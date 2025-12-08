@@ -4415,20 +4415,10 @@
                 }
             }
 
-            // === SHARED GEMINI API KEYS FOR OCR (10 keys with rotation) ===
-            // Add your API keys here - system will auto-rotate to next key when quota exhausted
-            const OCR_API_KEYS = [
-                'AIzaSyCdCjsRchicFI3HZRUmn4YJ2VxkMS1_SMg',  // Slot 1 - Primary (Original)
-                'AIzaSyBHs9EJh2etGlhDL92tZbVPdnMS-b1qKK4',  // Slot 2
-                'AIzaSyDaaLzTQXYzFuWZXg720dZtSVzFouYFzYs',  // Slot 3
-                'AIzaSyB_nP_DoTGSt9vXGTfMCdIXK7QS5TIzpZ0',  // Slot 4
-                'AIzaSyDFtmELO9kzoyk69jCSfVaP2z_0MydCHD0',  // Slot 5
-                'AIzaSyD1xChnc80T5Ez6Mq3Jt5FENr4IGJtXew8',  // Slot 6
-                'AIzaSyAPvuIRMn0QO6PGXNe3M3UIWS6zniX-gMM',  // Slot 7
-                'AIzaSyARBT6mu9G_Riq_UwQqLyhTERsC0kws7wE',  // Slot 8
-                'AIzaSyBDwYvP1ffKNnwcoaAbTsLbFSMsfCF1k7w',  // Slot 9
-                'YOUR_OCR_API_KEY_10'  // Slot 10
-            ].filter(key => key && !key.startsWith('YOUR_'));  // Only use keys that are set
+            // === SHARED GEMINI API KEYS FOR OCR ===
+            // Uses the shared GEMINI_API_KEYS array defined above (17 keys with rotation)
+            // Both OCR and Chatbot use the same keys
+            const OCR_API_KEYS = GEMINI_API_KEYS;  // Unified key source
 
             // Track exhausted OCR keys for today
             function getExhaustedOCRKeys() {
