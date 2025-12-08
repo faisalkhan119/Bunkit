@@ -3317,16 +3317,9 @@
                     .replace(/=+$/, '');
             }
 
-            // --- GOOGLE OAUTH WITH FULL PKCE FLOW ---
-            // Implements the Authorization Code Flow with PKCE as shown in the diagram:
-            // 1. User clicks login
-            // 2. App generates code_verifier and code_challenge
-            // 3. Auth request sent with code_challenge
-            // 4-5. User authenticates
-            // 6. Authorization code returned
-            // 7. App exchanges code + code_verifier for tokens
-            // 8. Server validates verifier against challenge
-            // 9. Tokens returned
+            // --- GOOGLE OAUTH (Token Flow for SPA) ---
+            // Using initTokenClient which handles token exchange automatically
+            // No client_secret needed for this flow
 
             function initGoogleAuth() {
                 // Initialize Google API client for Drive access
@@ -3338,85 +3331,46 @@
                     maybeEnableSync();
                 });
 
-                // Initialize GIS Code Client for Authorization Code flow with PKCE
-                // Using initCodeClient instead of initTokenClient for proper PKCE
-                tokenClient = google.accounts.oauth2.initCodeClient({
+                // Initialize GIS Token Client (handles tokens directly, no backend needed)
+                tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: OAUTH_SCOPES,
-                    ux_mode: 'popup',
-                    callback: handleCodeResponse,
+                    callback: handleTokenResponse,
                 });
                 gisInited = true;
                 maybeEnableSync();
-                console.log('🔒 PKCE Authorization Code Flow initialized');
+                console.log('✅ Google OAuth initialized (Token Flow)');
             }
 
             function maybeEnableSync() {
                 if (gapiInited && gisInited) {
-                    console.log('✅ Google Auth with PKCE ready');
+                    console.log('✅ Google Auth ready');
                     checkLoginStatus();
                 }
             }
 
-            // Step 7: Exchange Authorization Code + Code Verifier for tokens
-            async function handleCodeResponse(response) {
+            // Handle token response directly (no code exchange needed)
+            async function handleTokenResponse(response) {
                 if (response.error !== undefined) {
                     console.error('Auth error:', response);
                     alert('❌ Google sign-in failed. Please try again.');
                     return;
                 }
 
-                console.log('📨 Authorization code received, exchanging for tokens...');
+                console.log('✅ Access token received');
 
                 try {
-                    // Exchange the authorization code for tokens
-                    // This is where PKCE validation happens on Google's server
-                    const tokenResponse = await exchangeCodeForTokens(response.code);
+                    // Set the token for gapi client
+                    gapi.client.setToken({ access_token: response.access_token });
 
-                    if (tokenResponse.access_token) {
-                        console.log('✅ Token exchange successful (PKCE validated)');
-                        await fetchUserInfo(tokenResponse.access_token);
-                    } else {
-                        throw new Error('No access token in response');
-                    }
+                    // Fetch and store user info
+                    await fetchUserInfo(response.access_token);
                 } catch (error) {
-                    console.error('Token exchange failed:', error);
-                    // Fallback: Try using Google's token endpoint directly
-                    // For SPAs, Google's GIS handles this securely
+                    console.error('Auth failed:', error);
                     alert('❌ Authentication failed: ' + error.message);
                 }
             }
 
-            async function exchangeCodeForTokens(authCode) {
-                // For pure client-side apps, we use Google's token endpoint
-                // PKCE allows us to do this without a client_secret
-
-                const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-
-                const params = new URLSearchParams({
-                    client_id: GOOGLE_CLIENT_ID,
-                    code: authCode,
-                    code_verifier: pkceCodeVerifier, // The secret that proves we initiated the request
-                    grant_type: 'authorization_code',
-                    redirect_uri: window.location.origin,
-                });
-
-                const response = await fetch(tokenEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params,
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Token endpoint error:', errorData);
-                    throw new Error(errorData.error_description || errorData.error || 'Token exchange failed');
-                }
-
-                return await response.json();
-            }
 
             async function fetchUserInfo(accessToken) {
                 try {
@@ -3454,7 +3408,7 @@
                 }
             }
 
-            // Main sign-in function using PKCE
+            // Main sign-in function
             async function signInWithGoogle() {
                 if (!gisInited) {
                     alert('⏳ Google services still loading. Please wait...');
@@ -3466,18 +3420,10 @@
                     return;
                 }
 
-                // PKCE Step 2: Generate code_verifier and code_challenge
-                pkceCodeVerifier = generateCodeVerifier();
-                const codeChallenge = await generateCodeChallenge(pkceCodeVerifier);
+                console.log('🔑 Requesting Google sign-in...');
 
-                console.log('🔐 PKCE: code_verifier generated (64 chars)');
-                console.log('🔐 PKCE: code_challenge generated (SHA-256 + base64url)');
-
-                // PKCE Step 3: Request authorization with code_challenge
-                tokenClient.requestCode({
-                    code_challenge: codeChallenge,
-                    code_challenge_method: 'S256',
-                });
+                // Request access token directly (GIS handles everything)
+                tokenClient.requestAccessToken({ prompt: 'consent' });
             }
 
             function continueAsGuest() {
