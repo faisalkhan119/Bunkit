@@ -2846,9 +2846,36 @@
     </a>
 
     <div id="mySidenav" class="sidenav">
-        <div class="sidenav-header">Menu</div>
         <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">File <span>▾</span></a>
+
+        <!-- Account Section at Top -->
+        <div id="sidebarAccountHeader"
+            style="padding: 15px; background: var(--light-bg); border-bottom: 1px solid var(--border-color); margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="sidebarUserAvatar"
+                    style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; font-weight: 600;">
+                    👤</div>
+                <div style="flex: 1;">
+                    <div id="sidebarUserName" style="font-weight: 600; color: var(--main-text); font-size: 1rem;">Guest
+                        User</div>
+                    <div id="sidebarUserEmail" style="font-size: 0.75rem; color: var(--medium-text);">Not signed in
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Options -->
+        <a href="#" onclick="openProfileNameModal(); closeNav();">✏️ Edit Profile Name</a>
+        <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">🔐 Sign in with Google</a>
+        <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">☁️ Sync with
+            Google Drive</a>
+        <a href="#" id="sidebarSignOutBtn" onclick="signOutGoogle(); closeNav();"
+            style="display: none; color: #dc3545;">🚪 Sign Out</a>
+
+        <div style="height: 1px; background: var(--border-color); margin: 10px 15px;"></div>
+
+        <!-- File Options -->
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📁 File <span>▾</span></a>
         <div class="sidenav-dropdown-content">
             <a href="#" onclick="openImportModal(); closeNav();">Import Class (JSON)</a>
             <a href="#" onclick="openExportModal(); closeNav();">Export Class (JSON)</a>
@@ -2856,13 +2883,13 @@
             <a href="#" onclick="openRestoreModal(); closeNav();">Restore from Backup</a>
             <a href="#" onclick="restoreDefaultClass(); closeNav();">Restore Default Class</a>
         </div>
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">History <span>▾</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📜 History <span>▾</span></a>
         <div class="sidenav-dropdown-content" id="historyDropdown">
             <a href="javascript:void(0)" style="color: var(--medium-text); cursor: default;">No history yet.</a>
         </div>
         <a href="#" onclick="openNotificationSettings(); closeNav();">🔔 Notification Settings</a>
         <a href="#" onclick="openAPISettings(); closeNav();">🔑 API Settings</a>
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">View Options <span>▾</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">👁️ View Options <span>▾</span></a>
         <div class="sidenav-dropdown-content">
             <a href="#" onclick="switchView('cards')">🗂️ Card View</a>
             <a href="#" onclick="switchView('table')">📊 Table View</a>
@@ -2872,7 +2899,7 @@
         <a href="#" id="periodViewMenuItem" onclick="openPeriodAttendanceModal(); closeNav();" style="display: none;">📊
             Period-wise Attendance</a>
 
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">Help <span>▾</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">❓ Help <span>▾</span></a>
         <div class="sidenav-dropdown-content">
             <a href="#" onclick="openHelpModal()">💡 How to Use</a>
             <a href="https://wa.me/916386854875?text=Hello!%20I%20have%20a%20question%20about%20the%20Smart%20Attendance%20Calculator."
@@ -3401,6 +3428,12 @@
                     // Auto-sync on login
                     await syncWithDrive();
 
+                    // Update sidebar account section
+                    updateSidebarAccountUI();
+
+                    // Check if first-time login - ask for name
+                    checkFirstLoginPrompt();
+
                     console.log('✅ Signed in as:', userInfo.email);
                 } catch (error) {
                     console.error('Failed to fetch user info:', error);
@@ -3432,6 +3465,9 @@
                 googleUser = null;
                 hideLoginScreen();
                 updateAccountUI();
+                updateSidebarAccountUI();
+                // Check if first-time user - show onboarding
+                checkFirstLoginPrompt();
                 console.log('👤 Continuing as guest');
             }
 
@@ -3462,6 +3498,21 @@
                 document.getElementById('loginScreen').style.display = 'none';
             }
 
+            // --- MODAL HELPER FUNCTIONS ---
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
             function checkLoginStatus() {
                 const isGuest = localStorage.getItem('isGuest');
                 const savedUser = localStorage.getItem('googleUser');
@@ -3476,6 +3527,7 @@
                 if (savedUser && isGuest !== 'true') {
                     googleUser = JSON.parse(savedUser);
                     updateAccountUI();
+                    updateSidebarAccountUI();
                     // Token needs refresh on each session
                     silentTokenRefresh();
                     return;
@@ -3483,6 +3535,7 @@
 
                 // Guest user
                 updateAccountUI();
+                updateSidebarAccountUI();
             }
 
             function silentTokenRefresh() {
@@ -3525,6 +3578,434 @@
                     // Guest user
                     guestView.style.display = 'block';
                     googleView.style.display = 'none';
+                }
+            }
+
+            // --- PROFILE NAME MANAGEMENT ---
+            function openProfileNameModal() {
+                const savedName = localStorage.getItem('userProfileName') || '';
+                const modal = document.getElementById('profileNameModal');
+                if (!modal) {
+                    createProfileModals();
+                }
+                document.getElementById('profileNameInput').value = savedName;
+                openModal('profileNameModal');
+            }
+
+            function saveProfileName() {
+                const name = document.getElementById('profileNameInput').value.trim();
+                if (name) {
+                    localStorage.setItem('userProfileName', name);
+                    updateSidebarAccountUI();
+                    closeModal('profileNameModal');
+                    alert('✅ Profile name saved!');
+                } else {
+                    alert('⚠️ Please enter a name');
+                }
+            }
+
+            function saveFirstLoginName() {
+                const name = document.getElementById('firstLoginNameInput').value.trim();
+                if (name) {
+                    localStorage.setItem('userProfileName', name);
+                    updateSidebarAccountUI();
+                    // Directly hide the modal
+                    const modal = document.getElementById('firstLoginPromptModal');
+                    if (modal) modal.style.display = 'none';
+                    // Show class setup modal next
+                    setTimeout(() => openOnboardingClassModal(), 300);
+                } else {
+                    alert('⚠️ Please enter your name to continue');
+                }
+            }
+
+            function checkFirstLoginPrompt() {
+                const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
+
+                if (!hasCompleted) {
+                    // First time user - show onboarding
+                    setTimeout(() => {
+                        createProfileModals();
+                        const googleUser = JSON.parse(localStorage.getItem('googleUser') || '{}');
+                        document.getElementById('firstLoginNameInput').value = googleUser.name || '';
+                        openModal('firstLoginPromptModal');
+                    }, 500);
+                }
+            }
+
+            function openOnboardingClassModal() {
+                createOnboardingClassModal();
+                openModal('onboardingClassModal');
+            }
+
+            function createOnboardingClassModal() {
+                if (document.getElementById('onboardingClassModal')) return;
+
+                const modal = document.createElement('div');
+                modal.id = 'onboardingClassModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px;">
+                    <div class="modal-header" style="text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 10px;">📚</div>
+                        <h2>Setup Your Class</h2>
+                        <p>Choose how you want to get started</p>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; padding: 15px 0;">
+                        <button class="btn primary-btn" onclick="handleCreateNewClass();" style="padding: 18px; font-size: 1.1rem;">
+                            ➕ Create New Class
+                        </button>
+                        <button class="btn secondary-btn" onclick="useExampleClass();" style="padding: 18px; font-size: 1.1rem;">
+                            📝 Use Example Class
+                        </button>
+                    </div>
+                </div>`;
+                document.body.appendChild(modal);
+            }
+
+            function useExampleClass() {
+                // Directly hide the modal
+                const modal = document.getElementById('onboardingClassModal');
+                if (modal) modal.style.display = 'none';
+
+                localStorage.setItem('hasCompletedOnboarding', 'true');
+
+                // Select the example class in dropdown
+                const classSelector = document.getElementById('classSelector');
+                const exampleClassName = 'CSE Core - H (Example)';
+
+                if (classSelector) {
+                    classSelector.value = exampleClassName;
+                    // Trigger change to load the class
+                    if (typeof handleDropdownChange === 'function') {
+                        handleDropdownChange();
+                    }
+                }
+
+                // Open the Edit/Share Class form for the example class
+                setTimeout(() => {
+                    if (typeof editSelectedClass === 'function') {
+                        editSelectedClass();
+                    }
+                }, 100);
+
+                // Show Bunkmate tutorial after 3 seconds
+                setTimeout(() => showBunkmateTutorial('example'), 3000);
+            }
+
+            function handleCreateNewClass() {
+                // Hide onboarding modal
+                const onboardingModal = document.getElementById('onboardingClassModal');
+                if (onboardingModal) {
+                    onboardingModal.style.display = 'none';
+                }
+                // Mark onboarding as complete
+                localStorage.setItem('hasCompletedOnboarding', 'true');
+                // Open add class modal
+                if (typeof openAddClassModal === 'function') {
+                    openAddClassModal();
+                }
+                // Show Bunkmate tutorial after 3 seconds
+                setTimeout(() => showBunkmateTutorial('newclass'), 3000);
+            }
+
+            // --- BUNKMATE TUTORIAL CLOUD ANIMATION ---
+            let tutorialCloudIndex = 0;
+            let tutorialMessages = [];
+            let tutorialInterval = null;
+
+            function showBunkmateTutorial(type) {
+                const userName = localStorage.getItem('userProfileName') || 'Friend';
+
+                // Tutorial messages in Hinglish
+                const introMessages = [
+                    `👋 Hey ${userName}! Main <b>Bunkmate</b> hoon - tumhara personal AI assistant jo tumhari attendance manage karne mein help karega!`,
+                    `🎯 Bunkit app se tum dekh sakte ho ki <b>kitne lectures bunk</b> kar sakte ho bina attendance giraye. Mast hai na? 😎`,
+                    `📊 App tumhe batayega ki <b>75% attendance</b> maintain karne ke liye kitne classes attend karne hain ya kitne bunk kar sakte ho!`
+                ];
+
+                const newClassMessages = [
+                    `📝 <b>Form Entry Tab:</b> Yahaan manually apni class ka naam likho, last working date daalo, aur ek ek subject add karo with weekly schedule!`,
+                    `📅 <b>Weekly Schedule:</b> Har subject ke liye Monday se Sunday tak <b>kitne lectures</b> hain wo batana hai. Jaise Monday ko 2 lectures, Tuesday ko 1, etc.`,
+                    `🤖 <b>Inbuilt AI Import:</b> Sabse easy tarika! Apni <b>timetable ki photo</b> upload karo, AI khud subjects aur schedule extract kar lega!`,
+                    `⚡ <b>AI Tip:</b> Best results ke liye <b>clear photo</b> lo jisme text properly dikh raha ho. Blurry photo se galat data aa sakta hai!`,
+                    `📥 <b>Import from JSON:</b> Agar tumhare dost ne class export ki hai ya pehle backup liya tha, to yahan <b>paste</b> karke import karo!`,
+                    `📱 <b>Scan QR:</b> Dost ki class ka QR code scan karo aur <b>instantly</b> same class import ho jayegi. Sharing is caring! 🤝`,
+                    `🎓 <b>Pro Tip:</b> Class banana ke baad <b>hamburger menu</b> (☰) se backup le lo taaki data safe rahe!`,
+                    `💬 <b>Need Help?</b> Kabhi bhi confuse ho to neeche right side mein mera <b>chat icon</b> 💬 hai - kuch bhi poocho!`
+                ];
+
+                const exampleMessages = [
+                    `📚 Ye ek <b>Example Class</b> hai - CSE Core H semester ka demo! Isse samajh lo app kaise kaam karta hai.`,
+                    `👀 Dekho - <b>Class Name</b> upar hai, <b>Last Working Date</b> semester end date hai, aur neeche saare <b>subjects</b> hain!`,
+                    `📅 Har subject mein <b>Weekly Schedule</b> hai - matlab Mon-Sun kitne lectures hain. Ye attendance calculate karne ke liye zaroori hai!`,
+                    `✏️ <b>Edit kaise kare:</b> Subject name click karke change karo, schedule mein numbers change karo, ya <b>Remove</b> button se delete karo!`,
+                    `➕ <b>Naya Subject:</b> Neeche <b>"+ Add Subject"</b> button hai - click karke apne subjects add karo!`,
+                    `💾 <b>Save karna mat bhoolna:</b> Saare changes karne ke baad <b>Save Class</b> button zaroor dabao!`,
+                    `📊 <b>Attendance Track:</b> Save karne ke baad main screen pe subjects dikhenge - wahan se daily attendance mark karo!`,
+                    `💬 <b>Confused?</b> Koi tension nahi! Neeche right side mein mera <b>chat icon</b> 💬 hai - mujhse kuch bhi poocho, main hoon na! 🤗`
+                ];
+
+                tutorialMessages = [...introMessages, ...(type === 'newclass' ? newClassMessages : exampleMessages)];
+                tutorialCloudIndex = 0;
+
+                createTutorialOverlay();
+                showNextCloud();
+            }
+
+            function createTutorialOverlay() {
+                // Remove existing if any
+                const existing = document.getElementById('bunkmateTutorialOverlay');
+                if (existing) existing.remove();
+
+                const overlay = document.createElement('div');
+                overlay.id = 'bunkmateTutorialOverlay';
+                overlay.innerHTML = `
+                    <style>
+                        #bunkmateTutorialOverlay {
+                            position: fixed;
+                            bottom: 100px;
+                            right: 20px;
+                            z-index: 100000;
+                            pointer-events: none;
+                        }
+                        .bunkmate-cloud {
+                            background: white;
+                            color: #333;
+                            padding: 15px 20px;
+                            border-radius: 20px;
+                            max-width: 320px;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                            position: relative;
+                            animation: cloudPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                            pointer-events: auto;
+                            font-size: 0.95rem;
+                            line-height: 1.5;
+                        }
+                        .bunkmate-cloud::after {
+                            content: '';
+                            position: absolute;
+                            bottom: -10px;
+                            right: 30px;
+                            width: 20px;
+                            height: 20px;
+                            background: white;
+                            transform: rotate(45deg);
+                            box-shadow: 4px 4px 8px rgba(0,0,0,0.1);
+                        }
+                        .bunkmate-cloud-header {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            margin-bottom: 8px;
+                            font-weight: 600;
+                            color: #6366f1;
+                        }
+                        .bunkmate-cloud-text {
+                            color: #444;
+                        }
+                        .bunkmate-cloud-actions {
+                            display: flex;
+                            gap: 10px;
+                            margin-top: 12px;
+                            justify-content: flex-end;
+                        }
+                        .bunkmate-btn {
+                            padding: 6px 14px;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 0.85rem;
+                            font-weight: 500;
+                            transition: all 0.2s;
+                        }
+                        .bunkmate-btn-next {
+                            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                            color: white;
+                        }
+                        .bunkmate-btn-next:hover {
+                            transform: scale(1.05);
+                        }
+                        .bunkmate-btn-skip {
+                            background: #f1f5f9;
+                            color: #64748b;
+                        }
+                        .bunkmate-btn-skip:hover {
+                            background: #e2e8f0;
+                        }
+                        .bunkmate-progress {
+                            display: flex;
+                            gap: 4px;
+                            margin-top: 10px;
+                            justify-content: center;
+                        }
+                        .bunkmate-dot {
+                            width: 6px;
+                            height: 6px;
+                            border-radius: 50%;
+                            background: #e2e8f0;
+                        }
+                        .bunkmate-dot.active {
+                            background: #6366f1;
+                        }
+                        @keyframes cloudPop {
+                            0% { transform: scale(0) translateY(50px); opacity: 0; }
+                            100% { transform: scale(1) translateY(0); opacity: 1; }
+                        }
+                    </style>
+                    <div class="bunkmate-cloud">
+                        <div class="bunkmate-cloud-header">
+                            <span>🤖</span> Bunkmate
+                        </div>
+                        <div class="bunkmate-cloud-text" id="bunkmateCloudText"></div>
+                        <div class="bunkmate-progress" id="bunkmateProgress"></div>
+                        <div class="bunkmate-cloud-actions">
+                            <button class="bunkmate-btn bunkmate-btn-skip" onclick="closeBunkmateTutorial()">Skip</button>
+                            <button class="bunkmate-btn bunkmate-btn-next" onclick="showNextCloud()" id="bunkmateNextBtn">Next →</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            function showNextCloud() {
+                const textEl = document.getElementById('bunkmateCloudText');
+                const progressEl = document.getElementById('bunkmateProgress');
+                const nextBtn = document.getElementById('bunkmateNextBtn');
+
+                if (!textEl || tutorialCloudIndex >= tutorialMessages.length) {
+                    closeBunkmateTutorial();
+                    return;
+                }
+
+                // Update cloud with animation
+                const cloud = document.querySelector('.bunkmate-cloud');
+                if (cloud) {
+                    cloud.style.animation = 'none';
+                    cloud.offsetHeight; // Trigger reflow
+                    cloud.style.animation = 'cloudPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                }
+
+                textEl.innerHTML = tutorialMessages[tutorialCloudIndex];
+
+                // Update progress dots
+                progressEl.innerHTML = tutorialMessages.map((_, i) =>
+                    `<div class="bunkmate-dot ${i === tutorialCloudIndex ? 'active' : ''}"></div>`
+                ).join('');
+
+                // Update button text on last message
+                if (tutorialCloudIndex === tutorialMessages.length - 1) {
+                    nextBtn.textContent = 'Done ✓';
+                } else {
+                    nextBtn.textContent = 'Next →';
+                }
+
+                tutorialCloudIndex++;
+            }
+
+            function closeBunkmateTutorial() {
+                const overlay = document.getElementById('bunkmateTutorialOverlay');
+                if (overlay) {
+                    overlay.style.transition = 'opacity 0.3s';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.remove(), 300);
+                }
+                tutorialCloudIndex = 0;
+                tutorialMessages = [];
+            }
+
+            function createProfileModals() {
+                if (document.getElementById('profileNameModal')) return;
+
+                // Profile Name Modal
+                const profileModal = document.createElement('div');
+                profileModal.id = 'profileNameModal';
+                profileModal.className = 'modal';
+                profileModal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px;">
+                    <button class="modal-close" onclick="closeModal('profileNameModal')">&times;</button>
+                    <div class="modal-header">
+                        <h2>👤 Edit Profile</h2>
+                        <p>Customize how your name appears</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="profileNameInput">Your Name:</label>
+                        <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="50">
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn primary-btn" onclick="saveProfileName()">💾 Save</button>
+                        <button class="btn secondary-btn" onclick="closeModal('profileNameModal')">Cancel</button>
+                    </div>
+                </div>`;
+                document.body.appendChild(profileModal);
+
+                // First Login Prompt Modal
+                const firstLoginModal = document.createElement('div');
+                firstLoginModal.id = 'firstLoginPromptModal';
+                firstLoginModal.className = 'modal';
+                firstLoginModal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px;">
+                    <div class="modal-header" style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🎉</div>
+                        <h2>Welcome to Bunk it!</h2>
+                        <p>Let's personalize your experience</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="firstLoginNameInput">What should we call you?</label>
+                        <input type="text" id="firstLoginNameInput" placeholder="Enter your name" maxlength="50" style="text-align: center; font-size: 1.1rem;">
+                    </div>
+                    <div class="form-actions" style="justify-content: center;">
+                        <button class="btn primary-btn" onclick="saveFirstLoginName()" style="min-width: 150px;">Continue</button>
+                    </div>
+                </div>`;
+                document.body.appendChild(firstLoginModal);
+            }
+
+            // Update sidebar account section UI
+            function updateSidebarAccountUI() {
+                const signInBtn = document.getElementById('sidebarSignInBtn');
+                const syncBtn = document.getElementById('sidebarSyncBtn');
+                const signOutBtn = document.getElementById('sidebarSignOutBtn');
+                const userName = document.getElementById('sidebarUserName');
+                const userEmail = document.getElementById('sidebarUserEmail');
+                const userAvatar = document.getElementById('sidebarUserAvatar');
+
+                if (!userName) return;
+
+                const isGuest = localStorage.getItem('isGuest') === 'true';
+                const savedUser = localStorage.getItem('googleUser');
+                const profileName = localStorage.getItem('userProfileName');
+
+                if (!isGuest && savedUser) {
+                    // Google user
+                    const user = JSON.parse(savedUser);
+                    signInBtn.style.display = 'none';
+                    syncBtn.style.display = 'block';
+                    signOutBtn.style.display = 'block';
+
+                    userName.textContent = profileName || user.name || 'User';
+                    userEmail.textContent = user.email || '';
+
+                    if (user.picture && userAvatar) {
+                        userAvatar.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    } else if (userAvatar) {
+                        const initial = (profileName || user.name || 'U').charAt(0).toUpperCase();
+                        userAvatar.innerHTML = initial;
+                    }
+                } else {
+                    // Guest user
+                    signInBtn.style.display = 'block';
+                    syncBtn.style.display = 'none';
+                    signOutBtn.style.display = 'none';
+
+                    userName.textContent = profileName || 'Guest User';
+                    userEmail.textContent = profileName ? 'Guest Mode' : 'Not signed in';
+
+                    if (userAvatar) {
+                        const initial = profileName ? profileName.charAt(0).toUpperCase() : '👤';
+                        userAvatar.innerHTML = initial;
+                    }
                 }
             }
 
@@ -5906,7 +6387,7 @@ CRITICAL INSTRUCTIONS:
                     document.getElementById('newClassLastDate').value = '';
                     document.getElementById('subjectsContainer').innerHTML = '';
                     addSubjectEntry();
-                    populateHolidaysInModal(defaultHolidays);
+                    populateHolidaysInModal([]);
 
                     document.getElementById('jsonTabBtn').style.display = 'block';
                     if (shareTabBtn) shareTabBtn.style.display = 'none';
