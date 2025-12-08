@@ -1,0 +1,24 @@
+# Netlify Configuration
+[build]
+  # Directory to deploy
+  publish = "."
+  # Serverless functions directory
+  functions = "netlify/functions"
+
+[functions]
+  # Node.js version for functions
+  node_bundler = "esbuild"
+
+# Redirect API calls to serverless function
+[[redirects]]
+  from = "/api/gemini"
+  to = "/.netlify/functions/gemini-proxy"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
