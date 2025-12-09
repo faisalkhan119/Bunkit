@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <!-- Anti-DevTools Protection (deters casual users) -->
     <script>
         (function () {
@@ -84,7 +85,6 @@
             console.log('%c🔒 Security measures active', 'color: #28a745; font-weight: bold;');
         })();
     </script>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bunk it - Smart Attendance Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js" defer></script>
@@ -2869,6 +2869,10 @@
         <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">🔐 Sign in with Google</a>
         <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">☁️ Sync with
             Google Drive</a>
+        <div id="sidebarLastSynced"
+            style="display: none; padding: 5px 22px; font-size: 0.75rem; color: var(--medium-text);">
+            🕐 Last synced: Never
+        </div>
         <a href="#" id="sidebarSignOutBtn" onclick="signOutGoogle(); closeNav();"
             style="display: none; color: #dc3545;">🚪 Sign Out</a>
 
@@ -3026,46 +3030,6 @@
                         <p>Processing image and extracting attendance data...</p>
                     </div>
 
-                    <!-- Account Section -->
-                    <div class="settings-section" id="accountSection">
-                        <h3>👤 Account</h3>
-
-                        <!-- Guest User View -->
-                        <div id="guestAccountView" class="guest-upgrade-card" style="display: none;">
-                            <h4>📱 Guest Mode</h4>
-                            <p>Your data is only on this device. Connect Google to sync across devices.</p>
-                            <button class="login-btn login-btn-google" onclick="signInWithGoogle()"
-                                style="max-width: 280px; margin: 0 auto;">
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                    alt="Google">
-                                Connect Google
-                            </button>
-                        </div>
-
-                        <!-- Google User View -->
-                        <div id="googleAccountView" class="account-card" style="display: none;">
-                            <div class="account-info">
-                                <div class="account-avatar" id="accountAvatar">
-                                    <!-- Profile picture or initial -->
-                                </div>
-                                <div class="account-details">
-                                    <div class="account-name" id="accountName">User Name</div>
-                                    <div class="account-email" id="accountEmail">user@gmail.com</div>
-                                </div>
-                            </div>
-                            <div class="account-sync-status" id="syncStatus">
-                                ☁️ Last synced: Never
-                            </div>
-                            <div class="account-actions">
-                                <button class="account-btn account-btn-sync" onclick="syncWithDrive()">
-                                    🔄 Sync Now
-                                </button>
-                                <button class="account-btn account-btn-signout" onclick="signOutGoogle()">
-                                    Sign Out
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="settings-section">
                         <h3>⚙️ Calculation Settings</h3>
@@ -3392,6 +3356,9 @@
 
                     // Fetch and store user info
                     await fetchUserInfo(response.access_token);
+
+                    // Check for auto-sync after token refresh
+                    checkAndAutoSync();
                 } catch (error) {
                     console.error('Auth failed:', error);
                     alert('❌ Authentication failed: ' + error.message);
@@ -3541,6 +3508,27 @@
             function silentTokenRefresh() {
                 if (gisInited && googleUser && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
                     tokenClient.requestAccessToken({ prompt: '' });
+                }
+            }
+
+            // Auto-sync on app open if last sync was more than 12 hours ago
+            function checkAndAutoSync() {
+                const isGuest = localStorage.getItem('isGuest') === 'true';
+                const savedUser = localStorage.getItem('googleUser');
+
+                if (!isGuest && savedUser && googleUser?.accessToken) {
+                    const lastSyncTime = parseInt(localStorage.getItem('lastSyncTime') || '0');
+                    const twelveHoursMs = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+                    const now = Date.now();
+
+                    if (now - lastSyncTime > twelveHoursMs) {
+                        console.log('🔄 Auto-sync: Last sync was more than 12 hours ago, syncing now...');
+                        setTimeout(() => {
+                            syncWithDrive();
+                        }, 2000); // Wait 2 seconds after app load
+                    } else {
+                        console.log('✅ Auto-sync: Last sync was within 12 hours, skipping auto-sync');
+                    }
                 }
             }
 
@@ -3967,6 +3955,7 @@
                 const signInBtn = document.getElementById('sidebarSignInBtn');
                 const syncBtn = document.getElementById('sidebarSyncBtn');
                 const signOutBtn = document.getElementById('sidebarSignOutBtn');
+                const lastSyncedDiv = document.getElementById('sidebarLastSynced');
                 const userName = document.getElementById('sidebarUserName');
                 const userEmail = document.getElementById('sidebarUserEmail');
                 const userAvatar = document.getElementById('sidebarUserAvatar');
@@ -3976,6 +3965,7 @@
                 const isGuest = localStorage.getItem('isGuest') === 'true';
                 const savedUser = localStorage.getItem('googleUser');
                 const profileName = localStorage.getItem('userProfileName');
+                const lastSyncTime = localStorage.getItem('lastSyncTime');
 
                 if (!isGuest && savedUser) {
                     // Google user
@@ -3983,6 +3973,19 @@
                     signInBtn.style.display = 'none';
                     syncBtn.style.display = 'block';
                     signOutBtn.style.display = 'block';
+
+                    // Show last synced time
+                    if (lastSyncedDiv) {
+                        lastSyncedDiv.style.display = 'block';
+                        if (lastSyncTime) {
+                            const syncDate = new Date(parseInt(lastSyncTime));
+                            const formattedDate = syncDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            const formattedTime = syncDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                            lastSyncedDiv.textContent = `🕐 Last synced: ${formattedDate}, ${formattedTime}`;
+                        } else {
+                            lastSyncedDiv.textContent = '🕐 Last synced: Never';
+                        }
+                    }
 
                     userName.textContent = profileName || user.name || 'User';
                     userEmail.textContent = user.email || '';
@@ -3998,6 +4001,7 @@
                     signInBtn.style.display = 'block';
                     syncBtn.style.display = 'none';
                     signOutBtn.style.display = 'none';
+                    if (lastSyncedDiv) lastSyncedDiv.style.display = 'none';
 
                     userName.textContent = profileName || 'Guest User';
                     userEmail.textContent = profileName ? 'Guest Mode' : 'Not signed in';
@@ -4136,7 +4140,7 @@
                 }
 
                 try {
-                    document.getElementById('syncStatus').textContent = '☁️ Syncing...';
+                    showToast('☁️ Syncing...', 'Connecting to Google Drive', { duration: 2000 });
 
                     const cloudBackup = await downloadBackupFromDrive();
                     const localBackup = getBackupDataObj();
@@ -4167,11 +4171,12 @@
                         }
                     }
 
+                    // Save sync timestamp
+                    localStorage.setItem('lastSyncTime', Date.now().toString());
                     localStorage.setItem('lastDriveSync', new Date().toISOString());
-                    updateAccountUI();
+                    updateSidebarAccountUI();
                 } catch (error) {
                     console.error('Sync failed:', error);
-                    document.getElementById('syncStatus').textContent = '❌ Sync failed';
                     showToast('❌ Sync Failed', error.message, { duration: 5000 });
                 }
             }
@@ -5746,26 +5751,15 @@ CRITICAL INSTRUCTIONS:
                         const classData = classesData[currentClass];
 
                         if (classData && classData.lastDate) {
-                            // REQUIRE semester start date
-                            if (!classData.semesterStart) {
-                                alert(`⚠️ Cannot enable notifications.\n\nSemester starting date is required for portal mode.\n\nPlease set the semester start date in your class settings before enabling notifications.`);
-                                document.getElementById('notificationEnabled').checked = false;
-                                document.getElementById('notificationTimeGroup').style.display = 'none';
-                                return;
-                            }
-
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
 
                             const semesterEnd = new Date(classData.lastDate);
                             semesterEnd.setHours(0, 0, 0, 0);
 
-                            const semesterStart = new Date(classData.semesterStart);
-                            semesterStart.setHours(0, 0, 0, 0);
-
-                            // Check if today is within range
-                            if (today < semesterStart || today > semesterEnd) {
-                                alert(`⚠️ Notifications cannot be enabled.\n\nThe current date (${today.toLocaleDateString()}) is outside your semester period.\n\nSemester Range:\nStart: ${semesterStart.toLocaleDateString()}\nEnd: ${semesterEnd.toLocaleDateString()}\n\nNotifications are only active during the semester.`);
+                            // Only check if today is after last working date
+                            if (today > semesterEnd) {
+                                alert(`⚠️ Cannot enable notifications.\n\nCurrent date is after the semester end date (${classData.lastDate}).\nPlease update your class's last working date.`);
                                 document.getElementById('notificationEnabled').checked = false;
                                 document.getElementById('notificationTimeGroup').style.display = 'none';
                                 return;
@@ -5863,24 +5857,15 @@ CRITICAL INSTRUCTIONS:
                         const classData = classes[className];
 
                         if (classData && classData.lastDate) {
-                            // REQUIRE semester start date
-                            if (!classData.semesterStart) {
-                                alert(`⚠️ Cannot enable notifications.\n\nSemester starting date is required for portal mode.\n\nPlease set the semester start date in your class settings.`);
-                                document.getElementById('notificationEnabled').checked = false;
-                                return;
-                            }
-
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
 
                             const semesterEnd = new Date(classData.lastDate);
                             semesterEnd.setHours(0, 0, 0, 0);
 
-                            const semesterStart = new Date(classData.semesterStart);
-                            semesterStart.setHours(0, 0, 0, 0);
-
-                            if (today < semesterStart || today > semesterEnd) {
-                                alert(`⚠️ Cannot enable notifications.\n\nCurrent date is outside semester period.\nNotifications will automatically enable when semester starts.`);
+                            // Only check if current date is after last working date
+                            if (today > semesterEnd) {
+                                alert(`⚠️ Cannot enable notifications.\n\nCurrent date is after the semester end date (${classData.lastDate}).\nPlease update your class's last working date.`);
                                 document.getElementById('notificationEnabled').checked = false;
                                 return;
                             }
@@ -11874,6 +11859,21 @@ CRITICAL RULES:
                         scrollChatToBottom();
                     }
 
+                    // Send AI chat message (from AI Chat Panel with separate input)
+                    async function sendAIChatMessage() {
+                        const aiInput = document.getElementById('aiChatInput');
+                        const chatInput = document.getElementById('chatInput');
+
+                        // Copy value to main chatInput for the existing function to use
+                        if (aiInput && chatInput) {
+                            chatInput.value = aiInput.value;
+                            aiInput.value = '';
+                        }
+
+                        // Call the existing function
+                        sendChatMessage();
+                    }
+
                     // Add message to chat
                     function addChatMessage(text, type) {
                         const messagesDiv = document.getElementById('chatMessages');
@@ -12510,10 +12510,10 @@ Answer helpfully using this context.`;
                     <!-- Chat Input -->
                     <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--card-bg);">
                         <div style="display: flex; gap: 10px;">
-                            <input type="text" id="chatInput" placeholder="Ask me anything..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; 
+                            <input type="text" id="aiChatInput" placeholder="Ask me anything..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; 
                                   background: var(--input-bg); color: var(--dark-text);"
-                                onkeypress="if(event.key==='Enter') sendChatMessage()">
-                            <button onclick="sendChatMessage()" class="btn primary-btn" style="padding: 12px 20px;">
+                                onkeypress="if(event.key==='Enter') sendAIChatMessage()">
+                            <button onclick="sendAIChatMessage()" class="btn primary-btn" style="padding: 12px 20px;">
                                 Send
                             </button>
                         </div>
