@@ -3204,38 +3204,32 @@
             const BACKUP_FILENAME = 'bunkit_backup.json';
             const OAUTH_SCOPES = DRIVE_SCOPE + ' https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
-            // --- GEMINI API KEYS (Free keys with rotation) ---
-            const GEMINI_API_KEYS = [
-                'AIzaSyAJIbJxgjCiMDhsI5q1U2PIDlrU-at_l-U',
-                'AIzaSyC9e8VRH2hZHo6E_zO8FDHrFBTkx3DVjHc',
-                'AIzaSyDWdOCvOBJg_Kx1Myw8xpGO47tEt-vyq3c',
-                'AIzaSyBF5ipZ7Hk6HZYVE9aiXjhDHsAQaozEOwU',
-                'AIzaSyBHs9EJh2etGlhDL92tZbVPdnMS-b1qKK4',
-                'AIzaSyDaaLzTQXYzFuWZXg720dZtSVzFouYFzYs',
-                'AIzaSyCKJOrw1FTbVuxmjAH7T6gHeGuQ4HC_qeE',
-                'AIzaSyBjoNWgaCEl_hA-QJRU_M7J96WfRLnKCpo',
-                'AIzaSyDk08-1soeoTABx890LKMG0af_OhoWrF0Q',
-                'AIzaSyDNuieLglJSlbObkSdxY3nT9xPiz_CNvqo',
-                'AIzaSyARvpLQbfJ4xBlaaG7zNc_cn2SQ5ZNT7lo',
-                'AIzaSyD1xChnc80T5Ez6Mq3Jt5FENr4IGJtXew8',
-                'AIzaSyAPvuIRMn0QO6PGXNe3M3UIWS6zniX-gMM',
-                'AIzaSyARBT6mu9G_Riq_UwQqLyhTERsC0kws7wE',
-                'AIzaSyBDwYvP1ffKNnwcoaAbTsLbFSMsfCF1k7w',
-                'AIzaSyB_nP_DoTGSt9vXGTfMCdIXK7QS5TIzpZ0',
-                'AIzaSyDFtmELO9kzoyk69jCSfVaP2z_0MydCHD0'
-            ];
-            let currentGeminiKeyIndex = 0;
-
-            // Get current Gemini API key
-            function getGeminiKey() {
-                return GEMINI_API_KEYS[currentGeminiKeyIndex];
+            // --- GEMINI API (Keys now stored securely on server) ---
+            // Personal API key from user settings
+            function getPersonalGeminiKey() {
+                return localStorage.getItem('personalGeminiKey');
             }
 
-            // Rotate to next key (called when current key fails)
-            function rotateGeminiKey() {
-                currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % GEMINI_API_KEYS.length;
-                console.log(`🔄 Rotated to Gemini key ${currentGeminiKeyIndex + 1}/${GEMINI_API_KEYS.length}`);
-                return getGeminiKey();
+            // Call Gemini API via backend proxy (for OCR, class import, etc.)
+            async function callGeminiProxy(action, payload) {
+                const personalKey = getPersonalGeminiKey();
+
+                if (personalKey) {
+                    // Use personal key with direct call
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`;
+                    return fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    // Use backend proxy
+                    return fetch('/api/gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action, ...payload })
+                    });
+                }
             }
 
             // Call Gemini API with auto-rotation on failure
@@ -12032,25 +12026,9 @@ CRITICAL RULES:
                         return quota;
                     }
 
-                    // Get AI response using Gemini API - Fully Context-Aware with Key Rotation
+                    // Get AI response using Gemini API - Uses backend proxy with key rotation
                     async function getAIResponse(userQuestion) {
                         const personalKey = localStorage.getItem('personalGeminiKey');
-
-                        // Use personal key if available, otherwise use shared keys with rotation
-                        let apiKey = personalKey;
-                        let usingSharedKey = false;
-                        let currentKeyIndex = -1;
-
-                        if (!personalKey) {
-                            // Get next available shared key
-                            const keyData = getNextAvailableChatbotKey();
-                            if (!keyData) {
-                                return `⚠️ All API keys exhausted for today.\\n\\nTo get unlimited access, add your personal Gemini API key in Settings.`;
-                            }
-                            apiKey = keyData.key;
-                            currentKeyIndex = keyData.index;
-                            usingSharedKey = true;
-                        }
 
                         // Get current date info
                         const today = new Date();
@@ -12111,16 +12089,13 @@ CRITICAL RULES:
                             notifications: notificationSettings
                         };
 
-                        // Comprehensive system prompt with ALL features
+                        // Comprehensive system prompt
                         const systemPrompt = `You are "Bunkmate", the friendly AI assistant for "Bunk it - Smart Attendance Manager" app.
 
 🔒 RULES:
 1. Only answer questions about this app
 2. Use provided data for personalized responses
-3. LANGUAGE MATCHING: Match the user's language:
-   - If user types in English → Reply in English
-   - If user types in Hindi (हिंदी) → Reply in Hindi (हिंदी में जवाब दें)
-   - If user types in Hinglish (mix of Hindi & English) → Reply in Hinglish (same style use karo)
+3. LANGUAGE MATCHING: Match the user's language
 
 📊 USER'S CURRENT DATA:
 • Today: ${appContext.currentDate} (${appContext.currentDayName})
@@ -12132,261 +12107,58 @@ CRITICAL RULES:
 • Today's Classes: ${appContext.isHolidayToday ? 'None (holiday)' : (appContext.todaysClasses.length > 0 ? JSON.stringify(appContext.todaysClasses) : 'None today')}
 • Subjects: ${JSON.stringify(appContext.subjects.map(s => ({ name: s.name, code: s.code })))}
 • Attendance: ${appContext.currentAttendance.length > 0 ? JSON.stringify(appContext.currentAttendance) : 'Not calculated yet'}
-• Total Holidays: ${appContext.holidays.length}
-• Days Logged: ${appContext.logs.totalDays}
-• Notifications: ${appContext.notifications.enabled ? 'On at ' + appContext.notifications.time : 'Off'}
 
-📱 ALL APP FEATURES (explain when asked):
-
-1️⃣ CLASS SETUP (4 methods):
-• Form: Manual entry - Add Class → fill name, last date, subjects with schedules
-• JSON: Paste JSON structure {"ClassName":{lastDate,holidays[],subjects[]}}
-• AI Import: Upload timetable/attendance images → AI fills form automatically
-• QR Scan: Scan classmate's QR to import their class setup
-
-2️⃣ ATTENDANCE INPUT (3 methods):
-• Image Upload: OCR extracts attendance from screenshots
-• Manual Input: Enter total/attended per subject
-• JSON Paste: {"CODE":{total,present}}
-
-3️⃣ MODES:
-• Portal Mode: Daily logging, ML recommendations, semester tracking (Settings → Portal Setup)
-• Standard Mode: Quick one-time calculation without daily logs
-
-4️⃣ LEAVE PLANNER:
-• Add planned leave dates → see impact on attendance
-• Compulsory events marking → warns about conflicts
-• Medical Certificate recommendations → suggests optimal ML dates
-• Max Safe Leave → shows days you can skip safely
-• Long Weekend Finder → finds best leave strategy
-
-5️⃣ TIMETABLE:
-• Visual weekly schedule with drag-drop
-• Period time configuration
-• Current day highlighting with attendance status colors (green=safe, yellow=warning, red=danger)
-
-📅 PERIOD-WISE ATTENDANCE VIEW (Portal Mode only):
-• Access: Menu → View Options → Period-wise Attendance (or click "Period-wise Attendance" button)
-• Shows attendance grid by date and period (columns = periods 1-7, rows = dates)
-• Status badges: ? = Not Logged, P = Present, A = Absent, C = Cancelled, OD = Duty Leave, ML = Medical Leave
-• Click any cell to change status directly
-• Month headers show counts for each status type
-• Day names shown with dates (Mon 06 Dec, Tue 07 Dec, etc.)
-• Changes sync instantly with Edit History and Daily Log
-• Perfect for reviewing and editing past attendance at a glance
-
-6️⃣ NOTIFICATIONS:
-• Daily reminders at custom time
-• Only during semester period
-• Enable in Settings → Notification Settings
-
-7️⃣ ANALYSIS:
-• Current %, Max possible %, Min possible %
-• Still Need (must attend), Can Skip (safe to miss)
-• Overall vs Per-Subject mode toggle
-
-8️⃣ SETTINGS:
-• Minimum attendance % (default 75%)
-• Dark mode toggle
-• API Settings for personal Gemini key
-• Export/Backup class as JSON or QR
-
-9️⃣ DAILY LOGGING (Portal Mode):
-• Mark each subject: Attended/Skipped/Cancelled
-• Access: Menu → History dropdown → select a date
-• Shows missing log dates
-
-🍔 HAMBURGER MENU (☰ button top-left):
-📁 FILE:
-  - Import Class (JSON): Paste JSON to add a class
-  - Export Class (JSON): Download current class as JSON
-  - Backup All Data: Save all classes and settings
-  - Restore from Backup: Load previous backup
-📜 HISTORY:
-  - View and edit past attendance logs
-  - Click any date to modify that day's log
-🔔 Notification Settings: Configure daily reminders
-🔑 API Settings: Add personal Gemini key (free 10k/day)
-👁️ VIEW OPTIONS:
-  - Card View: Subject cards with detailed stats
-  - Table View: Spreadsheet-style compact view
-  - Analytics Graph: Visual attendance charts
-❓ HELP:
-  - How to Use: Step-by-step guide
-  - Contact on WhatsApp: Developer support
-
-📊 MAX SAFE LEAVE FEATURE:
-• Located in Leave & Event Planner section
-• Calculates exact dates you can skip entirely
-• Considers your planned leaves + compulsory events
-• Shows which subject is the bottleneck limiting safe leaves
-• Click "Recalculate Max Safe Leave" after adding leaves/events
-• SMART DETECTION: If any subject cannot reach minimum even after attending all remaining classes:
-  - Shows warning with list of unrecoverable subjects
-  - Offers "Show Safe Leave (Excluding This Subject)" button
-  - This shows days where critical subjects have NO classes
-  - Safe to take leave on those days without hurting their attendance
-
-🚫 MAX POSSIBLE BUNK (Avoid Detention):
-• Calculates maximum skippable days at 65% DETENTION threshold (not 75%)
-• Shows all dates you can bunk without getting detained
-• Considers planned leaves + compulsory events
-• Shows bottleneck subject limiting bunks
-• MEDICAL CERTIFICATE SUGGESTIONS:
-  - After bunking, shows which subjects need ML to reach 75%
-  - Calculates exact classes needed per subject
-  - Recommends best dates for ML from bunk dates + planned leaves
-  - Example: "DSA needs 5 classes via ML, OS needs 3 classes"
-• Perfect for planning maximum freedom while avoiding detention
-
-📌 COMPULSORY EVENTS:
-• Add dates you MUST attend (exams, practicals, etc.)
-• System warns if planned leaves overlap with compulsory days
-• Helps calculate remaining leave budget accurately
-
-🏖️ LONG WEEKEND FINDER:
-• Enter number of leave days you want to use
-• Finds the optimal days to take leave
-• Maximizes consecutive days off (weekends + holidays)
-
-🤔 CAN I SKIP TODAY? FEATURE:
-• Quick check for today's impact
-• Shows what happens if you skip all today's classes
-• Per-subject impact analysis
-
-✏️ EDIT/DELETE/SHARE CLASS:
-• Edit Class: Click "Edit/Share (Class)" button → modify subjects, schedule, holidays
-• Delete Class: Click "Delete Class" button → permanently removes class
-• Share Class: Edit mode shows "Share via QR" tab → generates QR code for friends
-• Download QR: Save QR image to share offline
-• Share via App: Use native share (WhatsApp, etc.)
-
-🔍 CLASS SEARCH:
-• Type in search box to find classes quickly
-• Dropdown shows matching classes
-• Works with many classes
-
-🎓 PORTAL SETUP (how to enable):
-1. Select class → Click "Student Portal" button
-2. Enter "Semester Start Date" (REQUIRED)
-3. Enter baseline attendance (total/attended per subject as of that date)
-4. Click "Activate Portal Mode"
-• After activation: Daily logging, ML recommendations become available
-
-📊 DAILY DASHBOARD (Portal Mode):
-• Shows today's classes
-• Quick log buttons for each subject
-• Missing logs indicator
-• One-click "Log Today" option
-
-📅 SUBJECT SCHEDULE SETUP:
-• Each subject has Mon-Sun schedule inputs
-• Enter number of classes per day (0-4)
-• Example: 2 on Mon, 1 on Wed, 0 on other days
-• Used for calculating remaining classes
-
-🏖️ DEFAULT HOLIDAYS:
-• New classes auto-include common holidays
-• Can add/remove holidays in class settings
-• Holidays are excluded from attendance calculations
-
-📤 EXPORT/IMPORT OPTIONS:
-• Export Class JSON: Copy class data to share
-• Import from JSON: Paste JSON to create new class
-• QR Code: Scan to import class instantly
-
-📄 PDF REPORTS:
-• Download current attendance report as PDF
-• Auto-generated filename with class name and date
-• Includes all metrics: current %, still need, can skip, status
-
-💬 FLOATING WHATSAPP BUTTON:
-• Green button at bottom-right corner
-• Direct chat with developer for help
-• Auto-opens WhatsApp with pre-filled message
-
-☕ BUY ME A COFFEE (Support the Developer):
-• Access: Menu → "Buy Me a Coffee" (at bottom of menu, highlighted in red)
-• Shows UPI QR code for donations
-• Works with GPay, PhonePe, Paytm, and any UPI app
-• Download or Share the QR code
-• Helps keep the app ad-free and fund new features
-• 100% optional - app is fully free to use
-• Buy Me a Coffee Link: https://buymeacoffee.com/Faisalkhan119
-
-👤 ABOUT THE DEVELOPER/OWNER:
-• Name: Faisal Khan
-• Role: Solo Developer & Creator of Bunk it
-• WhatsApp:(for support & feedback)
-• Buy Me a Coffee: https://buymeacoffee.com/Faisalkhan119
-• About: A passionate solo developer building this app in free time to help students manage their attendance better. The app is 100% free, ad-free, and open for donations to cover API costs and fund new features.
-• Mission: Help students track attendance smartly, plan leaves optimally, and never get detained!
-
-📝 RESPONSE FORMAT INSTRUCTIONS:
-When explaining how to use features or answering "how to" questions:
-• ALWAYS use numbered steps (1, 2, 3...)
-• Keep each step clear and concise
-• Use emojis for visual clarity
-• Example format:
-  1️⃣ First step here
-  2️⃣ Second step here
-  3️⃣ Third step here
-• For sub-steps, use letters (a, b, c) or bullets
-• End with a helpful tip or confirmation message
-
-🧠 SMART RESPONSES: When asked about skipping/leave, check their attendance data and give specific advice based on maxSkippable values and subject buffers.
-
-Answer helpfully using this context.`;
+Answer helpfully using this context. Keep responses concise.`;
 
                         try {
-                            console.log('🤖 Chatbot: Using API key:', apiKey ? apiKey.substring(0, 10) + '...' : 'NONE');
+                            let response;
 
-                            const response = await fetch(
-                                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-                                {
+                            if (personalKey) {
+                                // Use personal key with direct API call
+                                console.log('🤖 Chatbot: Using personal API key');
+                                response = await fetch(
+                                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`,
+                                    {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            contents: [{
+                                                parts: [
+                                                    { text: systemPrompt },
+                                                    { text: `User question: ${userQuestion}` }
+                                                ]
+                                            }]
+                                        })
+                                    }
+                                );
+                            } else {
+                                // Use backend proxy (keys are safe on server)
+                                console.log('🤖 Chatbot: Using backend proxy');
+                                response = await fetch('/api/gemini', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
-                                        contents: [{
-                                            parts: [
-                                                { text: systemPrompt },
-                                                { text: `User question: ${userQuestion}` }
-                                            ]
-                                        }]
+                                        action: 'chat',
+                                        systemPrompt: systemPrompt,
+                                        prompt: `User question: ${userQuestion}`
                                     })
-                                }
-                            );
+                                });
+                            }
 
                             console.log('🤖 Chatbot: Response status:', response.status);
 
                             if (!response.ok) {
-                                const errorText = await response.text();
-                                console.error('🤖 Chatbot: API Error:', response.status, errorText);
-
-                                if (response.status === 429 && usingSharedKey && currentKeyIndex >= 0) {
-                                    // Mark current key as exhausted and try next
-                                    markChatbotKeyExhausted(currentKeyIndex);
-                                    const nextKeyData = getNextAvailableChatbotKey();
-                                    if (nextKeyData) {
-                                        console.log(`🔄 Chatbot key quota exceeded, switching to Key #${nextKeyData.index + 1}...`);
-                                        return getAIResponse(userQuestion); // Retry with next key
-                                    }
-                                    return `⚠️ All API keys exhausted for today.\\n\\nTo get unlimited access, add your personal Gemini API key in Settings.`;
-                                }
-                                return `❌ API Error ${response.status}: ${errorText.substring(0, 200)}`;
+                                const errorData = await response.json().catch(() => ({}));
+                                console.error('🤖 Chatbot: API Error:', response.status, errorData);
+                                return `❌ API Error ${response.status}: ${errorData.error || 'Unknown error'}`;
                             }
 
                             const result = await response.json();
-                            if (usingSharedKey) {
-                                const updatedQuota = updateSharedQuota();
-                                console.log(`Shared quota: ${updatedQuota.count}/${updatedQuota.limit}`);
-                            }
-
-                            return result.candidates[0]?.content?.parts[0]?.text || 'Sorry, I could not generate a response.';
+                            return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
 
                         } catch (error) {
                             console.error('Gemini API error:', error);
-                            return `❌ Connection Error: ${error.message}\\n\\nCheck your internet connection and try again.`;
+                            return `❌ Connection Error: ${error.message}\n\nCheck your internet connection and try again.`;
                         }
                     }
 

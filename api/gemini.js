@@ -1,5 +1,10 @@
-// Vercel Serverless Function: Gemini API Proxy
-// This hides your API key from client-side code
+// Vercel Serverless Function: Gemini API Proxy with Key Rotation
+// This hides your API keys from client-side code
+// Set GEMINI_API_KEYS in Vercel Dashboard as comma-separated values
+
+// Simple in-memory key rotation (resets on cold start)
+let currentKeyIndex = 0;
+let exhaustedKeys = new Set();
 
 export default async function handler(req, res) {
     // CORS headers
@@ -18,15 +23,41 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Get API key from environment (set in Vercel Dashboard or .env.local)
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        // Get API keys from environment (comma-separated)
+        const keysString = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+        const API_KEYS = keysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
-        if (!GEMINI_API_KEY) {
-            console.error('GEMINI_API_KEY not set');
-            return res.status(500).json({ error: 'API key not configured on server' });
+        if (API_KEYS.length === 0) {
+            console.error('No GEMINI_API_KEYS configured');
+            return res.status(500).json({ error: 'API keys not configured on server' });
         }
 
-        const { action, prompt, imageData, mimeType } = req.body;
+        // Get next available key (skip exhausted ones)
+        function getNextKey() {
+            for (let i = 0; i < API_KEYS.length; i++) {
+                const idx = (currentKeyIndex + i) % API_KEYS.length;
+                if (!exhaustedKeys.has(idx)) {
+                    currentKeyIndex = idx;
+                    return { key: API_KEYS[idx], index: idx };
+                }
+            }
+            return null; // All keys exhausted
+        }
+
+        const keyData = getNextKey();
+        if (!keyData) {
+            // Reset exhausted keys and try again (daily reset simulation)
+            exhaustedKeys.clear();
+            const retryKey = getNextKey();
+            if (!retryKey) {
+                return res.status(429).json({ error: 'All API keys exhausted. Try again later.' });
+            }
+        }
+
+        const GEMINI_API_KEY = keyData?.key || API_KEYS[0];
+        const keyIndex = keyData?.index || 0;
+
+        const { action, prompt, imageData, mimeType, systemPrompt } = req.body;
 
         if (!action) {
             return res.status(400).json({ error: 'Missing action parameter' });
@@ -36,9 +67,13 @@ export default async function handler(req, res) {
 
         switch (action) {
             case 'chat':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
+                    contents: [{
+                        parts: systemPrompt
+                            ? [{ text: systemPrompt }, { text: prompt }]
+                            : [{ text: prompt }]
+                    }],
                     generationConfig: {
                         temperature: 0.7,
                         topK: 40,
@@ -49,7 +84,7 @@ export default async function handler(req, res) {
                 break;
 
             case 'vision':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
                     contents: [{
                         parts: [
@@ -83,12 +118,23 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Gemini API error:', data);
+            console.error(`Gemini API error (Key #${keyIndex + 1}):`, data);
+
+            // If quota exceeded, mark key as exhausted and rotate
+            if (response.status === 429) {
+                exhaustedKeys.add(keyIndex);
+                currentKeyIndex = (keyIndex + 1) % API_KEYS.length;
+                console.log(`Key #${keyIndex + 1} exhausted, rotating to next key...`);
+            }
+
             return res.status(response.status).json({
                 error: data.error?.message || 'Gemini API error',
                 details: data
             });
         }
+
+        // Rotate to next key for load balancing
+        currentKeyIndex = (keyIndex + 1) % API_KEYS.length;
 
         return res.status(200).json(data);
 
