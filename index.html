@@ -3188,7 +3188,7 @@
 
             // --- GLOBAL STATE & CONSTANTS ---
             const defaultHolidays = ["2025-08-09", "2025-08-15", "2025-09-05", "2025-09-26", "2025-10-01", "2025-10-02", "2025-10-03", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-12-25"];
-            const defaultExampleClass = { 'CSE Core - H (Example)': { lastDate: '2025-11-10', holidays: [...defaultHolidays], subjects: [{ name: "Data Structures & Algorithms", code: "21CSC201J", schedule: [1, 2, 1, 0, 1, 1, 0] }, { name: "Operating Systems", code: "21CSC202J", schedule: [2, 0, 2, 1, 0, 1, 0] }, { name: "Advanced Programming Practice", code: "21CSC203P", schedule: [1, 0, 1, 1, 2, 1, 0] }, { name: "Computer Org. & Architecture", code: "21CSS201T", schedule: [1, 1, 1, 1, 1, 1, 0] }, { name: "Design Thinking & Methodology", code: "21DCS201P", schedule: [1, 1, 0, 1, 1, 1, 0] }, { name: "Professional Ethics", code: "21LEM201T", schedule: [0, 1, 1, 0, 0, 0, 0] }, { name: "Transforms & BVP", code: "21MAB201T", schedule: [1, 1, 1, 1, 0, 1, 0] }, { name: "Class In Charge", code: "CL", schedule: [0, 0, 0, 1, 0, 0, 0] }] } };
+            const defaultExampleClass = { 'CSE Core - H (Example)': { lastDate: '2026-04-01', holidays: [...defaultHolidays], subjects: [{ name: "Data Structures & Algorithms", code: "21CSC201J", schedule: [1, 2, 1, 0, 1, 1, 0] }, { name: "Operating Systems", code: "21CSC202J", schedule: [2, 0, 2, 1, 0, 1, 0] }, { name: "Advanced Programming Practice", code: "21CSC203P", schedule: [1, 0, 1, 1, 2, 1, 0] }, { name: "Computer Org. & Architecture", code: "21CSS201T", schedule: [1, 1, 1, 1, 1, 1, 0] }, { name: "Design Thinking & Methodology", code: "21DCS201P", schedule: [1, 1, 0, 1, 1, 1, 0] }, { name: "Professional Ethics", code: "21LEM201T", schedule: [0, 1, 1, 0, 0, 0, 0] }, { name: "Transforms & BVP", code: "21MAB201T", schedule: [1, 1, 1, 1, 0, 1, 0] }, { name: "Class In Charge", code: "CL", schedule: [0, 0, 0, 1, 0, 0, 0] }] } };
             let classes = {};
             let selectedClass = null;
             let editingClassName = null;
@@ -3438,21 +3438,37 @@
                 console.log('👤 Continuing as guest');
             }
 
-            function signOutGoogle() {
-                if (confirm('Sign out? Your local data will be kept, but cloud sync will stop.')) {
-                    // Revoke token
-                    if (googleUser?.accessToken) {
-                        google.accounts.oauth2.revoke(googleUser.accessToken, () => {
-                            console.log('Token revoked');
-                        });
+            async function signOutGoogle() {
+                if (confirm('Sign out? Your data will be synced to Google Drive first.')) {
+                    try {
+                        // Sync data before signing out
+                        if (googleUser?.accessToken) {
+                            showToast('☁️ Syncing before logout...', 'Please wait', { duration: 3000 });
+                            await syncWithDrive();
+                        }
+
+                        // Revoke token
+                        if (googleUser?.accessToken) {
+                            google.accounts.oauth2.revoke(googleUser.accessToken, () => {
+                                console.log('Token revoked');
+                            });
+                        }
+
+                        localStorage.setItem('isGuest', 'true');
+                        localStorage.removeItem('googleUser');
+                        googleUser = null;
+
+                        // Refresh page to show guest mode
+                        alert('✅ Signed out successfully. Page will refresh.');
+                        location.reload();
+                    } catch (error) {
+                        console.error('Sync before logout failed:', error);
+                        // Still log out even if sync fails
+                        localStorage.setItem('isGuest', 'true');
+                        localStorage.removeItem('googleUser');
+                        googleUser = null;
+                        location.reload();
                     }
-
-                    localStorage.setItem('isGuest', 'true');
-                    localStorage.removeItem('googleUser');
-                    googleUser = null;
-
-                    updateAccountUI();
-                    alert('✅ Signed out successfully.');
                 }
             }
 
@@ -3601,7 +3617,7 @@
                     localStorage.setItem('userProfileName', name);
                     updateSidebarAccountUI();
                     closeModal('profileNameModal');
-                    alert('✅ Profile name saved!');
+                    showToast('✅ Saved', 'Profile name updated', { duration: 2000 });
                 } else {
                     alert('⚠️ Please enter a name');
                 }
