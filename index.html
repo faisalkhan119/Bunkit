@@ -3495,8 +3495,9 @@
                     googleUser = JSON.parse(savedUser);
                     updateAccountUI();
                     updateSidebarAccountUI();
-                    // Token needs refresh on each session
-                    silentTokenRefresh();
+                    // Token will be requested when user clicks Sync
+                    // This avoids showing Google popup on every page refresh
+                    console.log('✅ Returning user detected:', googleUser.email);
                     return;
                 }
 
@@ -4148,6 +4149,16 @@
             }
 
             async function syncWithDrive() {
+                // Check if we have a Google user but no token
+                if (googleUser && !googleUser.accessToken) {
+                    // Request token (will show Google popup for consent)
+                    if (gisInited && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+                        showToast('🔐 Authenticating...', 'Please complete Google sign-in', { duration: 3000 });
+                        tokenClient.requestAccessToken({ prompt: '' });
+                        return; // Token request will trigger handleTokenResponse which calls syncWithDrive
+                    }
+                }
+
                 if (!googleUser?.accessToken) {
                     alert('⚠️ Please sign in with Google first.');
                     return;
