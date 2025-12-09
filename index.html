@@ -3197,6 +3197,14 @@
             let isJsonMode = false;
             let calculationHistory = [];
 
+            // Predefined color palette for subjects (timetable)
+            const subjectColors = [
+                '#4facfe', '#00f2fe', '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                '#4facfe', '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#00c6fb',
+                '#a18cd1', '#fbc2eb', '#ff9a9e', '#fad0c4', '#a8edea', '#fed6e3',
+                '#d299c2', '#fef9d7', '#89f7fe', '#66a6ff', '#c471f5', '#12c2e9'
+            ];
+
             // --- GOOGLE AUTH CONFIG ---
             // ⚠️ REPLACE THIS WITH YOUR CLIENT ID FROM GOOGLE CLOUD CONSOLE
             const GOOGLE_CLIENT_ID = '692376293711-jsrogchpholoqg7mutd4igb8nfp5jfd2.apps.googleusercontent.com';
@@ -4882,40 +4890,32 @@
                 }
             }
 
-            // === SHARED GEMINI API KEYS FOR OCR ===
-            // Uses the shared GEMINI_API_KEYS array defined above (17 keys with rotation)
-            // Both OCR and Chatbot use the same keys
-            const OCR_API_KEYS = GEMINI_API_KEYS;  // Unified key source
+            // === OCR API - Uses Backend Proxy ===
+            // OCR now uses the same backend proxy as chatbot for API key security
+            // Personal key takes priority, otherwise backend handles key rotation
 
-            // Track exhausted OCR keys for today
-            function getExhaustedOCRKeys() {
-                const data = JSON.parse(localStorage.getItem('exhaustedOCRKeys') || '{}');
-                const today = new Date().toDateString();
-                if (data.date !== today) return { date: today, keys: [] };
-                return data;
+            function hasPersonalGeminiKey() {
+                return !!localStorage.getItem('personalGeminiKey');
             }
 
-            function markOCRKeyExhausted(keyIndex) {
-                const data = getExhaustedOCRKeys();
-                if (!data.keys.includes(keyIndex)) {
-                    data.keys.push(keyIndex);
-                    localStorage.setItem('exhaustedOCRKeys', JSON.stringify(data));
-                }
-                console.log(`⚠️ OCR Key #${keyIndex + 1} exhausted. ${OCR_API_KEYS.length - data.keys.length} keys remaining.`);
-            }
-
+            // For backward compatibility - returns empty if no personal key
             function getNextAvailableOCRKey() {
-                const exhausted = getExhaustedOCRKeys().keys;
-                for (let i = 0; i < OCR_API_KEYS.length; i++) {
-                    if (!exhausted.includes(i)) {
-                        return { key: OCR_API_KEYS[i], index: i };
-                    }
+                const personalKey = localStorage.getItem('personalGeminiKey');
+                if (personalKey) {
+                    return { key: personalKey, index: -1 };
                 }
-                return null; // All keys exhausted
+                // For shared keys, we use backend proxy instead
+                return { key: null, index: -1, useProxy: true };
+            }
+
+            // Stub functions for backward compatibility
+            function markOCRKeyExhausted(keyIndex) {
+                console.log('OCR keys handled by backend proxy');
             }
 
             // Legacy variable for backward compatibility
-            const SHARED_GEMINI_KEY = OCR_API_KEYS[0] || '';
+            const SHARED_GEMINI_KEY = '';
+
 
             // === HYBRID OCR SYSTEM (Personal Gemini → Shared Gemini → Tesseract) ===
             async function processAttendanceImage(file, showFallbackPrompt = false) {
@@ -7963,15 +7963,7 @@ CRITICAL RULES:
                 document.getElementById('skipTodayModal').classList.add('active');
             }
 
-            // Predefined color palette for subjects
-            const subjectColors = [
-                '#4facfe', '#00f2fe', '#667eea', '#764ba2', '#f093fb', '#f5576c',
-                '#4facfe', '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#00c6fb',
-                '#a18cd1', '#fbc2eb', '#ff9a9e', '#fad0c4', '#a8edea', '#fed6e3',
-                '#d299c2', '#fef9d7', '#89f7fe', '#66a6ff', '#c471f5', '#12c2e9'
-            ];
-
-            // Get unique color for a subject based on its index
+            // Get unique color for a subject based on its index (uses subjectColors from top)
             function getSubjectColor(subjectIndex) {
                 return subjectColors[subjectIndex % subjectColors.length];
             }
@@ -11301,9 +11293,9 @@ CRITICAL RULES:
                 <script>
                     // ========== HYBRID OCR SYSTEM ==========
 
-                    // Gemini API Key - Uses OCR_API_KEYS array with rotation (defined earlier)
+                    // Gemini API Key - Uses personal key or backend proxy
                     // Get your own key from: https://aistudio.google.com/app/apikey
-                    const GEMINI_API_KEY = getNextAvailableOCRKey()?.key || '';
+                    const GEMINI_API_KEY = localStorage.getItem('personalGeminiKey') || '';
                     const GEMINI_DAILY_LIMIT = 10000;
 
 
@@ -11789,50 +11781,27 @@ CRITICAL RULES:
                         }
                     }
 
-                    // === SHARED GEMINI API KEYS FOR CHATBOT (10 keys with rotation) ===
-                    // Add your API keys here - system will auto-rotate to next key when quota exhausted
-                    const CHATBOT_API_KEYS = [
-                        'AIzaSyA8rYJ533pQQvXodFpIlHeUC9zVWSZSxEc',  // Slot 1 - Primary (Original)
-                        'AIzaSyAJIbJxgjCiMDhsI5q1U2PIDlrU-at_l-U',  // Slot 2
-                        'AIzaSyC9e8VRH2hZHo6E_zO8FDHrFBTkx3DVjHc',  // Slot 3
-                        'AIzaSyDWdOCvOBJg_Kx1Myw8xpGO47tEt-vyq3c',  // Slot 4
-                        'AIzaSyBF5ipZ7Hk6HZYVE9aiXjhDHsAQaozEOwU',  // Slot 5
-                        'AIzaSyCKJOrw1FTbVuxmjAH7T6gHeGuQ4HC_qeE',  // Slot 6
-                        'AIzaSyBjoNWgaCEl_hA-QJRU_M7J96WfRLnKCpo',  // Slot 7
-                        'AIzaSyDk08-1soeoTABx890LKMG0af_OhoWrF0Q',  // Slot 8
-                        'AIzaSyDNuieLglJSlbObkSdxY3nT9xPiz_CNvqo',  // Slot 9
-                        'AIzaSyARvpLQbfJ4xBlaaG7zNc_cn2SQ5ZNT7lo'  // Slot 10
-                    ].filter(key => key && !key.startsWith('YOUR_'));  // Only use keys that are set
+                    // === CHATBOT API - Uses Backend Proxy ===
+                    // Chatbot now uses backend proxy with key rotation
+                    // Personal key takes priority if set
 
-                    // Track exhausted Chatbot keys for today
+                    // Stub functions for backward compatibility
                     function getExhaustedChatbotKeys() {
-                        const data = JSON.parse(localStorage.getItem('exhaustedChatbotKeys') || '{}');
-                        const today = new Date().toDateString();
-                        if (data.date !== today) return { date: today, keys: [] };
-                        return data;
+                        return { date: new Date().toDateString(), keys: [] };
                     }
 
                     function markChatbotKeyExhausted(keyIndex) {
-                        const data = getExhaustedChatbotKeys();
-                        if (!data.keys.includes(keyIndex)) {
-                            data.keys.push(keyIndex);
-                            localStorage.setItem('exhaustedChatbotKeys', JSON.stringify(data));
-                        }
-                        console.log(`⚠️ Chatbot Key #${keyIndex + 1} exhausted. ${CHATBOT_API_KEYS.length - data.keys.length} keys remaining.`);
+                        console.log('Chatbot keys handled by backend proxy');
                     }
 
                     function getNextAvailableChatbotKey() {
-                        const exhausted = getExhaustedChatbotKeys().keys;
-                        for (let i = 0; i < CHATBOT_API_KEYS.length; i++) {
-                            if (!exhausted.includes(i)) {
-                                return { key: CHATBOT_API_KEYS[i], index: i };
-                            }
-                        }
-                        return null; // All keys exhausted
+                        // Backend proxy handles all shared key rotation
+                        return { key: null, index: -1, useProxy: true };
                     }
 
                     // Legacy variable for backward compatibility
-                    const SHARED_CHATBOT_KEY = CHATBOT_API_KEYS[0] || '';
+                    const SHARED_CHATBOT_KEY = '';
+
 
                     // === AI CHATBOT FUNCTIONS ===
 
@@ -12063,6 +12032,29 @@ CRITICAL RULES:
                         const todaysLog = attendanceLogs[todayStr];
                         const periodTimes = className ? JSON.parse(localStorage.getItem(`period_times_${className}`) || 'null') : null;
 
+                        // Calculate total periods today
+                        let totalTodayPeriods = 0;
+                        todaysClasses.forEach(c => totalTodayPeriods += c.periods);
+
+                        // Calculate overall attendance
+                        let overallAttended = 0, overallTotal = 0;
+                        currentAnalysisData?.forEach(a => {
+                            overallAttended += a.attended || 0;
+                            overallTotal += a.totalHeld || 0;
+                        });
+                        const overallPercent = overallTotal > 0 ? ((overallAttended / overallTotal) * 100).toFixed(1) : 0;
+
+                        // Find subjects in danger (below minimum)
+                        const minCriteria = parseFloat(document.getElementById('minAttendanceInput')?.value) || 75;
+                        const subjectsInDanger = currentAnalysisData?.filter(a => {
+                            const percent = a.totalHeld > 0 ? (a.attended / a.totalHeld) * 100 : 100;
+                            return percent < minCriteria;
+                        }).map(a => a.code) || [];
+
+                        // Find subjects safe to skip
+                        const subjectsSafeToSkip = currentAnalysisData?.filter(a => a.maxSkippable > 0)
+                            .map(a => ({ code: a.code, canSkip: a.maxSkippable })) || [];
+
                         // Prepare comprehensive app context
                         const appContext = {
                             appName: "Bunk it - Smart Attendance Manager",
@@ -12078,24 +12070,31 @@ CRITICAL RULES:
                                 attended: a.attended, totalHeld: a.totalHeld,
                                 remaining: a.remaining, stillNeed: a.stillNeed, maxSkippable: a.maxSkippable
                             })) || [],
-                            minPercentage: parseFloat(document.getElementById('minAttendanceInput')?.value) || 75,
+                            overallAttendance: { attended: overallAttended, total: overallTotal, percent: overallPercent },
+                            subjectsInDanger: subjectsInDanger,
+                            subjectsSafeToSkip: subjectsSafeToSkip,
+                            minPercentage: minCriteria,
                             lastWorkingDate: selectedClass?.lastDate || 'Not set',
                             holidays: selectedClass?.holidays || [],
                             isHolidayToday: isHoliday,
                             portalMode: { active: isPortalMode, semesterStartDate: portalSetup?.semesterStartDate || null },
                             todaysClasses: isHoliday ? [] : todaysClasses,
+                            totalTodayPeriods: isHoliday ? 0 : totalTodayPeriods,
                             periodTimes: periodTimes,
                             logs: { totalDays: loggedDays, todayLogged: !!todaysLog },
                             notifications: notificationSettings
                         };
 
-                        // Comprehensive system prompt
+                        // Comprehensive system prompt with ALL features
                         const systemPrompt = `You are "Bunkmate", the friendly AI assistant for "Bunk it - Smart Attendance Manager" app.
 
 🔒 RULES:
 1. Only answer questions about this app
 2. Use provided data for personalized responses
-3. LANGUAGE MATCHING: Match the user's language
+3. LANGUAGE MATCHING: Match the user's language:
+   - If user types in English → Reply in English
+   - If user types in Hindi (हिंदी) → Reply in Hindi (हिंदी में जवाब दें)
+   - If user types in Hinglish (mix of Hindi & English just indian people type on whatsapp) → Reply in Hinglish (same style use karo)
 
 📊 USER'S CURRENT DATA:
 • Today: ${appContext.currentDate} (${appContext.currentDayName})
@@ -12105,10 +12104,93 @@ CRITICAL RULES:
 • Holiday Today: ${appContext.isHolidayToday ? 'YES!' : 'No'}
 • Portal Mode: ${appContext.portalMode.active ? 'Active' : 'Inactive'}
 • Today's Classes: ${appContext.isHolidayToday ? 'None (holiday)' : (appContext.todaysClasses.length > 0 ? JSON.stringify(appContext.todaysClasses) : 'None today')}
+• Total Periods Today: ${appContext.totalTodayPeriods}
 • Subjects: ${JSON.stringify(appContext.subjects.map(s => ({ name: s.name, code: s.code })))}
 • Attendance: ${appContext.currentAttendance.length > 0 ? JSON.stringify(appContext.currentAttendance) : 'Not calculated yet'}
+• Overall Attendance: ${appContext.overallAttendance.percent}% (${appContext.overallAttendance.attended}/${appContext.overallAttendance.total})
+• Subjects in DANGER (below ${appContext.minPercentage}%): ${appContext.subjectsInDanger.length > 0 ? appContext.subjectsInDanger.join(', ') : 'None - all safe!'}
+• Subjects SAFE to Skip: ${appContext.subjectsSafeToSkip.length > 0 ? JSON.stringify(appContext.subjectsSafeToSkip) : 'None - attend all!'}
+• Total Holidays: ${appContext.holidays.length}
+• Days Logged: ${appContext.logs.totalDays}
+• Today Logged: ${appContext.logs.todayLogged ? 'Yes' : 'No'}
+• Notifications: ${appContext.notifications.enabled ? 'On at ' + appContext.notifications.time : 'Off'}
 
-Answer helpfully using this context. Keep responses concise.`;
+📱 ALL APP FEATURES (explain when asked):
+
+1️⃣ CLASS SETUP (4 methods):
+• Form: Manual entry - Add Class → fill name, last date, subjects with schedules
+• JSON: Paste JSON structure {"ClassName":{lastDate,holidays[],subjects[]}}
+• AI Import: Upload timetable/attendance images → AI fills form automatically
+• QR Scan: Scan classmate's QR to import their class setup
+
+2️⃣ ATTENDANCE INPUT (3 methods):
+• Image Upload: OCR extracts attendance from screenshots
+• Manual Input: Enter total/attended per subject
+• JSON Paste: {"CODE":{total,present}}
+
+3️⃣ MODES:
+• Portal Mode: Daily logging, ML recommendations, semester tracking (Settings → Portal Setup)
+• Standard Mode: Quick one-time calculation without daily logs
+
+4️⃣ LEAVE PLANNER:
+• Add planned leave dates → see impact on attendance
+• Compulsory events marking → warns about conflicts
+• Medical Certificate recommendations → suggests optimal ML dates
+• Max Safe Leave → shows days you can skip safely
+• Long Weekend Finder → finds best leave strategy
+
+5️⃣ TIMETABLE:
+• Visual weekly schedule with drag-drop
+• Period time configuration
+• Current day highlighting with attendance status colors (green=safe, yellow=warning, red=danger)
+
+6️⃣ NOTIFICATIONS:
+• Daily reminders at custom time
+• Only during semester period
+• Enable in Settings → Notification Settings
+
+7️⃣ ANALYSIS:
+• Current %, Max possible %, Min possible %
+• Still Need (must attend), Can Skip (safe to miss)
+• Overall vs Per-Subject mode toggle
+
+8️⃣ SETTINGS:
+• Minimum attendance % (default 75%)
+• Dark mode toggle
+• API Settings for personal Gemini key
+• Export/Backup class as JSON or QR
+
+📊 MAX SAFE LEAVE FEATURE:
+• Calculates exact dates you can skip entirely
+• Considers your planned leaves + compulsory events
+• Shows which subject is the bottleneck limiting safe leaves
+
+🚫 MAX POSSIBLE BUNK (Avoid Detention):
+• Calculates maximum skippable days at 65% DETENTION threshold (not 75%)
+• Shows all dates you can bunk without getting detained
+• MEDICAL CERTIFICATE SUGGESTIONS after bunking
+
+🤔 CAN I SKIP TODAY? FEATURE:
+• Quick check for today's impact
+• Shows what happens if you skip all today's classes
+• Per-subject impact analysis
+
+👤 ABOUT THE DEVELOPER:
+• Name: Faisal Khan
+• Role: Solo Developer & Creator of Bunk it
+• Buy Me a Coffee: https://buymeacoffee.com/Faisalkhan119
+• The app is 100% free, ad-free, and open for donations
+
+📝 RESPONSE FORMAT:
+• Use numbered steps (1, 2, 3...) enter next line after every steps for how-to questions
+• Use emojis for visual clarity
+• Keep responses concise but helpful
+• End with a helpful tip when relevant
+
+🧠 SMART RESPONSES: When asked about skipping/leave, check their attendance data and give specific advice based on maxSkippable values and subject buffers.
+
+Answer helpfully using this context.`;
+
 
                         try {
                             let response;
