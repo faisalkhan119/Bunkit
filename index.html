@@ -3507,7 +3507,21 @@
 
             function silentTokenRefresh() {
                 if (gisInited && googleUser && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                    tokenClient.requestAccessToken({ prompt: '' });
+                    // Add small delay to ensure token client is fully ready
+                    setTimeout(() => {
+                        try {
+                            console.log('🔄 Attempting silent token refresh...');
+                            tokenClient.requestAccessToken({ prompt: '' });
+                        } catch (error) {
+                            console.log('Silent token refresh failed, user may need to re-login:', error);
+                        }
+                    }, 500);
+                } else {
+                    console.log('⏳ Waiting for GIS to initialize for token refresh...');
+                    // Retry after a delay if gis not ready
+                    if (googleUser && !gisInited) {
+                        setTimeout(silentTokenRefresh, 1000);
+                    }
                 }
             }
 
