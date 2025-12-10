@@ -100,6 +100,10 @@
     <meta name="theme-color" content="#667eea" />
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <link rel="icon" type="image/png" href="icon-192x192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
@@ -160,6 +164,7 @@
         }
 
         /* --- NEW: Dark Mode Theme --- */
+        /* --- NEW: Dark Mode Theme (Glassmorphism 2.0) --- */
         body.dark-mode {
             --primary-grad-start: #7f8cfa;
             --primary-grad-end: #8e6ab4;
@@ -171,31 +176,57 @@
             --warning-color: #ffb142;
             --info-color: #25ccb0;
             --body-bg: #000000;
-            /* Dark mode background */
             --light-bg: #1e1e1e;
-            /* Darker component background */
             --dark-text: #ecf0f1;
-            /* Light grey */
             --medium-text: #95a5a6;
-            /* Softer grey */
-            --border-color: #444444;
-            /* More visible border */
+            --border-color: rgba(255, 255, 255, 0.1);
             --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             --container-bg: #121212;
-            /* Darker container background */
-            --card-bg: #1e1e1e;
-            /* Darker card background */
+            /* Glassmorphism: Semi-transparent backgrounds */
+            --card-bg: rgba(30, 30, 30, 0.70);
             --header-text-color: #ecf0f1;
-            --input-bg: #2c2c2c;
-            /* Dark input background */
+            --input-bg: rgba(255, 255, 255, 0.05);
+            /* Glass inputs */
             --input-text: #ecf0f1;
-            /* Light text for inputs */
-            --input-border: #444444;
-            /* Input border */
+            --input-border: rgba(255, 255, 255, 0.1);
             --warning-bg: rgba(255, 177, 66, 0.15);
-            /* Dark mode warning background */
             color-scheme: dark;
-            /* Enable dark color scheme for native inputs */
+        }
+
+        /* Glassmorphism Global Styles */
+        body.dark-mode .card,
+        body.dark-mode .modal-content,
+        body.dark-mode .sidenav,
+        body.dark-mode .fixed-ui-button {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- MICRO-INTERACTIONS --- */
+
+        /* 1. Button Click Effect */
+        button:active,
+        .fixed-ui-button:active {
+            transform: scale(0.96);
+        }
+
+        /* 2. Card Hover Lift (Desktop only) */
+        @media (hover: hover) {
+            .card:hover {
+                transform: translateY(-4px);
+                transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+            }
+        }
+
+        /* 3. Input Focus Glow */
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-grad-start) !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+            transition: all 0.2s ease;
         }
 
         * {
@@ -205,12 +236,31 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Outfit', sans-serif;
             background: var(--body-bg);
             min-height: 100vh;
             padding: 20px;
             color: var(--dark-text);
             transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* --- CUSTOM SCROLLBARS --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(150, 150, 150, 0.4);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(150, 150, 150, 0.6);
         }
 
         /* --- REWRITTEN: Sidenav Hamburger Menu & Fixed UI Buttons --- */
@@ -866,6 +916,12 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
+        /* Fix for Dark Mode Select Options */
+        body.dark-mode option {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
         .toggle-group {
             display: flex;
             align-items: center;
@@ -1228,7 +1284,7 @@
             color: var(--dark-text);
         }
 
-        /* Modal Styles */
+        /* Modal Styles - iOS Spring Animation */
         .modal {
             display: none;
             position: fixed;
@@ -1236,13 +1292,17 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             z-index: 1005;
             overflow-y: auto;
             opacity: 0;
             transition: opacity 0.3s ease;
+            /* Layout properties moved here to persist during closing */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .modal.active {
@@ -1255,34 +1315,61 @@
 
         .modal-content {
             background: var(--card-bg);
-            border-radius: var(--border-radius-lg);
-            padding: 40px;
+            border-radius: 20px;
+            padding: 32px;
             max-width: 600px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
-            transform: scale(0.9) translateY(20px);
+            /* iOS-style spring animation: starts from scale 0.7 with slight rotation */
+            transform: scale(0.7);
             opacity: 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* iOS spring curve - slight overshoot then settle */
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease-out;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .modal.active .modal-content {
-            transform: scale(1) translateY(0);
+            transform: scale(1);
             opacity: 1;
+        }
+
+        /* Closing animation */
+        .modal.closing .modal-content {
+            transform: scale(0.7);
+            opacity: 0;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease-in;
         }
 
         .modal-close {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            background: var(--light-bg);
             border: none;
-            font-size: 2rem;
+            border-radius: 50%;
+            font-size: 1.5rem;
             cursor: pointer;
             color: var(--medium-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--border-color);
+            transform: scale(1.1);
+        }
+
+        .modal-close:active {
+            transform: scale(0.95);
         }
 
         .modal-header {
@@ -3098,7 +3185,7 @@
 
 <body>
     <!-- Toast Notification Container -->
-    <div id="toastContainer" class="toast-container"></div>
+    <div id="toast-container"></div>
 
     <!-- Login Screen -->
     <div id="loginScreen" class="login-screen" style="display: none;">
@@ -3123,7 +3210,7 @@
     </div>
 
     <!-- AI Chatbot Floating Button -->
-    <div id="aiChatbotButton" onclick="openAIChatbot()">🤖</div>
+    <div id="aiChatbotButton">🤖</div>
 
     <!-- AI Chat Panel -->
     <div id="aiChatPanel" class="chat-panel">
@@ -3781,45 +3868,50 @@
 
             async function signOutGoogle() {
                 if (confirm('Sign out? Your data will be synced to Google Drive first.')) {
+                    let syncSuccess = false;
                     try {
                         // Sync data before signing out
                         if (googleUser?.accessToken) {
                             showToast('☁️ Syncing before logout...', 'Please wait', { duration: 3000 });
-                            await syncWithDrive();
+                            syncSuccess = await syncWithDrive();
                         }
-
-                        // Revoke token
-                        if (googleUser?.accessToken) {
-                            google.accounts.oauth2.revoke(googleUser.accessToken, () => {
-                                console.log('Token revoked');
-                            });
-                        }
-
-                        localStorage.setItem('isGuest', 'true');
-                        localStorage.removeItem('googleUser');
-                        googleUser = null;
-
-                        // Refresh page to show guest mode
-                        alert('✅ Signed out successfully. Page will refresh.');
-                        location.reload();
                     } catch (error) {
                         console.error('Sync before logout failed:', error);
-                        // Still log out even if sync fails
-                        localStorage.setItem('isGuest', 'true');
-                        localStorage.removeItem('googleUser');
-                        googleUser = null;
-                        location.reload();
                     }
+
+                    // Warn if sync failed
+                    if (!syncSuccess && googleUser?.accessToken) {
+                        if (!confirm('⚠️ Sync failed! Recent changes may not be saved to cloud.\n\nSign out anyway?')) {
+                            return; // User cancelled
+                        }
+                    }
+
+                    // Revoke token
+                    if (googleUser?.accessToken) {
+                        google.accounts.oauth2.revoke(googleUser.accessToken, () => {
+                            console.log('Token revoked');
+                        });
+                    }
+
+                    localStorage.setItem('isGuest', 'true');
+                    localStorage.removeItem('googleUser');
+                    googleUser = null;
+
+                    // Refresh page to show guest mode
+                    alert('✅ Signed out successfully. Page will refresh.');
+                    location.reload();
                 }
             }
 
             // --- LOGIN SCREEN FUNCTIONS ---
             function showLoginScreen() {
-                document.getElementById('loginScreen').style.display = 'flex';
+                const loginScreen = document.getElementById('loginScreen');
+                if (loginScreen) loginScreen.style.display = 'flex';
             }
 
             function hideLoginScreen() {
-                document.getElementById('loginScreen').style.display = 'none';
+                const loginScreen = document.getElementById('loginScreen');
+                if (loginScreen) loginScreen.style.display = 'none';
             }
 
             // --- MODAL HELPER FUNCTIONS ---
@@ -3827,13 +3919,23 @@
                 const modal = document.getElementById(modalId);
                 if (modal) {
                     modal.style.display = 'flex';
+                    // Trigger reflow to enable CSS transition
+                    modal.offsetHeight;
+                    modal.classList.add('active');
                 }
             }
 
             function closeModal(modalId) {
                 const modal = document.getElementById(modalId);
                 if (modal) {
-                    modal.style.display = 'none';
+                    // Add closing animation class
+                    modal.classList.add('closing');
+                    modal.classList.remove('active');
+                    // Wait for iOS-style closing animation to complete
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        modal.classList.remove('closing');
+                    }, 310);
                 }
             }
 
@@ -3965,6 +4067,30 @@
                     </div>`;
                     document.body.insertAdjacentHTML('beforeend', modalHTML);
                 }
+
+                // Create first login prompt modal if it doesn't exist
+                if (!document.getElementById('firstLoginPromptModal')) {
+                    const firstLoginHTML = `
+                    <div id="firstLoginPromptModal" class="modal">
+                        <div class="modal-content" style="max-width: 420px;">
+                            <div class="modal-header" style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
+                                <h2>Welcome to BunkIt!</h2>
+                                <p>Let's get you set up. What should we call you?</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Your Name</label>
+                                <input type="text" id="firstLoginNameInput" placeholder="Enter your name" maxlength="50">
+                            </div>
+                            <div class="form-actions" style="display: flex; justify-content: center; margin-top: 20px;">
+                                <button class="btn primary-btn" onclick="saveFirstLoginName()" style="padding: 14px 40px; font-size: 1.1rem;">
+                                    Continue →
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                    document.body.insertAdjacentHTML('beforeend', firstLoginHTML);
+                }
             }
 
             function openProfileNameModal() {
@@ -3973,34 +4099,36 @@
                 if (!modal) {
                     createProfileModals();
                 }
-                document.getElementById('profileNameInput').value = savedName;
+                const nameInput = document.getElementById('profileNameInput');
+                if (nameInput) nameInput.value = savedName;
                 openModal('profileNameModal');
             }
 
             function saveProfileName() {
-                const name = document.getElementById('profileNameInput').value.trim();
+                const nameInput = document.getElementById('profileNameInput');
+                const name = nameInput ? nameInput.value.trim() : '';
                 if (name) {
                     localStorage.setItem('userProfileName', name);
                     updateSidebarAccountUI();
                     closeModal('profileNameModal');
-                    showToast('✅ Saved', 'Profile name updated', { duration: 2000 });
+                    showToast('Profile name updated successfully', 'success');
                 } else {
                     alert('⚠️ Please enter a name');
                 }
             }
 
             function saveFirstLoginName() {
-                const name = document.getElementById('firstLoginNameInput').value.trim();
+                const nameInput = document.getElementById('firstLoginNameInput');
+                const name = nameInput ? nameInput.value.trim() : '';
                 if (name) {
                     localStorage.setItem('userProfileName', name);
                     updateSidebarAccountUI();
-                    // Directly hide the modal
-                    const modal = document.getElementById('firstLoginPromptModal');
-                    if (modal) modal.style.display = 'none';
-                    // Show class setup modal next
-                    setTimeout(() => openOnboardingClassModal(), 300);
+                    // Close modal with iOS animation
+                    closeModal('firstLoginPromptModal');
+                    // Show class setup modal after close animation completes
+                    setTimeout(() => openOnboardingClassModal(), 350);
                 } else {
-                    alert('⚠️ Please enter your name to continue');
+                    showToast('Please enter your name to continue', 'warning');
                 }
             }
 
@@ -4012,7 +4140,8 @@
                     setTimeout(() => {
                         createProfileModals();
                         const googleUser = JSON.parse(localStorage.getItem('googleUser') || '{}');
-                        document.getElementById('firstLoginNameInput').value = googleUser.name || '';
+                        const firstLoginInput = document.getElementById('firstLoginNameInput');
+                        if (firstLoginInput) firstLoginInput.value = googleUser.name || '';
                         openModal('firstLoginPromptModal');
                     }, 500);
                 }
@@ -4021,6 +4150,7 @@
             function openOnboardingClassModal() {
                 createOnboardingClassModal();
                 openModal('onboardingClassModal');
+                // Bot will appear 3s after user clicks Example/Add Class buttons
             }
 
             function createOnboardingClassModal() {
@@ -4050,9 +4180,54 @@
             }
 
             function useExampleClass() {
-                // Directly hide the modal
-                const modal = document.getElementById('onboardingClassModal');
-                if (modal) modal.style.display = 'none';
+                // Show Bot with glow after 3 seconds
+                setTimeout(() => {
+                    const botBtn = document.getElementById('aiChatbotButton');
+                    const botPanel = document.getElementById('aiChatPanel');
+                    if (botBtn) {
+                        document.body.appendChild(botBtn);
+                        botBtn.style.display = 'flex';
+                        botBtn.style.zIndex = '2147483647';
+                        botBtn.style.pointerEvents = 'auto';  // Ensure clicks are received
+                        botBtn.style.position = 'fixed';  // Ensure fixed positioning
+                        botBtn.classList.add('glowing-pulse');
+
+                        // Store reference globally for click detection
+                        window._bunkmateBot = botBtn;
+
+                        // Direct click handler using addEventListener
+                        botBtn.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+
+                            // Close ALL modals first
+                            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+
+                            // Close tutorial overlay if present
+                            const overlay = document.getElementById('bunkmateTutorialOverlay');
+                            if (overlay) overlay.remove();
+
+                            // Remove glow
+                            this.classList.remove('glowing-pulse');
+
+                            // Open chatbot panel - FORCE visibility with inline styles
+                            const panel = document.getElementById('aiChatPanel');
+                            if (panel) {
+                                panel.classList.add('active');
+                                panel.style.right = '0';
+                                panel.style.display = 'flex';
+                                panel.style.zIndex = '2147483647';
+                            }
+                        }, true);  // Capture phase
+                    }
+                    if (botPanel) {
+                        document.body.appendChild(botPanel);
+                        botPanel.style.zIndex = '2147483647';
+                    }
+                }, 3000);
+
+                // Close modal with animation
+                closeModal('onboardingClassModal');
 
                 localStorage.setItem('hasCompletedOnboarding', 'true');
 
@@ -4080,11 +4255,54 @@
             }
 
             function handleCreateNewClass() {
-                // Hide onboarding modal
-                const onboardingModal = document.getElementById('onboardingClassModal');
-                if (onboardingModal) {
-                    onboardingModal.style.display = 'none';
-                }
+                // Show Bot with glow after 3 seconds
+                setTimeout(() => {
+                    const botBtn = document.getElementById('aiChatbotButton');
+                    const botPanel = document.getElementById('aiChatPanel');
+                    if (botBtn) {
+                        document.body.appendChild(botBtn);
+                        botBtn.style.display = 'flex';
+                        botBtn.style.zIndex = '2147483647';
+                        botBtn.style.pointerEvents = 'auto';  // Ensure clicks are received
+                        botBtn.style.position = 'fixed';  // Ensure fixed positioning
+                        botBtn.classList.add('glowing-pulse');
+
+                        // Store reference globally for click detection
+                        window._bunkmateBot = botBtn;
+
+                        // Direct click handler using addEventListener
+                        botBtn.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+
+                            // Close ALL modals first
+                            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+
+                            // Close tutorial overlay if present
+                            const overlay = document.getElementById('bunkmateTutorialOverlay');
+                            if (overlay) overlay.remove();
+
+                            // Remove glow
+                            this.classList.remove('glowing-pulse');
+
+                            // Open chatbot panel - FORCE visibility with inline styles
+                            const panel = document.getElementById('aiChatPanel');
+                            if (panel) {
+                                panel.classList.add('active');
+                                panel.style.right = '0';
+                                panel.style.display = 'flex';
+                                panel.style.zIndex = '2147483647';
+                            }
+                        }, true);  // Capture phase
+                    }
+                    if (botPanel) {
+                        document.body.appendChild(botPanel);
+                        botPanel.style.zIndex = '2147483647';
+                    }
+                }, 3000);
+
+                // Close onboarding modal with animation
+                closeModal('onboardingClassModal');
                 // Mark onboarding as complete
                 localStorage.setItem('hasCompletedOnboarding', 'true');
                 // Open add class modal
@@ -4150,7 +4368,7 @@
                     <style>
                         #bunkmateTutorialOverlay {
                             position: fixed;
-                            bottom: 100px;
+                            bottom: 90px;
                             right: 20px;
                             z-index: 100000;
                             pointer-events: none;
@@ -4298,6 +4516,12 @@
                 }
                 tutorialCloudIndex = 0;
                 tutorialMessages = [];
+
+                // Stop the bot icon glow when tutorial is skipped/finished
+                const botBtn = document.getElementById('aiChatbotButton');
+                if (botBtn) {
+                    botBtn.classList.remove('glowing-pulse');
+                }
             }
 
             function createProfileModals() {
@@ -4552,16 +4776,118 @@
                     const cloudBackup = await downloadBackupFromDrive();
                     const localBackup = getBackupDataObj();
 
-                    if (!cloudBackup) {
-                        // No cloud backup - upload local
-                        await uploadBackupToDrive();
-                        showToast('☁️ Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
-                    } else {
-                        // Compare timestamps
-                        const cloudTime = new Date(cloudBackup.metadata?.syncTimestamp || cloudBackup.metadata?.timestamp || 0);
-                        const localTime = new Date(localBackup.metadata?.timestamp || 0);
+                    // Check if local data is essentially empty
+                    const localHasData = localBackup.stats && (
+                        localBackup.stats.totalClasses > 0 ||
+                        localBackup.stats.totalLogs > 0
+                    );
+                    const cloudHasData = cloudBackup && cloudBackup.stats && (
+                        (cloudBackup.stats.totalClasses || 0) > 0 ||
+                        (cloudBackup.stats.totalLogs || 0) > 0
+                    );
 
-                        console.log('Cloud time:', cloudTime, 'Local time:', localTime);
+                    // Check if this is the first sync for this Google account on this device
+                    const syncedAccountsKey = 'syncedGoogleAccounts';
+                    const syncedAccounts = JSON.parse(localStorage.getItem(syncedAccountsKey) || '[]');
+                    const currentEmail = googleUser?.email;
+                    const isFirstSyncForAccount = currentEmail && !syncedAccounts.includes(currentEmail);
+
+                    if (!cloudBackup) {
+                        // No cloud backup - upload local (even if empty, user is starting fresh)
+                        if (localHasData) {
+                            await uploadBackupToDrive();
+                            showToast('☁️ Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
+                        } else {
+                            showToast('☁️ Synced', 'No data to backup yet', { duration: 3000 });
+                        }
+                    } else {
+                        // CRITICAL: Protect against data loss
+                        // If local is empty but cloud has data, ALWAYS restore from cloud
+                        if (!localHasData && cloudHasData) {
+                            console.log('⚠️ Local data is empty but cloud has data - restoring from cloud');
+                            restoreFromBackupData(cloudBackup);
+                            showToast('☁️ Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                            // Mark this account as synced on this device
+                            if (currentEmail && !syncedAccounts.includes(currentEmail)) {
+                                syncedAccounts.push(currentEmail);
+                                localStorage.setItem(syncedAccountsKey, JSON.stringify(syncedAccounts));
+                            }
+                            localStorage.setItem('lastSyncTime', Date.now().toString());
+                            localStorage.setItem('lastDriveSync', new Date().toISOString());
+                            updateSidebarAccountUI();
+                            return;
+                        }
+
+                        // FIRST SYNC PROTECTION: If this is first sync on this device AND both have data
+                        // Compare timestamps to decide action
+                        if (isFirstSyncForAccount && localHasData && cloudHasData) {
+                            const cloudClasses = cloudBackup.stats?.totalClasses || 0;
+                            const localClasses = localBackup.stats?.totalClasses || 0;
+                            const cloudTime = new Date(cloudBackup.metadata?.syncTimestamp || cloudBackup.metadata?.timestamp || 0);
+                            // Use lastAppInteraction (actual user activity) instead of backup timestamp
+                            const localInteraction = localStorage.getItem('lastAppInteraction');
+                            const localTime = localInteraction ? new Date(localInteraction) : new Date(0);
+
+                            // If local is NOT newer than cloud, auto-restore from cloud (safe default)
+                            if (localTime <= cloudTime) {
+                                console.log('🔄 First sync: Local not newer than cloud, auto-restoring from cloud');
+                                restoreFromBackupData(cloudBackup);
+                                showToast('☁️ Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                            } else {
+                                // Local is NEWER - this is unusual, ask user (might be on friend's device)
+                                const userChoice = confirm(
+                                    `🔄 First sync on this device!\n\n` +
+                                    `This device has NEWER data than your cloud backup:\n` +
+                                    `☁️ Cloud backup: ${cloudClasses} class(es)\n` +
+                                    `📱 This device: ${localClasses} class(es)\n\n` +
+                                    `Choose wisely:\n` +
+                                    `• OK = Restore YOUR backup from Google Drive\n` +
+                                    `• Cancel = Keep this device's data (will overwrite cloud!)`
+                                );
+
+                                if (userChoice) {
+                                    // User wants their cloud backup
+                                    console.log('👤 User chose to restore from cloud (first sync protection)');
+                                    restoreFromBackupData(cloudBackup);
+                                    showToast('☁️ Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                                } else {
+                                    // User chose device data - double confirm for safety
+                                    const doubleConfirm = confirm(
+                                        `⚠️ Are you SURE?\n\n` +
+                                        `This will PERMANENTLY replace your cloud backup ` +
+                                        `(${cloudClasses} classes) with this device's data (${localClasses} classes).\n\n` +
+                                        `This cannot be undone!`
+                                    );
+
+                                    if (doubleConfirm) {
+                                        console.log('👤 User confirmed to upload local data (first sync protection)');
+                                        await uploadBackupToDrive();
+                                        showToast('☁️ Synced', 'Cloud backup replaced with this device data', { duration: 3000 });
+                                    } else {
+                                        // User cancelled - restore from cloud instead
+                                        restoreFromBackupData(cloudBackup);
+                                        showToast('☁️ Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                                    }
+                                }
+                            }
+
+                            // Mark this account as synced on this device
+                            syncedAccounts.push(currentEmail);
+                            localStorage.setItem(syncedAccountsKey, JSON.stringify(syncedAccounts));
+                            localStorage.setItem('lastSyncTime', Date.now().toString());
+                            localStorage.setItem('lastDriveSync', new Date().toISOString());
+                            updateSidebarAccountUI();
+                            return;
+                        }
+
+                        // Compare timestamps (only if local has data AND not first sync)
+                        const cloudTime = new Date(cloudBackup.metadata?.syncTimestamp || cloudBackup.metadata?.timestamp || 0);
+                        // Use lastAppInteraction (actual user activity) instead of backup timestamp
+                        const localInteraction = localStorage.getItem('lastAppInteraction');
+                        const localTime = localInteraction ? new Date(localInteraction) : new Date(0);
+
+                        console.log('Cloud time:', cloudTime, 'Local interaction time:', localTime);
+                        console.log('Local has data:', localHasData, 'Cloud has data:', cloudHasData);
 
                         if (cloudTime > localTime) {
                             // Cloud is newer - restore from cloud
@@ -4576,6 +4902,12 @@
                         } else {
                             showToast('☁️ Synced', 'Everything is up to date', { duration: 3000 });
                         }
+                    }
+
+                    // Mark this account as synced on this device
+                    if (currentEmail && !syncedAccounts.includes(currentEmail)) {
+                        syncedAccounts.push(currentEmail);
+                        localStorage.setItem(syncedAccountsKey, JSON.stringify(syncedAccounts));
                     }
 
                     // Save sync timestamp
@@ -4669,7 +5001,11 @@
                 classes = storedClasses ? JSON.parse(storedClasses) : JSON.parse(JSON.stringify(defaultExampleClass));
             }
 
-            function saveToStorage() { localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes)); }
+            function saveToStorage() {
+                localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+                // Track last app interaction time for sync comparison
+                localStorage.setItem('lastAppInteraction', new Date().toISOString());
+            }
 
             document.addEventListener('DOMContentLoaded', function () {
                 loadFromStorage();
@@ -5142,11 +5478,19 @@
 
                 showInputMode('upload');
                 document.getElementById('resultsSection').innerHTML = '';
-                document.getElementById('leavePlannerSection').style.display = 'none';
+                const leavePlannerSection = document.getElementById('leavePlannerSection');
+                if (leavePlannerSection) leavePlannerSection.style.display = 'none';
+
                 document.getElementById('pdfDownloadContainer').innerHTML = '';
-                document.getElementById('maxLeaveRecommendation').style.display = 'none';
-                document.getElementById('leaveRecommendationContainer').style.display = 'none';
-                document.getElementById('previewSection').style.display = 'none';
+
+                const maxLeaveRec = document.getElementById('maxLeaveRecommendation');
+                if (maxLeaveRec) maxLeaveRec.style.display = 'none';
+
+                const leaveRecContainer = document.getElementById('leaveRecommendationContainer');
+                if (leaveRecContainer) leaveRecContainer.style.display = 'none';
+
+                const previewSection = document.getElementById('previewSection');
+                if (previewSection) previewSection.style.display = 'none';
                 currentAnalysisData = [];
 
                 if (className && classes[className]) {
@@ -5439,7 +5783,7 @@ CRITICAL RULES:
             function extractDataToJson(text, subjects) { const jsonData = {}; const lines = text.split('\n'); const usedLines = new Set(); const history = { totals: [], weeklyClasses: [] }; const processAllSubjects = () => { subjects.forEach(subject => { if (jsonData[subject.code]) return; let bestMatch = { line: null, confidence: 0, index: -1, word: null }; lines.forEach((line, index) => { if (usedLines.has(index)) return; for (const word of line.split(/\s+/)) { const result = fuzzyMatch(word, subject.code); if (result.match && result.confidence > bestMatch.confidence) { bestMatch = { line, confidence: result.confidence, index, word }; } } }); if (bestMatch.line && bestMatch.confidence >= 65) { usedLines.add(bestMatch.index); const context = {}; if (history.totals.length > 0) { context.avgTotal = history.totals.reduce((a, b) => a + b, 0) / history.totals.length; const avgWeekly = history.weeklyClasses.reduce((a, b) => a + b, 0) / history.weeklyClasses.length; context.avgWeeklyClasses = avgWeekly > 0 ? avgWeekly : 1; } processLine(bestMatch.line, subject, jsonData, bestMatch.word, context); if (jsonData[subject.code]) { history.totals.push(jsonData[subject.code].total); const weeklySum = subject.schedule.reduce((a, b) => a + b, 0); history.weeklyClasses.push(weeklySum > 0 ? weeklySum : 1); } } }); }; processAllSubjects(); processAllSubjects(); return jsonData; }
             function processOCRText(text) { const extractedJson = extractDataToJson(text, selectedClass.subjects); console.log("Extracted JSON:", JSON.stringify(extractedJson, null, 2)); processJsonAndCalculate(extractedJson); }
             function validateAndCorrectData(jsonData) { if (!selectedClass || !selectedClass.subjects) return jsonData; const frequencyGroups = {}; selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { const weeklyFrequency = subject.schedule.reduce((a, b) => a + b, 0); if (weeklyFrequency > 0) { if (!frequencyGroups[weeklyFrequency]) { frequencyGroups[weeklyFrequency] = []; } frequencyGroups[weeklyFrequency].push(subject.code); } } }); for (const freq in frequencyGroups) { const subjectCodes = frequencyGroups[freq]; if (subjectCodes.length < 2) continue; const totals = subjectCodes.map(code => jsonData[code].total).sort((a, b) => a - b); const mid = Math.floor(totals.length / 2); const medianTotal = totals.length % 2 !== 0 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2); subjectCodes.forEach(code => { const originalData = jsonData[code]; if (Math.abs(originalData.total - medianTotal) > 15) { console.warn(`Data Correction: Subject ${code} total (${originalData.total}) is an outlier compared to its group median (${medianTotal}). Auto-correcting.`); const originalPercent = originalData.total > 0 ? (originalData.present / originalData.total) : 0; const newTotal = medianTotal; const newPresent = Math.round(newTotal * originalPercent); jsonData[code] = { total: newTotal, present: newPresent }; } }); } return jsonData; }
-            function processJsonAndCalculate(jsonData) { jsonData = validateAndCorrectData(jsonData); const attendanceDataForCalc = [], missedSubjects = []; selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { attendanceDataForCalc.push({ ...subject, totalHeld: jsonData[subject.code].total, attended: jsonData[subject.code].present }); } else { missedSubjects.push(subject); } }); if (missedSubjects.length > 0 && attendanceDataForCalc.length > 0) { ocrResultsCache = jsonData; openPartialEntryModal(missedSubjects); return; } if (Object.keys(jsonData).length === 0) { alert('Could not extract any attendance data. Please try manual entry.'); return; } calculateAttendance(attendanceDataForCalc); }
+            function processJsonAndCalculate(jsonData) { jsonData = validateAndCorrectData(jsonData); const attendanceDataForCalc = [], missedSubjects = []; const classSubjectCodes = new Set(selectedClass.subjects.map(s => s.code)); selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { attendanceDataForCalc.push({ ...subject, totalHeld: jsonData[subject.code].total, attended: jsonData[subject.code].present }); } else { missedSubjects.push(subject); } }); const unmatchedOcrCodes = Object.keys(jsonData).filter(code => !classSubjectCodes.has(code)); if (unmatchedOcrCodes.length > 0) { showToast(`⚠️ Unrecognized codes: ${unmatchedOcrCodes.join(', ')}`, 'warning'); console.warn('OCR extracted codes not in class:', unmatchedOcrCodes); } if (missedSubjects.length > 0 && attendanceDataForCalc.length > 0) { ocrResultsCache = jsonData; openPartialEntryModal(missedSubjects); return; } if (Object.keys(jsonData).length === 0) { alert('Could not extract any attendance data. Please try manual entry.'); return; } calculateAttendance(attendanceDataForCalc); }
 
             function calculateAttendance(attendanceData) {
                 const resultsSection = document.getElementById('resultsSection');
@@ -5499,12 +5843,20 @@ CRITICAL RULES:
                 }
 
                 document.getElementById('pdfDownloadContainer').innerHTML = `<button class="btn success-btn" onclick="downloadCurrentReportPDF()">Download Report (PDF)</button>`;
-                document.getElementById('leavePlannerSection').style.display = 'block';
+
+                const leavePlannerSection = document.getElementById('leavePlannerSection');
+                if (leavePlannerSection) leavePlannerSection.style.display = 'block';
+
                 generateLeavePlanner();
-                document.getElementById('maxLeaveRecommendation').style.display = 'block';
+
+                const maxLeaveRec = document.getElementById('maxLeaveRecommendation');
+                if (maxLeaveRec) maxLeaveRec.style.display = 'block';
+
                 calculateMaxSafeLeave();
                 recommendMedicalCertificates(); // NEW: Medical Certificate Recommendation
-                document.getElementById('leaveRecommendationContainer').style.display = 'block';
+
+                const leaveRecContainer = document.getElementById('leaveRecommendationContainer');
+                if (leaveRecContainer) leaveRecContainer.style.display = 'block';
                 findLongWeekends();
                 updateDailyDashboard();
 
@@ -5566,9 +5918,13 @@ CRITICAL RULES:
                     localStorage.setItem('defaultView', view);
                 }
 
-                document.getElementById('analysisResults').style.display = view === 'cards' ? 'grid' : 'none';
-                document.getElementById('tabularAnalysisSection').style.display = view === 'table' ? 'block' : 'none';
-                document.getElementById('graphAnalysisSection').style.display = view === 'graph' ? 'block' : 'none';
+                const analysisResults = document.getElementById('analysisResults');
+                const tabularAnalysisSection = document.getElementById('tabularAnalysisSection');
+                const graphAnalysisSection = document.getElementById('graphAnalysisSection');
+
+                if (analysisResults) analysisResults.style.display = view === 'cards' ? 'grid' : 'none';
+                if (tabularAnalysisSection) tabularAnalysisSection.style.display = view === 'table' ? 'block' : 'none';
+                if (graphAnalysisSection) graphAnalysisSection.style.display = view === 'graph' ? 'block' : 'none';
 
                 if (view === 'table') renderTabularAnalysis();
                 if (view === 'graph') renderAttendanceChart();
@@ -5576,6 +5932,8 @@ CRITICAL RULES:
 
             function renderTabularAnalysis() {
                 const container = document.getElementById('tabularAnalysisSection');
+                if (!container) return;
+
                 if (!currentAnalysisData || currentAnalysisData.length === 0) {
                     container.innerHTML = '<p style="text-align:center; padding:20px;">No data available. Please calculate attendance first.</p>';
                     return;
@@ -5684,6 +6042,8 @@ CRITICAL RULES:
 
             function renderAttendanceChart() {
                 const container = document.getElementById('graphAnalysisSection');
+                if (!container) return;
+
                 if (!currentAnalysisData || currentAnalysisData.length === 0) {
                     container.innerHTML = '<p style="text-align:center; padding:20px;">No data available. Please calculate attendance first.</p>';
                     return;
@@ -6048,22 +6408,71 @@ CRITICAL RULES:
             }
 
             function showInputMode(mode) { // mode can be 'upload', 'manual', 'json'
-                document.getElementById('uploadSection').style.display = mode === 'upload' ? 'block' : 'none';
-                document.getElementById('manualInput').style.display = mode === 'manual' ? 'block' : 'none';
-                document.getElementById('jsonInput').style.display = mode === 'json' ? 'block' : 'none';
+                const uploadSection = document.getElementById('uploadSection');
+                const manualInput = document.getElementById('manualInput');
+                const jsonInput = document.getElementById('jsonInput');
+                const previewImage = document.getElementById('previewImage');
 
-                if (mode !== 'upload') {
-                    document.getElementById('previewImage').style.display = 'none';
+                if (uploadSection) uploadSection.style.display = mode === 'upload' ? 'block' : 'none';
+                if (manualInput) manualInput.style.display = mode === 'manual' ? 'block' : 'none';
+                if (jsonInput) jsonInput.style.display = mode === 'json' ? 'block' : 'none';
+
+                if (mode !== 'upload' && previewImage) {
+                    previewImage.style.display = 'none';
                 }
             }
 
             function generateManualInputs() { const subjectsGrid = document.getElementById('subjectsGrid'); subjectsGrid.innerHTML = ''; if (!selectedClass) return; selectedClass.subjects.forEach((subject, index) => { subjectsGrid.innerHTML += `<div class="subject-input"><h4>${subject.name} (${subject.code})</h4><div class="manual-input-fields"><input type="number" id="manual_total_${index}" placeholder="Total Hours Held" min="0"><input type="number" id="manual_attended_${index}" placeholder="Hours Attended" min="0"></div></div>`; }); }
-            function calculateFromManual() { const attendanceData = []; if (!selectedClass) return; selectedClass.subjects.forEach((subject, index) => { const total = parseInt(document.getElementById(`manual_total_${index}`).value) || 0; const attended = parseInt(document.getElementById(`manual_attended_${index}`).value) || 0; if (total > 0 && attended <= total) { attendanceData.push({ ...subject, attended, totalHeld: total }); } }); if (attendanceData.length > 0) calculateAttendance(attendanceData); else alert("Please enter valid data for at least one subject."); }
-            function openPartialEntryModal(missedSubjects) { const grid = document.getElementById('partialSubjectsGrid'); grid.innerHTML = ''; missedSubjects.forEach(subject => { grid.innerHTML += `<div class="subject-input"><h4>${subject.name} (${subject.code})</h4><div class="manual-input-fields"><input type="number" id="partial_total_${subject.code}" placeholder="Total Hours Held" min="0"><input type="number" id="partial_attended_${subject.code}" placeholder="Hours Attended" min="0"></div></div>`; }); document.getElementById('partialEntryModal').classList.add('active'); }
-            function submitPartialEntry() { const grid = document.getElementById('partialSubjectsGrid'); const newEntries = {}; grid.querySelectorAll('.subject-input').forEach(inputDiv => { const code = inputDiv.querySelector('h4').textContent.match(/\(([^)]+)\)/)[1]; const total = parseInt(document.getElementById(`partial_total_${code}`).value) || 0; const attended = parseInt(document.getElementById(`partial_attended_${code}`).value) || 0; if (total > 0 && attended <= total) newEntries[code] = { total, present: attended }; }); const mergedJson = { ...ocrResultsCache, ...newEntries }; closeModal('partialEntryModal'); processJsonAndCalculate(mergedJson); }
+            function calculateFromManual() {
+                const attendanceData = [];
+                if (!selectedClass) return;
+                selectedClass.subjects.forEach((subject, index) => {
+                    const totalInput = document.getElementById(`manual_total_${index}`);
+                    const attendedInput = document.getElementById(`manual_attended_${index}`);
+
+                    if (totalInput && attendedInput) {
+                        const total = parseInt(totalInput.value) || 0;
+                        const attended = parseInt(attendedInput.value) || 0;
+
+                        if (total > 0 && attended <= total) {
+                            attendanceData.push({ ...subject, attended, totalHeld: total });
+                        }
+                    }
+                });
+
+                if (attendanceData.length > 0) calculateAttendance(attendanceData);
+                else alert("Please enter valid data for at least one subject.");
+            }
+            function openPartialEntryModal(missedSubjects) { const grid = document.getElementById('partialSubjectsGrid'); grid.innerHTML = ''; missedSubjects.forEach(subject => { grid.innerHTML += `<div class="subject-input"><h4>${subject.name} (${subject.code})</h4><div class="manual-input-fields"><input type="number" id="partial_total_${subject.code}" placeholder="Total Hours Held" min="0"><input type="number" id="partial_attended_${subject.code}" placeholder="Hours Attended" min="0"></div></div>`; }); openModal('partialEntryModal'); }
+            function submitPartialEntry() {
+                const grid = document.getElementById('partialSubjectsGrid');
+                if (!grid) return;
+
+                const newEntries = {};
+                grid.querySelectorAll('.subject-input').forEach(inputDiv => {
+                    const codeMatch = inputDiv.querySelector('h4').textContent.match(/\(([^)]+)\)/);
+                    if (!codeMatch) return;
+
+                    const code = codeMatch[1];
+                    const totalInput = document.getElementById(`partial_total_${code}`);
+                    const attendedInput = document.getElementById(`partial_attended_${code}`);
+
+                    if (totalInput && attendedInput) {
+                        const total = parseInt(totalInput.value) || 0;
+                        const attended = parseInt(attendedInput.value) || 0;
+
+                        if (total > 0 && attended <= total) newEntries[code] = { total, present: attended };
+                    }
+                });
+                const mergedJson = { ...ocrResultsCache, ...newEntries };
+                closeModal('partialEntryModal');
+                processJsonAndCalculate(mergedJson);
+            }
 
             function calculateFromJson() {
-                const jsonString = document.getElementById('attendanceJsonPasteArea').value;
+                const jsonInput = document.getElementById('attendanceJsonPasteArea');
+                const jsonString = jsonInput ? jsonInput.value : '';
+
                 if (!jsonString.trim()) {
                     alert("Please paste the JSON data into the text area.");
                     return;
@@ -6096,20 +6505,14 @@ CRITICAL INSTRUCTIONS:
                 navigator.clipboard.writeText(promptText).then(() => alert('AI prompt for attendance data copied to clipboard!'), () => alert('Failed to copy prompt.'));
             }
 
-            function closeModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.remove('active');
-                    modal.style.display = 'none';
-                }
-            }
+
 
             // === NOTIFICATION FUNCTIONS ===
             function openNotificationSettings() {
                 // Require class selection for notification settings
                 const className = document.getElementById('classSelector')?.value;
                 if (!className || !classes[className]) {
-                    alert('⚠️ Please select a class first to configure notifications for that class.');
+                    showToast('Please select a class first to configure notifications.', 'warning');
                     return;
                 }
 
@@ -6142,8 +6545,7 @@ CRITICAL INSTRUCTIONS:
                     modalHeader.innerHTML = `🔔 Notification Settings<br><small style="font-size:0.7em;opacity:0.8">for ${className}</small>`;
                 }
 
-                modal.classList.add('active');
-                modal.style.display = 'flex';
+                openModal('notificationSettingsModal');
             }
 
             function toggleNotifications(enabled) {
@@ -6241,145 +6643,150 @@ CRITICAL INSTRUCTIONS:
             }
 
             async function saveNotificationSettings() {
-                const enabled = document.getElementById('notificationEnabled').checked;
-                const time = document.getElementById('notificationTime').value;
+                try {
+                    const enabled = document.getElementById('notificationEnabled').checked;
+                    const time = document.getElementById('notificationTime').value;
 
-                // Get the class name from the modal (set in openNotificationSettings)
-                const modal = document.getElementById('notificationSettingsModal');
-                const className = modal.dataset.className;
+                    // Get the class name from the modal (set in openNotificationSettings)
+                    const modal = document.getElementById('notificationSettingsModal');
+                    const className = modal.dataset.className;
 
-                if (!className) {
-                    alert('Error: No class selected for notification settings.');
-                    return;
-                }
+                    if (!className) {
+                        showToast('Error: No class selected for notification settings.', 'error');
+                        return;
+                    }
 
-                console.log('Saving notification settings for class:', className, { enabled, time });
+                    console.log('Saving notification settings for class:', className, { enabled, time });
 
-                if (enabled) {
-                    // FIRST: Check if current date is within semester range
-                    if (classes[className]) {
-                        const classData = classes[className];
+                    if (enabled) {
+                        // FIRST: Check if current date is within semester range
+                        if (classes[className]) {
+                            const classData = classes[className];
 
-                        if (classData && classData.lastDate) {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
+                            if (classData && classData.lastDate) {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
 
-                            const semesterEnd = new Date(classData.lastDate);
-                            semesterEnd.setHours(0, 0, 0, 0);
+                                const semesterEnd = new Date(classData.lastDate);
+                                semesterEnd.setHours(0, 0, 0, 0);
 
-                            // Only check if current date is after last working date
-                            if (today > semesterEnd) {
-                                alert(`⚠️ Cannot enable notifications.\n\nCurrent date is after the semester end date (${classData.lastDate}).\nPlease update your class's last working date.`);
-                                document.getElementById('notificationEnabled').checked = false;
-                                return;
+                                // Only check if current date is after last working date
+                                if (today > semesterEnd) {
+                                    showToast(`Cannot enable notifications. Current date is after the semester end date (${classData.lastDate}).`, 'error');
+                                    document.getElementById('notificationEnabled').checked = false;
+                                    return;
+                                }
                             }
                         }
-                    }
 
-                    // Request notification permission
-                    if (!('Notification' in window)) {
-                        alert('This browser does not support notifications.');
-                        return;
-                    }
-
-                    const permission = await Notification.requestPermission();
-                    console.log('Notification permission:', permission);
-
-                    if (permission !== 'granted') {
-                        alert('Notification permission denied. Please enable notifications in your browser settings.');
-                        document.getElementById('notificationEnabled').checked = false;
-                        return;
-                    }
-                }
-
-                const settings = { enabled, time };
-                // Save per-class notification settings
-                localStorage.setItem(`notificationSettings_${className}`, JSON.stringify(settings));
-
-                // CRITICAL FIX: Smartly handle "Already Shown" flag
-                const now = new Date();
-                const [targetHour, targetMinute] = time.split(':').map(Number);
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
-
-                const targetTotalMinutes = targetHour * 60 + targetMinute;
-                const currentTotalMinutes = currentHour * 60 + currentMinute;
-
-                if (currentTotalMinutes >= targetTotalMinutes) {
-                    // Time has passed for today. Mark as shown so it doesn't fire immediately.
-                    localStorage.setItem('lastNotificationDate', now.toDateString());
-                    console.log('Target time passed for today. Marked as shown to prevent immediate trigger.');
-                } else {
-                    // Time is in the future. Clear flag to ensure it fires today.
-                    localStorage.removeItem('lastNotificationDate');
-                    console.log('Target time is in future. Flag cleared to allow firing today.');
-                }
-
-                // Sync to IndexedDB for Service Worker
-                try {
-                    const dbRequest = indexedDB.open('BunkitDB', 1);
-                    dbRequest.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains('settings')) {
-                            db.createObjectStore('settings');
+                        // Request notification permission
+                        if (!('Notification' in window)) {
+                            showToast('This browser does not support notifications.', 'error');
+                            return;
                         }
-                    };
-                    dbRequest.onsuccess = (event) => {
-                        const db = event.target.result;
-                        const tx = db.transaction(['settings'], 'readwrite');
-                        const store = tx.objectStore('settings');
 
-                        // Store per-class notification settings
-                        store.put(settings, `notificationSettings_${className}`);
+                        const permission = await Notification.requestPermission();
+                        console.log('Notification permission:', permission);
 
-                        // Also store all classes data for SW to check lastDate
-                        store.put(classes, 'classesData');
-
-                        // Clear the per-class notification shown flag
-                        store.delete(`lastNotificationDate_${className}`);
-
-                        console.log(`Settings for ${className} synced to IndexedDB.`);
-
-                        // Notify SW to update/schedule
-                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                            navigator.serviceWorker.controller.postMessage({
-                                type: 'SETTINGS_UPDATED',
-                                className: className
-                            });
+                        if (permission !== 'granted') {
+                            showToast('Notification permission denied. Please enable notifications in your browser settings.', 'error');
+                            document.getElementById('notificationEnabled').checked = false;
+                            return;
                         }
-                    };
-                } catch (error) {
-                    console.error('Error syncing to IndexedDB:', error);
-                }
+                    }
 
-                if (enabled) {
-                    startNotificationChecker();
+                    const settings = { enabled, time };
+                    // Save per-class notification settings
+                    localStorage.setItem(`notificationSettings_${className}`, JSON.stringify(settings));
 
-                    // Show test notification immediately
-                    if (Notification.permission === 'granted') {
-                        if ('serviceWorker' in navigator) {
-                            navigator.serviceWorker.ready.then(registration => {
-                                registration.showNotification('✅ Notifications Enabled!', {
+                    // CRITICAL FIX: Smartly handle "Already Shown" flag
+                    const now = new Date();
+                    const [targetHour, targetMinute] = time.split(':').map(Number);
+                    const currentHour = now.getHours();
+                    const currentMinute = now.getMinutes();
+
+                    const targetTotalMinutes = targetHour * 60 + targetMinute;
+                    const currentTotalMinutes = currentHour * 60 + currentMinute;
+
+                    if (currentTotalMinutes >= targetTotalMinutes) {
+                        // Time has passed for today. Mark as shown so it doesn't fire immediately.
+                        localStorage.setItem('lastNotificationDate', now.toDateString());
+                        console.log('Target time passed for today. Marked as shown to prevent immediate trigger.');
+                    } else {
+                        // Time is in the future. Clear flag to ensure it fires today.
+                        localStorage.removeItem('lastNotificationDate');
+                        console.log('Target time is in future. Flag cleared to allow firing today.');
+                    }
+
+                    // Sync to IndexedDB for Service Worker
+                    try {
+                        const dbRequest = indexedDB.open('BunkitDB', 1);
+                        dbRequest.onupgradeneeded = (event) => {
+                            const db = event.target.result;
+                            if (!db.objectStoreNames.contains('settings')) {
+                                db.createObjectStore('settings');
+                            }
+                        };
+                        dbRequest.onsuccess = (event) => {
+                            const db = event.target.result;
+                            const tx = db.transaction(['settings'], 'readwrite');
+                            const store = tx.objectStore('settings');
+
+                            // Store per-class notification settings
+                            store.put(settings, `notificationSettings_${className}`);
+
+                            // Also store all classes data for SW to check lastDate
+                            store.put(classes, 'classesData');
+
+                            // Clear the per-class notification shown flag
+                            store.delete(`lastNotificationDate_${className}`);
+
+                            console.log(`Settings for ${className} synced to IndexedDB.`);
+
+                            // Notify SW to update/schedule
+                            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                                navigator.serviceWorker.controller.postMessage({
+                                    type: 'SETTINGS_UPDATED',
+                                    className: className
+                                });
+                            }
+                        };
+                    } catch (error) {
+                        console.error('Error syncing to IndexedDB:', error);
+                    }
+
+                    if (enabled) {
+                        startNotificationChecker();
+
+                        // Show test notification immediately
+                        if (Notification.permission === 'granted') {
+                            if ('serviceWorker' in navigator) {
+                                navigator.serviceWorker.ready.then(registration => {
+                                    registration.showNotification('✅ Notifications Enabled!', {
+                                        body: `You'll receive daily reminders at ${time}`,
+                                        icon: '/icon-192x192.png'
+                                    });
+                                });
+                            } else {
+                                new Notification('✅ Notifications Enabled!', {
                                     body: `You'll receive daily reminders at ${time}`,
                                     icon: '/icon-192x192.png'
                                 });
-                            });
-                        } else {
-                            new Notification('✅ Notifications Enabled!', {
-                                body: `You'll receive daily reminders at ${time}`,
-                                icon: '/icon-192x192.png'
-                            });
+                            }
                         }
+
+                        showToast(`Daily notifications enabled at ${time}!`, 'success');
+                    } else {
+                        stopNotificationChecker();
+                        showToast('Daily notifications disabled.', 'info');
                     }
 
-                    alert(`Daily notifications enabled at ${time}!\n\nA test notification should appear now.`);
-                } else {
-                    stopNotificationChecker();
-                    alert('Daily notifications disabled.');
-                }
+                    closeModal('notificationSettingsModal');
 
-                closeModal('notificationSettingsModal');
-                alert('✅ Notification settings saved!');
+                } catch (e) {
+                    console.error('Save Notification Settings Error:', e);
+                    showToast('Failed to save settings: ' + e.message, 'error');
+                }
             }
 
             // === API SETTINGS FUNCTIONS ===
@@ -6427,7 +6834,7 @@ CRITICAL INSTRUCTIONS:
                     updateOCRQuotaDisplay();
                 }
 
-                modal.classList.add('active');
+                openModal('ocrSettingsModal');
             }
 
             let notificationInterval = null;
@@ -6757,34 +7164,39 @@ CRITICAL INSTRUCTIONS:
                 editingClassName = className;
                 switchModalTab('form');
 
+                const newClassNameInput = document.getElementById('newClassName');
+                const newClassLastDateInput = document.getElementById('newClassLastDate');
+                const subjectsContainer = document.getElementById('subjectsContainer');
+                const jsonTabBtn = document.getElementById('jsonTabBtn');
+
                 if (className && classes[className]) {
                     // Edit Mode
-                    title.textContent = '📝 Edit Class';
+                    if (title) title.textContent = '📝 Edit Class';
                     const classData = classes[className];
-                    document.getElementById('newClassName').value = className;
-                    document.getElementById('newClassLastDate').value = classData.lastDate;
-                    document.getElementById('subjectsContainer').innerHTML = '';
+                    if (newClassNameInput) newClassNameInput.value = className;
+                    if (newClassLastDateInput) newClassLastDateInput.value = classData.lastDate;
+                    if (subjectsContainer) subjectsContainer.innerHTML = '';
                     classData.subjects.forEach(subject => addSubjectEntry(subject));
                     populateHolidaysInModal(classData.holidays || defaultHolidays);
 
-                    document.getElementById('jsonTabBtn').style.display = 'none';
+                    if (jsonTabBtn) jsonTabBtn.style.display = 'none';
                     if (shareTabBtn) shareTabBtn.style.display = 'inline-block';
                 } else {
                     // Add Mode
-                    title.textContent = '➕ Add New Class';
-                    document.getElementById('newClassName').value = '';
-                    document.getElementById('newClassLastDate').value = '';
-                    document.getElementById('subjectsContainer').innerHTML = '';
+                    if (title) title.textContent = '➕ Add New Class';
+                    if (newClassNameInput) newClassNameInput.value = '';
+                    if (newClassLastDateInput) newClassLastDateInput.value = '';
+                    if (subjectsContainer) subjectsContainer.innerHTML = '';
                     addSubjectEntry();
                     populateHolidaysInModal([]);
 
-                    document.getElementById('jsonTabBtn').style.display = 'block';
+                    if (jsonTabBtn) jsonTabBtn.style.display = 'block';
                     if (shareTabBtn) shareTabBtn.style.display = 'none';
                 }
-                modal.classList.add('active');
+                openModal('addClassModal');
             }
             function openImportModal() { openAddClassModal(); setTimeout(() => switchModalTab('json'), 50); }
-            function openHelpModal() { document.getElementById('helpModal').classList.add('active'); }
+            function openHelpModal() { openModal('helpModal'); }
 
             function openDonateModal() {
                 const modal = document.getElementById('donateModal');
@@ -6851,7 +7263,7 @@ CRITICAL INSTRUCTIONS:
                         </button>
                     </div>
                 </div>`;
-                modal.classList.add('active');
+                openModal('donateModal');
             }
 
             function downloadDonateQR() {
@@ -6922,7 +7334,7 @@ CRITICAL INSTRUCTIONS:
                 navigator.clipboard.writeText(promptText).then(() => alert('Prompt copied to clipboard!'), () => alert('Failed to copy prompt.'));
             }
 
-            function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = classes[className]; const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; document.getElementById('exportModal').classList.add('active'); }
+            function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = classes[className]; const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; openModal('exportModal'); }
             function copyExportJson() { const jsonText = document.getElementById('exportJsonTextarea').value; navigator.clipboard.writeText(jsonText).then(() => { alert('Class JSON copied to clipboard!'); closeModal('exportModal'); }, () => alert('Failed to copy.')); }
             function editSelectedClass() { const selected = document.getElementById('classSelector').value; if (selected) openAddClassModal(selected); else alert("Please select a class to edit first."); }
             function addSubjectEntry(subject = {}) { const container = document.getElementById('subjectsContainer'); const newIndex = container.children.length + 1; container.insertAdjacentHTML('beforeend', `<div class="subject-entry"><div class="subject-entry-header"><h4>Subject ${newIndex}</h4><button type="button" class="remove-subject-btn" onclick="removeSubjectEntry(this)">Remove</button></div><div class="form-group"><input type="text" placeholder="Subject Name" class="new-subject-name" value="${subject.name || ''}"></div><div class="form-group"><input type="text" placeholder="Subject Code (e.g., 21CSC202J)" class="new-subject-code" value="${subject.code || ''}"></div><label>Weekly Schedule (Mon-Sun)</label><div class="schedule-input">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => `<div class="schedule-day"><label>${day}</label><input type="number" class="new-subject-schedule" min="0" value="${(subject.schedule && subject.schedule[i]) ?? 0}"></div>`).join('')}</div></div>`); }
@@ -6930,7 +7342,7 @@ CRITICAL INSTRUCTIONS:
             function populateHolidaysInModal(holidays) { const holidayList = document.getElementById('holidayList'); holidayList.innerHTML = ''; holidays.forEach(dateStr => { const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); }); }
             function addHolidayToModal() { const dateInput = document.getElementById('newHolidayDate'); const dateStr = dateInput.value; if (dateStr) { const holidayList = document.getElementById('holidayList'); if ([...holidayList.querySelectorAll('span')].some(span => span.textContent === dateStr)) { alert("This holiday is already in the list."); return; } const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); dateInput.value = ''; } }
             function submitClassForm() { if (isJsonMode) { submitClassFromJson(); } else { submitClassFromForm(); } }
-            function submitClassFromForm() { const className = document.getElementById('newClassName').value.trim(); const lastDate = document.getElementById('newClassLastDate').value; if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; } const subjects = []; let isValid = true; document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => { const name = entry.querySelector('.new-subject-name').value.trim(); const code = entry.querySelector('.new-subject-code').value.trim(); const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0); if (!name || !code) isValid = false; subjects.push({ name, code, schedule }); }); if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; } const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort(); if (editingClassName && editingClassName !== className) delete classes[editingClassName]; classes[className] = { lastDate, subjects, holidays }; localStorage.removeItem(`timetable_arrangement_${className}`); saveToStorage(); alert(`Class "${className}" saved successfully!`); closeModal('addClassModal'); populateClassSelector(); document.getElementById('classSelector').value = className; onClassChange(); }
+            function submitClassFromForm() { const className = document.getElementById('newClassName').value.trim(); const lastDate = document.getElementById('newClassLastDate').value; if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; } const subjects = []; let isValid = true; document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => { const name = entry.querySelector('.new-subject-name').value.trim(); const code = entry.querySelector('.new-subject-code').value.trim(); const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0); if (!name || !code) isValid = false; subjects.push({ name, code, schedule }); }); if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; } const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort(); if (editingClassName && editingClassName !== className) { const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_']; keyPrefixes.forEach(prefix => { const oldData = localStorage.getItem(`${prefix}${editingClassName}`); if (oldData) { localStorage.setItem(`${prefix}${className}`, oldData); localStorage.removeItem(`${prefix}${editingClassName}`); } }); delete classes[editingClassName]; } classes[className] = { lastDate, subjects, holidays }; localStorage.removeItem(`timetable_arrangement_${className}`); saveToStorage(); alert(`Class "${className}" saved successfully!`); closeModal('addClassModal'); populateClassSelector(); document.getElementById('classSelector').value = className; onClassChange(); }
             function submitClassFromJson() {
                 const jsonString = document.getElementById('jsonPasteArea').value;
                 if (!jsonString) {
@@ -7165,6 +7577,7 @@ CRITICAL RULES:
 
             function generateLeavePlanner() {
                 const container = document.getElementById('leavePlannerSection');
+                if (!container) return;
                 container.innerHTML = `
                 <div class="subject-card" style="border-left-color: var(--warning-color);">
                     <div class="subject-title">🗓️ Leave & Event Planner</div>
@@ -8324,7 +8737,7 @@ CRITICAL RULES:
                     });
                     resultsDiv.innerHTML = resultsHTML;
                 }
-                document.getElementById('skipTodayModal').classList.add('active');
+                openModal('skipTodayModal');
             }
 
             // Get unique color for a subject based on its index (uses subjectColors from top)
@@ -8861,6 +9274,8 @@ CRITICAL RULES:
                 }
 
                 localStorage.setItem('attendance_logs', JSON.stringify(logs));
+                // Track last app interaction time for sync comparison
+                localStorage.setItem('lastAppInteraction', new Date().toISOString());
                 alert('Log saved! Your future calculations will now reflect these changes.');
                 closeModal('dailyLogModal');
 
@@ -8918,10 +9333,21 @@ CRITICAL RULES:
                     }
                 }
 
+                // Collect custom schedules for each class
+                const customSchedules = {};
+                for (const className in classesData) {
+                    const key = `custom_schedules_${className}`;
+                    const schedules = localStorage.getItem(key);
+                    if (schedules) {
+                        customSchedules[className] = JSON.parse(schedules);
+                    }
+                }
+
                 return {
                     // Metadata
                     metadata: {
-                        version: '3.0',
+                        version: '3.1',
+                        appVersion: '1.0.0', // App version for restore compatibility check
                         timestamp: new Date().toISOString(),
                         appName: 'Bunk it - Smart Attendance Manager',
                         backupType: 'complete'
@@ -8943,6 +9369,9 @@ CRITICAL RULES:
                     // Period times
                     periodTimes: periodTimes,
 
+                    // Custom schedules (for specific dates)
+                    customSchedules: customSchedules,
+
                     // Theme preference
                     theme: localStorage.getItem('theme') || 'light',
 
@@ -8960,7 +9389,8 @@ CRITICAL RULES:
                                 JSON.parse(localStorage.getItem('attendance_logs')) : {}
                         ).length,
                         notificationSettingsCount: Object.keys(notificationSettings).length,
-                        timetableArrangementsCount: Object.keys(timetableArrangements).length
+                        timetableArrangementsCount: Object.keys(timetableArrangements).length,
+                        customSchedulesCount: Object.keys(customSchedules).length
                     }
                 };
             }
@@ -9094,6 +9524,14 @@ CRITICAL RULES:
                 // Check if it's a complete backup or old format
                 const isCompleteBackup = backupData.metadata && backupData.metadata.backupType === 'complete';
 
+                // Version check - warn if backup is from a newer version
+                const currentAppVersion = '1.0.0'; // Update this when releasing new versions
+                if (backupData.metadata?.appVersion && backupData.metadata.appVersion > currentAppVersion) {
+                    if (!confirm(`⚠️ VERSION MISMATCH WARNING\\n\\nThis backup was created with a newer version of the app (${backupData.metadata.appVersion}).\\n\\nYour current version is ${currentAppVersion}.\\n\\nRestoring may cause unexpected behavior.\\n\\nProceed anyway?`)) {
+                        return;
+                    }
+                }
+
                 if (isCompleteBackup) {
                     // New comprehensive backup format
                     if (!confirm(`⚠️ RESTORE COMPLETE BACKUP?\\n\\nThis will replace ALL current data:\\n\\n• Classes: ${backupData.stats?.totalClasses || 0}\\n• Logs: ${backupData.stats?.totalLogs || 0}\\n• Notification Settings: ${backupData.stats?.notificationSettingsCount || 0}\\n• Timetable Arrangements: ${backupData.stats?.timetableArrangementsCount || 0}\\n• Theme preferences\\n\\nBackup created: ${new Date(backupData.metadata.timestamp).toLocaleString()}\\n\\nContinue?`)) {
@@ -9154,6 +9592,18 @@ CRITICAL RULES:
                                 localStorage.setItem(
                                     `periodTimes_${className}`,
                                     JSON.stringify(backupData.periodTimes[className])
+                                );
+                            }
+                        }
+                    }
+
+                    // Restore custom schedules
+                    if (backupData.customSchedules) {
+                        for (const className in backupData.customSchedules) {
+                            if (backupData.customSchedules.hasOwnProperty(className)) {
+                                localStorage.setItem(
+                                    `custom_schedules_${className}`,
+                                    JSON.stringify(backupData.customSchedules[className])
                                 );
                             }
                         }
@@ -9421,6 +9871,11 @@ CRITICAL RULES:
 
                 if (confirm(`Are you sure you want to permanently delete the class "${className}"? This cannot be undone.`)) {
                     delete classes[className];
+                    // Clean up associated localStorage keys
+                    localStorage.removeItem(`notificationSettings_${className}`);
+                    localStorage.removeItem(`timetable_arrangement_${className}`);
+                    localStorage.removeItem(`periodTimes_${className}`);
+                    localStorage.removeItem(`custom_schedules_${className}`);
                     saveToStorage();
                     populateClassSelector();
 
@@ -9445,13 +9900,13 @@ CRITICAL RULES:
                 populateClassSelector();
                 document.getElementById('classSelector').value = className;
                 handleDropdownChange();
-                alert(`The default example class has been restored.`);
+                showToast('Default example class restored.', 'info');
             }
 
             // --- PORTAL FEATURE IMPLEMENTATION ---
 
             function openPortalSetup() {
-                if (!selectedClass) { alert("Please select a class first."); return; }
+                if (!selectedClass) { showToast("Please select a class first.", 'error'); return; }
 
                 const modal = document.getElementById('portalSetupModal');
                 let html = `
@@ -9513,24 +9968,45 @@ CRITICAL RULES:
                 </div>`;
 
                 modal.innerHTML = html;
-                modal.classList.add('active');
+                openModal('portalSetupModal');
             }
 
             function savePortalSetup() {
-                const startDate = document.getElementById('portalStartDate').value;
-                const semesterStartDate = document.getElementById('semesterStartDate').value;
-                if (!startDate) { alert("Please select a start date."); return; }
-                if (!semesterStartDate) { alert("Please select a Semester Start Date to enable Portal Mode."); return; }
+                const startDateInput = document.getElementById('portalStartDate');
+                const semesterStartInput = document.getElementById('semesterStartDate');
+
+                if (!startDateInput || !semesterStartInput) return;
+
+                const startDate = startDateInput.value;
+                const semesterStartDate = semesterStartInput.value;
+
+                if (!startDate) { showToast("Please select a start date.", 'error'); return; }
+                if (!semesterStartDate) { showToast("Please select a Semester Start Date to enable Portal Mode.", 'error'); return; }
+
+                // Date ordering validation
+                if (new Date(semesterStartDate) > new Date(startDate)) {
+                    showToast("Semester Start Date cannot be after the Baseline Date.", 'error');
+                    return;
+                }
+                if (selectedClass.lastDate && new Date(startDate) > new Date(selectedClass.lastDate)) {
+                    showToast("Baseline Date cannot be after the Class End Date.", 'error');
+                    return;
+                }
 
                 const baselineData = {};
                 let isValid = true;
 
                 selectedClass.subjects.forEach(subject => {
-                    const total = parseInt(document.getElementById(`portal_total_${subject.code}`).value) || 0;
-                    const attended = parseInt(document.getElementById(`portal_attended_${subject.code}`).value) || 0;
+                    const totalInput = document.getElementById(`portal_total_${subject.code}`);
+                    const attendedInput = document.getElementById(`portal_attended_${subject.code}`);
+
+                    if (!totalInput || !attendedInput) return;
+
+                    const total = parseInt(totalInput.value) || 0;
+                    const attended = parseInt(attendedInput.value) || 0;
 
                     if (attended > total) {
-                        alert(`Invalid data for ${subject.name}: Attended cannot be greater than Total.`);
+                        showToast(`Invalid data for ${subject.name}: Attended cannot be greater than Total.`, 'error');
                         isValid = false;
                         return;
                     }
@@ -9550,7 +10026,7 @@ CRITICAL RULES:
                 saveToStorage();
                 closeModal('portalSetupModal');
                 initPortal();
-                alert("Portal Mode Activated! You can now track attendance daily.");
+                showToast("Portal Mode Activated! You can now track attendance daily.", 'success');
 
                 // Auto-enable notifications if not already enabled
                 autoEnableNotificationsForPortal();
@@ -9586,7 +10062,7 @@ CRITICAL RULES:
                 if (selectedClass && selectedClass.portalSetup && selectedClass.portalSetup.active) {
                     // VALIDATION: Ensure Semester Start Date exists
                     if (!selectedClass.portalSetup.semesterStartDate) {
-                        alert("⚠️ Action Required\n\nPlease set the 'Semester Start Date' to continue using Portal Mode.");
+                        showToast("Action Required: Set Semester Start Date.", 'warning');
                         openPortalSetup();
                         return;
                     }
@@ -10051,13 +10527,7 @@ CRITICAL RULES:
                 }
             }
 
-            function closeModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.remove('active');
-                    modal.style.display = 'none';
-                }
-            }
+
 
             function removeStandardModeToggle() {
                 const toggle = document.getElementById('standardModeToggle');
@@ -12181,17 +12651,92 @@ CRITICAL RULES:
                     // Call on page load
                     window.addEventListener('load', toggleChatbotVisibility);
 
-                    // Open AI Chatbot
+                    // Open AI Chatbot (closes all modals first during onboarding)
                     function openAIChatbot() {
-                        const panel = document.getElementById('aiChatPanel');
-                        panel.classList.add('active');
+                        try {
+                            // Remove glow from bot icon
+                            const botBtn = document.getElementById('aiChatbotButton');
+                            if (botBtn) botBtn.classList.remove('glowing-pulse');
+
+                            // Close any bunkmate tutorial cloud messages (Priority)
+                            const tutorialOverlay = document.getElementById('bunkmateTutorialOverlay');
+                            if (tutorialOverlay) tutorialOverlay.remove();
+
+                            // Close onboarding/other modals
+                            const onboardingModal = document.getElementById('onboardingClassModal');
+                            if (onboardingModal && onboardingModal.classList.contains('active') && typeof closeModal === 'function') {
+                                closeModal('onboardingClassModal');
+                            }
+
+                            document.querySelectorAll('.modal.active').forEach(modal => {
+                                modal.classList.remove('active');
+                            });
+
+                            // Open chatbot panel - FORCE visibility with inline styles
+                            const panel = document.getElementById('aiChatPanel');
+                            if (panel) {
+                                panel.classList.add('active');
+                                panel.style.right = '0';
+                                panel.style.display = 'flex';
+                                panel.style.zIndex = '2147483647';
+                            }
+                        } catch (err) {
+                            console.error('Error opening chatbot:', err);
+                            // Fallback: force open the panel
+                            const panel = document.getElementById('aiChatPanel');
+                            if (panel) {
+                                panel.classList.add('active');
+                                panel.style.right = '0';
+                                panel.style.display = 'flex';
+                                panel.style.zIndex = '2147483647';
+                            }
+                        }
                     }
 
                     // Close AI Chatbot
                     function closeAIChatbot() {
                         const panel = document.getElementById('aiChatPanel');
-                        panel.classList.remove('active');
+                        if (panel) {
+                            panel.classList.remove('active');
+                            panel.style.right = '';  // Reset to CSS default
+                            panel.style.zIndex = '';  // Reset to CSS default
+                        }
                     }
+
+                    // Expose chatbot functions globally for onclick handlers
+                    window.openAIChatbot = openAIChatbot;
+                    window.closeAIChatbot = closeAIChatbot;
+
+                    // Add direct event listener for bot icon (works even after DOM move)
+                    // Uses both getElementById and stored reference for reliability
+                    document.addEventListener('click', function (e) {
+                        // Try stored reference first (guaranteed to be the visible one)
+                        const botBtn = window._bunkmateBot || document.getElementById('aiChatbotButton');
+                        if (!botBtn) return;
+
+                        // Get bot button position and check if click is within its bounds
+                        const rect = botBtn.getBoundingClientRect();
+                        const clickX = e.clientX;
+                        const clickY = e.clientY;
+
+                        // Skip if rect has no size (element not visible/positioned)
+                        if (rect.width === 0 || rect.height === 0) {
+                            return;
+                        }
+
+                        const isWithinBotBtn = (
+                            clickX >= rect.left &&
+                            clickX <= rect.right &&
+                            clickY >= rect.top &&
+                            clickY <= rect.bottom
+                        );
+
+                        if (isWithinBotBtn) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openAIChatbot();
+                        }
+                    }, true);
 
                     // Ask FAQ question
                     function askFAQ(question) {
@@ -12616,7 +13161,7 @@ Answer helpfully using this context.`;
                         const key = document.getElementById('personalGeminiKey').value.trim();
 
                         if (!key) {
-                            alert('Please enter an API key first.');
+                            showToast('Please enter an API key first.', 'warning');
                             return;
                         }
 
@@ -12633,16 +13178,16 @@ Answer helpfully using this context.`;
                             );
 
                             if (response.ok) {
-                                alert('✅ API key is valid and working!');
+                                showToast('API key is valid and working!', 'success');
                             } else if (response.status === 400) {
-                                alert('❌ Invalid API key. Please check and try again.');
+                                showToast('Invalid API key. Please check and try again.', 'error');
                             } else if (response.status === 429) {
-                                alert('⚠️ API key is valid but quota exceeded (10,000 requests/day limit reached).');
+                                showToast('API key is valid but quota exceeded.', 'warning');
                             } else {
-                                alert(`❌ Error ${response.status}. Please try again.`);
+                                showToast(`Error ${response.status}. Please try again.`, 'error');
                             }
                         } catch (error) {
-                            alert('❌ Connection error. Please check your internet connection.');
+                            showToast('Connection error. Please check your internet connection.', 'error');
                         }
                     }
 
@@ -12697,19 +13242,20 @@ Answer helpfully using this context.`;
                             }
                         }, 10);
 
-                        modal.classList.add('active');
+                        openModal('ocrSettingsModal');
                     }
 
                     // Save API Settings
                     function saveAPISettings() {
-                        const personalKey = document.getElementById('personalGeminiKey').value.trim();
+                        const keyInput = document.getElementById('personalGeminiKey');
+                        const personalKey = keyInput ? keyInput.value.trim() : '';
 
                         if (personalKey) {
                             localStorage.setItem('personalGeminiKey', personalKey);
-                            alert('✅ API key saved successfully!\n\nYou can now use OCR scanning and AI chatbot features.');
+                            showToast('API key saved successfully!', 'success');
                         } else {
                             localStorage.removeItem('personalGeminiKey');
-                            alert('API key cleared.');
+                            showToast('API key cleared.', 'info');
                         }
 
                         // Toggle chatbot button visibility
@@ -12725,72 +13271,6 @@ Answer helpfully using this context.`;
                     }
 
                 </script>
-
-
-                <!-- AI Chatbot Button -->
-                <button id="aiChatbotButton" onclick="openAIChatbot()" style="position: fixed; bottom: 150px; right: 20px; width: 60px; height: 60px; 
-                       border-radius: 50%; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); 
-                       color: white; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
-                       font-size: 28px; display: none; z-index: 999; transition: transform 0.3s;">
-                    🤖
-                </button>
-
-                <!-- AI Chat Panel -->
-                <div id="aiChatPanel"
-                    style="position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; 
-                                      background: var(--card-bg); box-shadow: -4px 0 20px rgba(0,0,0,0.3); 
-                                      z-index: 1000; transition: right 0.3s ease; display: flex; flex-direction: column;">
-                    <!-- Chat Header -->
-                    <div style="padding: 20px; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); 
-                        color: white; display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 1.2rem;">🤝 Bunkmate</h3>
-                        <button onclick="closeAIChatbot()" style="background: none; border: none; color: white; 
-                        font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
-                    </div>
-
-                    <!-- FAQ Section -->
-                    <div style="padding: 15px; border-bottom: 1px solid var(--border-color);">
-                        <div style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 10px;">Quick
-                            Questions:
-                        </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            <button class="btn faq-btn" onclick="askFAQ('How do I add a new class?')"
-                                style="padding: 6px 12px; font-size: 0.75rem;">
-                                Add Class
-                            </button>
-                            <button class="btn faq-btn" onclick="askFAQ('How does the leave planner work?')"
-                                style="padding: 6px 12px; font-size: 0.75rem;">
-                                Leave Planner
-                            </button>
-                            <button class="btn faq-btn" onclick="askFAQ('How can I scan my attendance?')"
-                                style="padding: 6px 12px; font-size: 0.75rem;">
-                                Scan Attendance
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Chat Messages -->
-                    <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; 
-                                          background: var(--light-bg);">
-                        <div class="chat-message system"
-                            style="padding: 12px; border-radius: 12px; background: var(--card-bg); 
-                                                         color: var(--dark-text); font-size: 0.9rem; border-left: 3px solid var(--info-color);">
-                            👋 Hi! I'm your AI assistant for Bunk it. Ask me anything about using the app!
-                        </div>
-                    </div>
-
-                    <!-- Chat Input -->
-                    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: var(--card-bg);">
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="aiChatInput" placeholder="Ask me anything..." style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; 
-                                  background: var(--input-bg); color: var(--dark-text);"
-                                onkeypress="if(event.key==='Enter') sendAIChatMessage()">
-                            <button onclick="sendAIChatMessage()" class="btn primary-btn" style="padding: 12px 20px;">
-                                Send
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <style>
                     /* AI Chat Panel Active State */
@@ -12898,8 +13378,169 @@ Answer helpfully using this context.`;
                     #chatMessages::-webkit-scrollbar-thumb:hover {
                         background: var(--medium-text);
                     }
-                </style>
 
+                    /* Toast Notifications */
+                    #toast-container {
+                        position: fixed;
+                        bottom: 30px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        z-index: 9999;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                        pointer-events: none;
+                        width: max-content;
+                        max-width: 90%;
+                    }
+
+                    .toast {
+                        background: var(--card-bg);
+                        color: var(--dark-text);
+                        padding: 12px 24px;
+                        border-radius: 50px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                        border: 1px solid var(--border-color);
+                        font-family: 'Outfit', sans-serif;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        opacity: 1;
+                        pointer-events: auto;
+                        animation: toastIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                    }
+
+                    .toast.hide {
+                        animation: toastOut 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+                    }
+
+                    @keyframes toastIn {
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+
+                    @keyframes toastOut {
+                        to {
+                            opacity: 0;
+                            transform: translateY(20px) scale(0.9);
+                        }
+                    }
+
+                    .toast.success {
+                        border-left: 4px solid var(--success-grad-start);
+                    }
+
+                    .toast.error {
+                        border-left: 4px solid var(--danger-color);
+                    }
+
+                    .toast.warning {
+                        border-left: 4px solid var(--warning-color);
+                    }
+
+                    /* View Transitions (Animation on Display) */
+                    @keyframes fadeInSlideUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(15px) scale(0.98);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
+                        }
+                    }
+
+                    /* AI Chat Panel Active State */
+                    #aiChatPanel.active {
+                        right: 0 !important;
+                    }
+
+                    #resultsSection,
+                    #portalDashboardSection,
+                    #uploadSection,
+                    #manualInput,
+                    #jsonInput,
+                    #leavePlannerSection,
+                    #analysisResults,
+                    #tabularAnalysisSection,
+                    #graphAnalysisSection,
+                    .section-view {
+                        animation: fadeInSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    }
+
+                    .fade-out {
+                        opacity: 0 !important;
+                    }
+
+                    .fade-in {
+                        opacity: 1 !important;
+                    }
+
+                    @keyframes glowingPulse {
+                        0% {
+                            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+                        }
+
+                        70% {
+                            box-shadow: 0 0 0 15px rgba(102, 126, 234, 0);
+                        }
+
+                        100% {
+                            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+                        }
+                    }
+
+                    .glowing-pulse {
+                        animation: glowingPulse 2s infinite !important;
+                    }
+                </style>
+                <script>
+                    // Global Haptic Feedback for all buttons
+                    document.addEventListener('click', function (e) {
+                        const target = e.target.closest('button, .btn, .fixed-ui-button, select, input[type="checkbox"], input[type="radio"]');
+                        if (target && navigator.vibrate) {
+                            navigator.vibrate(15);
+                        }
+                    });
+
+                    // Toast Notification Helper
+                    window.showToast = function (message, type = 'info') {
+                        let container = document.getElementById('toast-container');
+                        if (!container) {
+                            container = document.createElement('div');
+                            container.id = 'toast-container';
+                            document.body.appendChild(container);
+                        }
+
+                        const toast = document.createElement('div');
+                        toast.className = `toast ${type}`;
+
+                        let icon = 'ℹ️';
+                        if (type === 'success') icon = '✅';
+                        if (type === 'error') icon = '❌';
+                        if (type === 'warning') icon = '⚠️';
+
+                        toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+
+                        container.appendChild(toast);
+
+                        if (navigator.vibrate) navigator.vibrate(20);
+
+                        setTimeout(() => {
+                            toast.classList.add('hide');
+                            toast.addEventListener('animationend', () => {
+                                if (toast.parentElement) toast.remove();
+                            });
+                        }, 3000);
+                    };
+                </script>
 </body>
 
 </html>
+```

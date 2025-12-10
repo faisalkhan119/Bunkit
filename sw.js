@@ -362,6 +362,44 @@ async function showNotificationForClass(className) {
     console.log(`SW: Notification shown for ${className}`);
 }
 
+// Cleanup orphaned notification settings for deleted classes
+async function cleanupOrphanedNotificationSettings() {
+    try {
+        const classesData = await getFromIndexedDB('classesData');
+        if (!classesData) return;
+
+        const validClassNames = new Set(Object.keys(classesData));
+        const db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('BunkitDB', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = (event) => resolve(event.target.result);
+        });
+
+        const tx = db.transaction(['settings'], 'readwrite');
+        const store = tx.objectStore('settings');
+        const allKeys = await new Promise((resolve, reject) => {
+            const request = store.getAllKeys();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        // Find and delete orphaned notification settings
+        for (const key of allKeys) {
+            if (typeof key === 'string' && key.startsWith('notificationSettings_')) {
+                const className = key.replace('notificationSettings_', '');
+                if (!validClassNames.has(className)) {
+                    console.log(`SW: Cleaning up orphaned notification settings for deleted class: ${className}`);
+                    store.delete(key);
+                    // Also clean up lastNotificationDate for this class
+                    store.delete(`lastNotificationDate_${className}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('SW: Error cleaning up orphaned notification settings:', error);
+    }
+}
+
 // Keep old function for backward compatibility
 async function showNotification() {
     await showNotificationForClass('your class');
@@ -631,4 +669,5 @@ if ('periodicSync' in self.registration) {
 setInterval(() => {
     checkAndShowNotification();
     checkSmartReminders(); // NEW: Hourly smart reminder check
+    cleanupOrphanedNotificationSettings(); // Clean up orphaned settings for deleted classes
 }, 3600000); // Every hour
