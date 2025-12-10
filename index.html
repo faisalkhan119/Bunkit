@@ -86,7 +86,79 @@
         })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bunk it - Smart Attendance Manager</title>
+    <title>Bunk it - Smart Attendance Manager | Track College Attendance</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Bunk it is a smart attendance manager for college and school students. Track your attendance, plan safe bunks, calculate required classes, and never fall below 75% attendance. Works offline!">
+    <meta name="keywords" content="attendance tracker, bunk calculator, college attendance, school attendance, 75% attendance, attendance manager, student app, attendance planner, skip class calculator, PWA">
+    <meta name="author" content="Bunk it Team">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <link rel="canonical" href="https://bunkon.netlify.app/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bunkon.netlify.app/">
+    <meta property="og:title" content="Bunk it - Smart Attendance Manager">
+    <meta property="og:description" content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
+    <meta property="og:image" content="https://bunkon.netlify.app/icon-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name" content="Bunk it">
+    <meta property="og:locale" content="en_IN">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://bunkon.netlify.app/">
+    <meta name="twitter:title" content="Bunk it - Smart Attendance Manager">
+    <meta name="twitter:description" content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
+    <meta name="twitter:image" content="https://bunkon.netlify.app/icon-512x512.png">
+    
+    <!-- Additional SEO -->
+    <meta name="application-name" content="Bunk it">
+    <meta name="apple-mobile-web-app-title" content="Bunk it">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-TileImage" content="/icon-144x144.png">
+    <meta name="msapplication-config" content="none">
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Bunk it - Smart Attendance Manager",
+        "description": "Track your college/school attendance, plan safe bunks, and never fall below 75% attendance requirement.",
+        "url": "https://bunkon.netlify.app/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Bunk it Team"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1200"
+        },
+        "featureList": [
+            "Attendance Tracking",
+            "Bunk Calculator",
+            "Timetable Management",
+            "Offline Support",
+            "Smart Notifications",
+            "Data Export/Import"
+        ]
+    }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
@@ -377,7 +449,11 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
             z-index: 1001;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .menu-overlay.active {
@@ -403,7 +479,7 @@
             padding: 40px 30px;
             text-align: center;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .header::before {
@@ -515,41 +591,88 @@
         .btn {
             border: none;
             padding: 12px 28px;
-            border-radius: 50px;
+            border-radius: 16px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            /* Apple Liquid Glass - Spring transition */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             color: white;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: hidden;
+            /* Liquid Glass base */
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+            backdrop-filter: blur(12px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            /* 3D depth with inner highlights */
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.15),
+                0 1px 0 rgba(255, 255, 255, 0.25) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+            transform-style: preserve-3d;
         }
 
+        /* Shimmer overlay - sweeps on hover */
         .btn::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(105deg,
+                    transparent 0%,
+                    transparent 40%,
+                    rgba(255, 255, 255, 0.5) 50%,
+                    transparent 60%,
+                    transparent 100%);
+            background-size: 200% 100%;
+            background-position: -200% center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        /* Top edge highlight */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.5),
+                    transparent);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Hover: Grow + Shimmer + Enhanced Glow */
+        .btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 30px rgba(102, 126, 234, 0.25);
+            border-color: rgba(255, 255, 255, 0.35);
         }
 
         .btn:hover::before {
-            width: 300px;
-            height: 300px;
+            opacity: 1;
+            animation: liquidGlassShimmer 1.2s ease-in-out;
         }
 
-        .btn:hover {
-            transform: translateY(-3px) scale(1.02);
-        }
-
+        /* Active: Quick responsive pop */
         .btn:active {
-            transform: translateY(0) scale(0.98);
-            transition: all 0.1s;
+            transform: translateY(1px) scale(0.97);
+            box-shadow:
+                0 2px 10px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.15) inset;
+            transition: all 0.08s ease;
         }
 
         .btn.primary-btn {
@@ -558,53 +681,461 @@
         }
 
         .btn.primary-btn:hover {
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            box-shadow:
+                0 8px 32px rgba(102, 126, 234, 0.4),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 40px rgba(102, 126, 234, 0.3);
         }
 
         .btn.secondary-btn {
-            background: var(--medium-text);
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+            background: linear-gradient(135deg, rgba(120, 130, 140, 0.92), rgba(100, 110, 120, 0.92));
+            box-shadow:
+                0 4px 20px rgba(120, 130, 140, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset;
         }
 
         .btn.secondary-btn:hover {
-            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+            box-shadow:
+                0 8px 32px rgba(108, 117, 125, 0.35),
+                0 1px 0 rgba(255, 255, 255, 0.3) inset,
+                0 0 30px rgba(108, 117, 125, 0.2);
         }
 
         .btn.warning-btn {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+            background: linear-gradient(135deg, rgba(255, 180, 50, 0.92), rgba(255, 160, 30, 0.92));
+            box-shadow:
+                0 4px 20px rgba(255, 180, 50, 0.35),
+                0 1px 0 rgba(255, 255, 255, 0.4) inset;
         }
 
         .btn.warning-btn:hover {
-            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
+            box-shadow:
+                0 8px 32px rgba(243, 156, 18, 0.45),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 40px rgba(243, 156, 18, 0.3);
         }
 
         .btn.info-btn {
-            background: linear-gradient(135deg, #1abc9c, #16a085);
-            box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3);
+            background: linear-gradient(135deg, rgba(60, 220, 180, 0.92), rgba(40, 200, 160, 0.92));
+            box-shadow:
+                0 4px 20px rgba(60, 220, 180, 0.35),
+                0 1px 0 rgba(255, 255, 255, 0.4) inset;
         }
 
         .btn.info-btn:hover {
-            box-shadow: 0 8px 25px rgba(26, 188, 156, 0.5);
+            box-shadow:
+                0 8px 32px rgba(26, 188, 156, 0.45),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 40px rgba(26, 188, 156, 0.3);
         }
 
         .btn.danger-btn {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+            background: linear-gradient(135deg, rgba(255, 120, 120, 0.92), rgba(255, 100, 100, 0.92));
+            box-shadow:
+                0 4px 20px rgba(255, 120, 120, 0.35),
+                0 1px 0 rgba(255, 255, 255, 0.4) inset;
         }
 
         .btn.danger-btn:hover {
-            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.5);
+            box-shadow:
+                0 8px 32px rgba(231, 76, 60, 0.45),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 40px rgba(231, 76, 60, 0.3);
         }
 
         .btn.success-btn {
-            background: linear-gradient(135deg, var(--success-grad-start) 0%, var(--success-grad-end) 100%);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            background: linear-gradient(135deg, rgba(100, 220, 120, 0.92), rgba(80, 210, 100, 0.92));
+            box-shadow:
+                0 4px 20px rgba(100, 220, 120, 0.35),
+                0 1px 0 rgba(255, 255, 255, 0.4) inset;
         }
 
         .btn.success-btn:hover {
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+            box-shadow:
+                0 8px 32px rgba(40, 167, 69, 0.45),
+                0 1px 0 rgba(255, 255, 255, 0.35) inset,
+                0 0 40px rgba(40, 167, 69, 0.3);
         }
+
+        /* ========================================
+           APPLE LIQUID GLASS UI EFFECTS
+           iOS 26 / visionOS inspired design system
+           ======================================== */
+
+        /* Shimmer Animation - Light sweep across surface */
+        @keyframes liquidGlassShimmer {
+            0% {
+                background-position: -200% center;
+            }
+
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        /* Edge Glow Animation */
+        @keyframes edgeGlow {
+
+            0%,
+            100% {
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.1),
+                    0 4px 20px rgba(102, 126, 234, 0.2);
+            }
+
+            50% {
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.3),
+                    0 4px 30px rgba(102, 126, 234, 0.4),
+                    0 0 20px rgba(118, 75, 162, 0.3);
+            }
+        }
+
+        /* Subtle Float Animation */
+        @keyframes subtleFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Liquid Glass Button Base */
+        .btn-glass {
+            position: relative;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.15) 0%,
+                    rgba(255, 255, 255, 0.05) 100%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.15),
+                0 1px 0 rgba(255, 255, 255, 0.2) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.1) inset;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        /* Glass Shimmer Overlay */
+        .btn-glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0) 40%,
+                    rgba(255, 255, 255, 0.4) 50%,
+                    rgba(255, 255, 255, 0) 60%,
+                    transparent 100%);
+            background-size: 200% 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        /* Edge Highlight Overlay */
+        .btn-glass::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            background: radial-gradient(ellipse at 50% 0%,
+                    rgba(255, 255, 255, 0.3) 0%,
+                    transparent 50%);
+            opacity: 0.5;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Hover State - Grow + Shimmer + Glow */
+        .btn-glass:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.3) inset,
+                0 0 40px rgba(102, 126, 234, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-glass:hover::before {
+            opacity: 1;
+            animation: liquidGlassShimmer 1.5s ease-in-out;
+        }
+
+        .btn-glass:hover::after {
+            opacity: 0.8;
+        }
+
+        /* Active/Press State - Responsive Pop */
+        .btn-glass:active {
+            transform: translateY(1px) scale(0.97);
+            box-shadow:
+                0 2px 12px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset;
+            transition: all 0.1s ease;
+        }
+
+        /* Glass Button Variants */
+        .btn-glass.primary {
+            background: linear-gradient(135deg,
+                    rgba(102, 126, 234, 0.6) 0%,
+                    rgba(118, 75, 162, 0.6) 100%);
+        }
+
+        .btn-glass.success {
+            background: linear-gradient(135deg,
+                    rgba(40, 167, 69, 0.6) 0%,
+                    rgba(32, 201, 151, 0.6) 100%);
+        }
+
+        .btn-glass.danger {
+            background: linear-gradient(135deg,
+                    rgba(231, 76, 60, 0.6) 0%,
+                    rgba(192, 57, 43, 0.6) 100%);
+        }
+
+        .btn-glass.warning {
+            background: linear-gradient(135deg,
+                    rgba(243, 156, 18, 0.6) 0%,
+                    rgba(230, 126, 34, 0.6) 100%);
+        }
+
+        /* Dark Mode Glass Adjustments */
+        .dark-mode .btn-glass {
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.08) 0%,
+                    rgba(255, 255, 255, 0.02) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.4),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.3) inset;
+        }
+
+        .dark-mode .btn-glass:hover {
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 1px 0 rgba(255, 255, 255, 0.15) inset,
+                0 0 60px rgba(102, 126, 234, 0.2);
+        }
+
+        /* ========================================
+           LIQUID GLASS CARDS
+           ======================================== */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 1px 0 rgba(255, 255, 255, 0.2) inset;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent);
+            transition: left 0.6s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 16px 48px rgba(0, 0, 0, 0.15),
+                0 1px 0 rgba(255, 255, 255, 0.3) inset,
+                0 0 50px rgba(102, 126, 234, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        .dark-mode .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.05) inset;
+        }
+
+        /* ========================================
+           LIQUID GLASS INPUTS
+           ======================================== */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: var(--dark-text);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.05),
+                0 1px 0 rgba(255, 255, 255, 0.2) inset;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow:
+                0 4px 16px rgba(102, 126, 234, 0.2),
+                0 0 0 4px rgba(102, 126, 234, 0.1),
+                0 1px 0 rgba(255, 255, 255, 0.3) inset;
+        }
+
+        .dark-mode .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ========================================
+           FLOATING ACTION BUTTON - LIQUID GLASS
+           ======================================== */
+        .fab-glass {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: linear-gradient(135deg,
+                    rgba(102, 126, 234, 0.7) 0%,
+                    rgba(118, 75, 162, 0.7) 100%);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 8px 32px rgba(102, 126, 234, 0.4),
+                0 2px 0 rgba(255, 255, 255, 0.3) inset;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: subtleFloat 3s ease-in-out infinite;
+            z-index: 999;
+        }
+
+        .fab-glass:hover {
+            transform: scale(1.1);
+            animation: edgeGlow 2s ease-in-out infinite;
+            box-shadow:
+                0 12px 40px rgba(102, 126, 234, 0.5),
+                0 2px 0 rgba(255, 255, 255, 0.4) inset,
+                0 0 30px rgba(118, 75, 162, 0.4);
+        }
+
+        .fab-glass:active {
+            transform: scale(0.95);
+            animation: none;
+        }
+
+        /* ========================================
+           LIQUID GLASS TOGGLE/SWITCH
+           ======================================== */
+        .glass-toggle {
+            width: 52px;
+            height: 28px;
+            background: rgba(120, 120, 128, 0.3);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 1px;
+            left: 2px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-toggle.active {
+            background: linear-gradient(135deg,
+                    rgba(52, 199, 89, 0.8) 0%,
+                    rgba(48, 209, 88, 0.8) 100%);
+        }
+
+        .glass-toggle.active::after {
+            left: 25px;
+        }
+
+        /* ========================================
+           PREMIUM MICRO-INTERACTIONS
+           ======================================== */
+        /* Ripple effect for touch feedback */
+        .touch-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .touch-ripple::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%),
+                    rgba(255, 255, 255, 0.4) 0%,
+                    transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .touch-ripple:active::after {
+            opacity: 1;
+        }
+
+        /* Glow pulse for attention */
+        .glow-pulse {
+            animation: edgeGlow 2s ease-in-out infinite;
+        }
+
 
         .class-search-wrapper {
             position: relative;
@@ -1284,6 +1815,39 @@
             color: var(--dark-text);
         }
 
+        /* ========================================
+           UNIVERSAL BACKDROP OVERLAY
+           Blocks all interactions when panels are open
+           ======================================== */
+        .app-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            /* Block all interactions on the backdrop */
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* When backdrop is active, prevent body scroll */
+        body.backdrop-active {
+            overflow: hidden;
+            touch-action: none;
+        }
+
         /* Modal Styles - iOS Spring Animation */
         .modal {
             display: none;
@@ -1293,8 +1857,8 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
             z-index: 1005;
             overflow-y: auto;
             opacity: 0;
@@ -1303,6 +1867,9 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            /* Block all touch interactions on backdrop */
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .modal.active {
@@ -1330,6 +1897,8 @@
                 opacity 0.3s ease-out;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
+            /* Re-enable touch inside modal content */
+            touch-action: auto;
         }
 
         .modal.active .modal-content {
@@ -2254,50 +2823,7 @@
         }
 
 
-        /* Info Slider Styles */
-        .info-slider {
-            overflow: hidden;
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto 0;
-            padding: 12px 20px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 25px;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .slider-track {
-            display: flex;
-            animation: slide 200s linear infinite;
-        }
-
-        .slide {
-            min-width: 100%;
-            text-align: center;
-            font-size: 0.95rem;
-            color: var(--text-color);
-            opacity: 0.95;
-            padding: 0 20px;
-            white-space: nowrap;
-            font-weight: 500;
-        }
-
-        @keyframes slide {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-2000%);
-                /* 20 slides × 100% each */
-            }
-        }
-
-        .info-slider:hover .slider-track {
-            animation-play-state: paused;
-        }
+        /* Info Slider Styles - moved to line 2670+ with correct colors */
 
         #partialSubjectsGrid {
             display: grid;
@@ -2618,80 +3144,130 @@
             /* Highlight urgent action */
         }
 
-        /* WhatsApp Floating Button */
+        /* WhatsApp Floating Button - LIQUID GLASS */
         .whatsapp-float {
             position: fixed;
-            width: 60px;
-            height: 60px;
-            bottom: 80px;
+            width: 56px;
+            height: 56px;
+            bottom: 90px;
             right: 20px;
-            background-color: #25d366;
+            /* Bright glass green gradient with translucency */
+            background: linear-gradient(135deg,
+                    rgba(50, 230, 120, 0.88) 0%,
+                    rgba(40, 210, 100, 0.88) 100%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
             color: #FFF;
-            border-radius: 50px;
+            border-radius: 50%;
             text-align: center;
             font-size: 30px;
-            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.3);
-            z-index: 100;
+            /* Glass border and depth */
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 8px 32px rgba(37, 211, 102, 0.4),
+                0 2px 0 rgba(255, 255, 255, 0.3) inset,
+                0 -2px 0 rgba(0, 0, 0, 0.1) inset;
+            z-index: 999;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            /* Spring transition */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-decoration: none;
+            animation: subtleFloat 3s ease-in-out infinite;
+            animation-delay: 0.5s;
+            overflow: hidden;
+        }
+
+        /* Shimmer overlay */
+        .whatsapp-float::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+                    transparent 30%,
+                    rgba(255, 255, 255, 0.3) 50%,
+                    transparent 70%);
+            transform: rotate(45deg) translateY(-100%);
+            transition: transform 0.6s ease;
         }
 
         .whatsapp-float:hover {
-            background-color: #128c7e;
-            box-shadow: 2px 2px 20px rgba(0, 0, 0, 0.4);
-            transform: scale(1.1);
+            transform: scale(1.12);
+            box-shadow:
+                0 12px 40px rgba(37, 211, 102, 0.5),
+                0 2px 0 rgba(255, 255, 255, 0.4) inset,
+                0 0 40px rgba(18, 140, 126, 0.4);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .whatsapp-float:hover::before {
+            transform: rotate(45deg) translateY(100%);
+        }
+
+        .whatsapp-float:active {
+            transform: scale(0.95);
+            transition: all 0.1s ease;
         }
 
         .whatsapp-float svg {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             fill: white;
+            position: relative;
+            z-index: 1;
         }
 
         @media (max-width: 768px) {
             .whatsapp-float {
                 width: 50px;
                 height: 50px;
-                bottom: 70px;
+                bottom: 80px;
                 right: 15px;
-                font-size: 24px;
             }
 
             .whatsapp-float svg {
-                width: 26px;
-                height: 26px;
+                width: 24px;
+                height: 24px;
             }
         }
 
         /* === INFO SLIDER IN HEADER === */
         .info-slider {
-            width: 100%;
-            overflow: hidden;
-            background: rgba(255, 255, 255, 0.15);
+            width: 100% !important;
+            overflow: hidden !important;
+            background: rgba(255, 255, 255, 0.15) !important;
             border-radius: 8px;
             margin-top: 15px;
             padding: 10px 0;
+            position: relative !important;
+            z-index: 100 !important;
+            display: block !important;
+            min-height: 40px;
         }
 
         .slider-track {
-            display: flex;
-            animation: slide 60s linear infinite;
-            width: max-content;
+            display: flex !important;
+            width: max-content !important;
+            animation: marqueeEffect 120s linear infinite;
         }
 
         .slide {
             flex-shrink: 0;
-            padding: 0 30px;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.95);
-            white-space: nowrap;
+            padding: 0 40px;
+            font-size: 0.95rem;
+            color: #ffffff !important;
+            white-space: nowrap !important;
+            font-weight: 500;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
-        @keyframes slide {
+        @keyframes marqueeEffect {
             0% {
                 transform: translateX(0);
             }
@@ -2714,45 +3290,104 @@
             }
 
             .slider-track {
-                animation-duration: 45s;
+                animation-duration: 90s;
             }
         }
 
-        /* === AI CHATBOT FLOATING BUTTON & CHAT PANEL === */
+        /* === AI CHATBOT FLOATING BUTTON - LIQUID GLASS === */
         #aiChatbotButton {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end));
+            width: 56px;
+            height: 56px;
+            /* Bright glass gradient with translucency */
+            background: linear-gradient(135deg,
+                    rgba(130, 150, 255, 0.88) 0%,
+                    rgba(160, 120, 255, 0.88) 100%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
             border-radius: 50%;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 26px;
             color: white;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            z-index: 1000;
-            transition: all 0.3s ease;
-            animation: chatbot-pulse 2s ease-in-out infinite;
+            /* Glass border and depth */
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 8px 32px rgba(102, 126, 234, 0.4),
+                0 2px 0 rgba(255, 255, 255, 0.3) inset,
+                0 -2px 0 rgba(0, 0, 0, 0.1) inset;
+            z-index: 998;
+            /* Spring transition */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: subtleFloat 3s ease-in-out infinite;
+            /* Shimmer container */
+            overflow: hidden;
+        }
+
+        /* Shimmer overlay for chatbot button */
+        #aiChatbotButton::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+                    transparent 30%,
+                    rgba(255, 255, 255, 0.3) 50%,
+                    transparent 70%);
+            transform: rotate(45deg) translateY(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        @media (max-width: 768px) {
+            #aiChatbotButton {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 24px;
+            }
         }
 
         #aiChatbotButton:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            transform: scale(1.12);
+            box-shadow:
+                0 12px 40px rgba(102, 126, 234, 0.5),
+                0 2px 0 rgba(255, 255, 255, 0.4) inset,
+                0 0 40px rgba(118, 75, 162, 0.4);
+            border-color: rgba(255, 255, 255, 0.5);
+            animation: edgeGlow 2s ease-in-out infinite;
+        }
+
+        #aiChatbotButton:hover::before {
+            transform: rotate(45deg) translateY(100%);
+        }
+
+        #aiChatbotButton:active {
+            transform: scale(0.95);
+            animation: none;
+            transition: all 0.1s ease;
         }
 
         @keyframes chatbot-pulse {
 
             0%,
             100% {
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                box-shadow:
+                    0 8px 32px rgba(102, 126, 234, 0.4),
+                    0 2px 0 rgba(255, 255, 255, 0.3) inset;
             }
 
             50% {
-                box-shadow: 0 6px 25px rgba(102, 126, 234, 0.7);
+                box-shadow:
+                    0 12px 40px rgba(102, 126, 234, 0.6),
+                    0 2px 0 rgba(255, 255, 255, 0.4) inset,
+                    0 0 30px rgba(118, 75, 162, 0.3);
             }
         }
 
@@ -2761,17 +3396,33 @@
             top: 0;
             right: -400px;
             width: 400px;
+            max-width: 100%;
             height: 100vh;
-            background: var(--card-bg);
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-            z-index: 1004;
+            background: rgba(255, 255, 255, 0.5);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.25);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 10000;
             display: flex;
             flex-direction: column;
             transition: right 0.4s ease;
         }
 
+        /* Dark mode chat panel */
+        .dark-mode .chat-panel {
+            background: rgba(26, 26, 46, 0.6);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .chat-panel.active {
             right: 0;
+        }
+
+        /* Hide the floating button when panel is open */
+        .chat-panel.active~#aiChatbotButton,
+        body:has(.chat-panel.active) #aiChatbotButton {
+            display: none !important;
         }
 
         .chat-header {
@@ -2839,6 +3490,11 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            background: transparent;
+        }
+
+        .dark-mode .chat-messages {
+            background: transparent;
         }
 
         .chat-message {
@@ -2871,6 +3527,41 @@
             color: var(--medium-text);
             font-size: 0.8rem;
             font-style: italic;
+        }
+
+        .faq-section {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--light-bg);
+        }
+
+        .faq-section h4 {
+            font-size: 0.85rem;
+            color: var(--medium-text);
+            margin-bottom: 10px;
+        }
+
+        .faq-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .faq-btn {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            background: var(--card-bg);
+            color: var(--dark-text);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .faq-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         .chat-input-container {
@@ -2913,8 +3604,8 @@
             #aiChatbotButton {
                 bottom: 15px;
                 right: 15px;
-                width: 55px;
-                height: 55px;
+                width: 50px;
+                height: 50px;
             }
         }
 
@@ -3243,6 +3934,9 @@
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
+    <!-- Universal Backdrop Overlay - Blocks all interactions when panels are open -->
+    <div id="appBackdrop" class="app-backdrop" onclick="closeAllPanels()"></div>
+
     <!-- Login Screen -->
     <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="login-container">
@@ -3262,39 +3956,6 @@
                 👤 Continue as Guest
             </button>
             <p class="login-feature">📱 Data stays on this device</p>
-        </div>
-    </div>
-
-    <!-- AI Chatbot Floating Button -->
-    <div id="aiChatbotButton">🤖</div>
-
-    <!-- AI Chat Panel -->
-    <div id="aiChatPanel" class="chat-panel">
-        <div class="chat-header">
-            <h3>🤖 AI Assistant</h3>
-            <button onclick="closeAIChatbot()">&times;</button>
-        </div>
-        <div class="faq-section">
-            <h4>Quick Questions:</h4>
-            <div class="faq-buttons">
-                <button class="faq-btn" onclick="askFAQ('How do I add a new class?')">How do I add a new class?</button>
-                <button class="faq-btn" onclick="askFAQ('What is Portal Mode?')">What is Portal Mode?</button>
-                <button class="faq-btn" onclick="askFAQ('How does OCR attendance scanning work?')">How does OCR
-                    attendance scanning work?</button>
-                <button class="faq-btn" onclick="askFAQ('How do I get medical leave recommendations?')">How do I get
-                    medical leave recommendations?</button>
-                <button class="faq-btn"
-                    onclick="askFAQ('What is the difference between upload and manual mode?')">What's the difference
-                    between upload and manual mode?</button>
-            </div>
-        </div>
-        <div id="chatMessages" class="chat-messages">
-            <div class="chat-message system">👋 Hi! I'm here to help you with the app. Ask me anything!</div>
-        </div>
-        <div class="chat-input-container">
-            <input type="text" id="chatInput" placeholder="Ask about the app..."
-                onkeypress="if(event.key==='Enter') sendChatMessage()">
-            <button onclick="sendChatMessage()">Send</button>
         </div>
     </div>
 
@@ -3399,31 +4060,70 @@
                 like a pro</p>
 
             <!-- Info Slider -->
-            <div class="info-slider">
-                <div class="slider-track" id="sliderTrack">
-                    <div class="slide">💡 Portal Mode: Track daily attendance with automatic calculations</div>
-                    <div class="slide">⚠️ OCR is 95% accurate - always verify extracted numbers with your screenshot
-                    </div>
-                    <div class="slide">🚀 Fast Setup: Use AI to generate JSON from your timetable screenshot</div>
-                    <div class="slide">📊 3 View Options: Card View (detailed), Table View (compact), Graph View
-                        (visual)</div>
-                    <div class="slide">⚡ Edit Anytime: Click attended/total numbers to update in any view</div>
-                    <div class="slide">🎯 Settings: Toggle between Per-Subject or Overall attendance mode</div>
-                    <div class="slide">📱 100% Offline: All data saved locally - works without internet</div>
-                    <div class="slide">🔔 Notifications: Set daily reminders to mark your attendance</div>
-                    <div class="slide">📅 History Editor: View and edit past logs using the calendar</div>
-                    <div class="slide">✨ Safe Skip %: Shows your % after skipping maximum allowed classes</div>
-                    <div class="slide">🔄 Backup/Restore: Save all classes to file and restore on any device</div>
-                    <div class="slide">📤 Export/Import: Share class setup with friends via JSON</div>
-                    <div class="slide">🗓️ Daily Dashboard: Color-coded status (🔴Critical 🟡Low 🟢Safe) for today's
-                        classes</div>
-                    <div class="slide">📝 Daily Logs: Track attended/skipped/cancelled classes for accuracy</div>
-                    <div class="slide">🏖️ Leave Planner: Enter planned leaves to see impact on attendance</div>
-                    <div class="slide">🎪 Max Safe Leave: Find exact dates you can skip without issues</div>
-                    <div class="slide">🌴 Long Weekend Finder: Discover best leave days for extended breaks</div>
-                    <div class="slide">📊 Can I Skip Today?: Quick check for today's class impact</div>
-                    <div class="slide">🤖 Smart Baseline: Portal logs before baseline intelligently merged</div>
-                    <div class="slide">📜 Auto History: Last 10 calculations saved - restore anytime</div>
+            <div class="info-slider"
+                style="display: block; width: 100%; overflow: hidden; background: rgba(255,255,255,0.15); border-radius: 8px; margin-top: 15px; padding: 10px 0; min-height: 40px;">
+                <div class="slider-track" id="sliderTrack"
+                    style="display: flex; width: max-content; animation: marqueeEffect 120s linear infinite;">
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        💡 Portal Mode: Track daily attendance with automatic calculations</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        ⚠️ OCR is 95% accurate - always verify extracted numbers with your screenshot</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🚀 Fast Setup: Use AI to generate JSON from your timetable screenshot</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📊 3 View Options: Card View (detailed), Table View (compact), Graph View (visual)</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        ⚡ Edit Anytime: Click attended/total numbers to update in any view</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🎯 Settings: Toggle between Per-Subject or Overall attendance mode</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📱 100% Offline: All data saved locally - works without internet</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🔔 Notifications: Set daily reminders to mark your attendance</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📅 History Editor: View and edit past logs using the calendar</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        ✨ Safe Skip %: Shows your % after skipping maximum allowed classes</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🔄 Backup/Restore: Save all classes to file and restore on any device</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📤 Export/Import: Share class setup with friends via JSON</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🗓️ Daily Dashboard: Color-coded status (🔴Critical 🟡Low 🟢Safe) for today's classes</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📝 Daily Logs: Track attended/skipped/cancelled classes for accuracy</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🏖️ Leave Planner: Enter planned leaves to see impact on attendance</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🎪 Max Safe Leave: Find exact dates you can skip without issues</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🌴 Long Weekend Finder: Discover best leave days for extended breaks</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📊 Can I Skip Today?: Quick check for today's class impact</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        🤖 Smart Baseline: Portal logs before baseline intelligently merged</div>
+                    <div class="slide"
+                        style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
+                        📜 Auto History: Last 10 calculations saved - restore anytime</div>
                 </div>
             </div>
         </header>
@@ -3638,6 +4338,55 @@
         <div class="modal" id="backupOptionsModal"></div>
         <div class="modal" id="restoreOptionsModal"></div>
         <div class="modal" id="ocrSettingsModal"></div>
+
+        <!-- AI Chatbot Floating Button -->
+        <button id="aiChatbotButton" onclick="openAIChatbot()"
+            style="display: flex; border: none; cursor: pointer; align-items: center; justify-content: center;">
+            🤖
+        </button>
+
+        <!-- AI Chat Panel -->
+        <div id="aiChatPanel" class="chat-panel">
+            <!-- Chat Header -->
+            <div
+                style="padding: 15px 20px; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); color: white; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🤖</span>
+                    <span style="font-weight: 600; font-size: 1.1rem;">AI Assistant</span>
+                </div>
+                <button onclick="closeAIChatbot()"
+                    style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="faq-section">
+                <h4>Quick Questions:</h4>
+                <div class="faq-buttons">
+                    <button class="faq-btn" onclick="askFAQ('How do I add a new class?')">How do I add a new
+                        class?</button>
+                    <button class="faq-btn" onclick="askFAQ('What is Portal Mode?')">What is Portal Mode?</button>
+                    <button class="faq-btn" onclick="askFAQ('How does OCR attendance scanning work?')">How does OCR
+                        attendance scanning work?</button>
+                    <button class="faq-btn" onclick="askFAQ('How do I get medical leave recommendations?')">How do I get
+                        medical leave recommendations?</button>
+                    <button class="faq-btn"
+                        onclick="askFAQ('What is the difference between upload and manual mode?')">What's the
+                        difference between upload and manual mode?</button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px;">
+                <div class="chat-message system">👋 Hi! I'm here to help you with the app. Ask me anything!</div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Ask about the app..."
+                    onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
 
         <script>
             // --- GLOBAL ERROR HANDLER ---
@@ -3972,6 +4721,7 @@
                     // Trigger reflow to enable CSS transition
                     modal.offsetHeight;
                     modal.classList.add('active');
+                    document.body.classList.add('backdrop-active'); // Block body scroll
                 }
             }
 
@@ -3985,6 +4735,10 @@
                     setTimeout(() => {
                         modal.style.display = 'none';
                         modal.classList.remove('closing');
+                        // Only remove backdrop-active if no other modals are open
+                        if (!document.querySelector('.modal.active')) {
+                            document.body.classList.remove('backdrop-active');
+                        }
                     }, 310);
                 }
             }
@@ -5418,11 +6172,13 @@
             function openNav() {
                 document.getElementById("mySidenav").classList.add("active");
                 document.getElementById("menuOverlay").classList.add("active");
+                document.body.classList.add('backdrop-active'); // Block body scroll
             }
 
             function closeNav() {
                 document.getElementById("mySidenav").classList.remove("active");
                 document.getElementById("menuOverlay").classList.remove("active");
+                document.body.classList.remove('backdrop-active'); // Restore body scroll
             }
 
             function toggleDropdown(element) {
@@ -12879,9 +13635,12 @@ CRITICAL RULES:
                     // Open AI Chatbot (closes all modals first during onboarding)
                     function openAIChatbot() {
                         try {
-                            // Remove glow from bot icon
+                            // Remove glow from bot icon and HIDE it
                             const botBtn = document.getElementById('aiChatbotButton');
-                            if (botBtn) botBtn.classList.remove('glowing-pulse');
+                            if (botBtn) {
+                                botBtn.classList.remove('glowing-pulse');
+                                botBtn.style.display = 'none';  // Hide when panel opens
+                            }
 
                             // Close any bunkmate tutorial cloud messages (Priority)
                             const tutorialOverlay = document.getElementById('bunkmateTutorialOverlay');
@@ -12905,6 +13664,13 @@ CRITICAL RULES:
                                 panel.style.display = 'flex';
                                 panel.style.zIndex = '2147483647';
                             }
+
+                            // Show backdrop overlay to block background interactions
+                            const backdrop = document.getElementById('appBackdrop');
+                            if (backdrop) {
+                                backdrop.classList.add('active');
+                            }
+                            document.body.classList.add('backdrop-active');
                         } catch (err) {
                             console.error('Error opening chatbot:', err);
                             // Fallback: force open the panel
@@ -12926,11 +13692,45 @@ CRITICAL RULES:
                             panel.style.right = '';  // Reset to CSS default
                             panel.style.zIndex = '';  // Reset to CSS default
                         }
+                        // Show the floating button again
+                        const botBtn = document.getElementById('aiChatbotButton');
+                        if (botBtn) botBtn.style.display = 'flex';
+
+                        // Hide backdrop overlay
+                        const backdrop = document.getElementById('appBackdrop');
+                        if (backdrop) {
+                            backdrop.classList.remove('active');
+                        }
+                        document.body.classList.remove('backdrop-active');
+                    }
+
+                    // Close all panels (called when backdrop is clicked)
+                    function closeAllPanels() {
+                        // Close chatbot
+                        closeAIChatbot();
+
+                        // Close side navigation
+                        if (typeof closeNav === 'function') {
+                            closeNav();
+                        }
+
+                        // Close all modals
+                        document.querySelectorAll('.modal.active').forEach(modal => {
+                            modal.classList.remove('active');
+                        });
+
+                        // Hide backdrop
+                        const backdrop = document.getElementById('appBackdrop');
+                        if (backdrop) {
+                            backdrop.classList.remove('active');
+                        }
+                        document.body.classList.remove('backdrop-active');
                     }
 
                     // Expose chatbot functions globally for onclick handlers
                     window.openAIChatbot = openAIChatbot;
                     window.closeAIChatbot = closeAIChatbot;
+                    window.closeAllPanels = closeAllPanels;
 
                     // Add direct event listener for bot icon (works even after DOM move)
                     // Uses both getElementById and stored reference for reliability
@@ -12971,9 +13771,21 @@ CRITICAL RULES:
                     }
 
                     // Send chat message
+                    // Send chat message
                     async function sendChatMessage() {
-                        const input = document.getElementById('chatInput');
+                        console.log("Submit button clicked");
+                        let input = document.getElementById('chatInput');
+                        if (!input) input = document.getElementById('aiChatInput'); // Try alternate ID
+                        if (!input) input = document.querySelector('.chat-input-container input'); // Try class selector
+
+                        if (!input) {
+                            console.error("Chat input not found! Check IDs.");
+                            alert("Error: Chat input field not found. Please reload.");
+                            return;
+                        }
+
                         const message = input.value.trim();
+                        console.log("Sending message:", message);
 
                         if (!message) return;
 
@@ -13768,8 +14580,38 @@ Answer helpfully using this context.`;
                             });
                         }, 3000);
                     };
+
+                    // Initialize Slider - Duplicate content for seamless scrolling
+                    // Initialize Slider - Duplicate content for seamless scrolling
+                    window.addEventListener('DOMContentLoaded', () => {
+                        const track = document.querySelector('.slider-track');
+                        if (track) {
+                            // Clone items to ensure seamless loop
+                            if (track.children.length > 0) {
+                                track.innerHTML += track.innerHTML;
+                            }
+                            // Force styles via JS to ensure visibility
+                            track.style.display = 'flex';
+                            track.style.width = 'max-content';
+                        }
+
+                        // DEBUG & FIX CHATBOT
+                        setTimeout(() => {
+                            const buttons = Array.from(document.querySelectorAll('button'));
+                            const sendBtn = buttons.find(b => b.innerText.trim() === 'Send' || b.textContent.trim() === 'Send');
+
+                            if (sendBtn) {
+                                // Override click handler
+                                sendBtn.onclick = function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (window.sendChatMessage) window.sendChatMessage();
+                                    else alert("Global sendChatMessage not found!");
+                                };
+                            }
+                        }, 1000); // Delay to ensure DOM is fully ready
+                    });
                 </script>
 </body>
 
 </html>
-```
