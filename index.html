@@ -2667,6 +2667,57 @@
             }
         }
 
+        /* === INFO SLIDER IN HEADER === */
+        .info-slider {
+            width: 100%;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            margin-top: 15px;
+            padding: 10px 0;
+        }
+
+        .slider-track {
+            display: flex;
+            animation: slide 60s linear infinite;
+            width: max-content;
+        }
+
+        .slide {
+            flex-shrink: 0;
+            padding: 0 30px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            white-space: nowrap;
+        }
+
+        @keyframes slide {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Pause animation on hover */
+        .info-slider:hover .slider-track {
+            animation-play-state: paused;
+        }
+
+        /* Mobile optimization for slider */
+        @media (max-width: 768px) {
+            .slide {
+                font-size: 0.8rem;
+                padding: 0 20px;
+            }
+
+            .slider-track {
+                animation-duration: 45s;
+            }
+        }
+
         /* === AI CHATBOT FLOATING BUTTON & CHAT PANEL === */
         #aiChatbotButton {
             position: fixed;
@@ -2828,6 +2879,11 @@
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 10px;
+        }
+
+        /* Solid background for chat input in dark mode (no transparency) */
+        body.dark-mode .chat-input-container {
+            background: #1e1e1e;
         }
 
         .chat-input-container input {
@@ -3301,10 +3357,7 @@
             <a href="#" onclick="openRestoreModal(); closeNav();">Restore from Backup</a>
             <a href="#" onclick="restoreDefaultClass(); closeNav();">Restore Default Class</a>
         </div>
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📜 History <span>▾</span></a>
-        <div class="sidenav-dropdown-content" id="historyDropdown">
-            <a href="javascript:void(0)" style="color: var(--medium-text); cursor: default;">No history yet.</a>
-        </div>
+
         <a href="#" onclick="openNotificationSettings(); closeNav();">🔔 Notification Settings</a>
         <a href="#" onclick="openAPISettings(); closeNav();">🔑 API Settings</a>
         <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">👁️ View Options <span>▾</span></a>
@@ -3317,12 +3370,8 @@
         <a href="#" id="periodViewMenuItem" onclick="openPeriodAttendanceModal(); closeNav();" style="display: none;">📊
             Period-wise Attendance</a>
 
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">❓ Help <span>▾</span></a>
-        <div class="sidenav-dropdown-content">
-            <a href="#" onclick="openHelpModal()">💡 How to Use</a>
-            <a href="https://wa.me/916386854875?text=Hello!%20I%20have%20a%20question%20about%20the%20Smart%20Attendance%20Calculator."
-                target="_blank" rel="noopener noreferrer">Contact on WhatsApp</a>
-        </div>
+        <a href="#" onclick="openHelpModal(); closeNav();">💡 How to Use</a>
+        <a href="#" onclick="openPrivacyPolicy(); closeNav();">🔒 Privacy Policy</a>
 
         <a href="#" onclick="openDonateModal(); closeNav();" style="color: #ff6b6b; font-weight: 600;">☕ Buy Me a
             Coffee</a>
@@ -3551,6 +3600,7 @@
         <div class="modal" id="dailyLogModal"></div>
         <div class="modal" id="helpModal"></div>
         <div class="modal" id="donateModal"></div>
+        <div class="modal" id="privacyPolicyModal"></div>
         <div class="modal" id="periodAttendanceModal"></div>
         <div class="modal" id="customScheduleModal"></div>
         <div class="modal" id="notificationSettingsModal">
@@ -7196,7 +7246,6 @@ CRITICAL INSTRUCTIONS:
                 openModal('addClassModal');
             }
             function openImportModal() { openAddClassModal(); setTimeout(() => switchModalTab('json'), 50); }
-            function openHelpModal() { openModal('helpModal'); }
 
             function openDonateModal() {
                 const modal = document.getElementById('donateModal');
@@ -7302,6 +7351,182 @@ CRITICAL INSTRUCTIONS:
                         downloadDonateQR();
                     }
                 }
+            }
+
+            // Comprehensive How to Use Modal
+            function openHelpModal() {
+                const modal = document.getElementById('helpModal');
+                modal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+                    <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
+                    <div class="modal-header">
+                        <h2>💡 How to Use Bunk it</h2>
+                        <p>Complete guide to all features</p>
+                    </div>
+                    
+                    <div style="text-align: left; padding: 10px;">
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📚 1. Setting Up Your Class</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Add Class:</strong> Click "+ Add Class" button to create a new class</li>
+                            <li><strong>Class Name:</strong> Enter your class/section name (e.g., "CSE-A 3rd Sem")</li>
+                            <li><strong>Last Working Date:</strong> Set the semester end date</li>
+                            <li><strong>Subjects:</strong> Add each subject with name, code, and weekly schedule (classes per day)</li>
+                            <li><strong>Holidays:</strong> Add holidays so they're excluded from calculations</li>
+                            <li><strong>AI Import:</strong> Upload timetable screenshot to auto-fill class details</li>
+                            <li><strong>QR Import:</strong> Scan a classmate's QR code to copy their class setup</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📸 2. Entering Attendance</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Image Upload (OCR):</strong> Upload attendance portal screenshot - AI extracts the numbers</li>
+                            <li><strong>Manual Entry:</strong> Enter total and attended classes for each subject</li>
+                            <li><strong>JSON Paste:</strong> Paste attendance data in JSON format from AI chat</li>
+                            <li><strong>⚠️ Pro Tip:</strong> OCR is ~95% accurate - always verify extracted numbers</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🎓 3. Portal Mode (Daily Tracking)</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Enable:</strong> Go to "Student Portal" button → Set baseline date & semester start</li>
+                            <li><strong>Daily Logs:</strong> Mark attended/skipped/cancelled classes each day</li>
+                            <li><strong>Dashboard:</strong> See color-coded status (🔴 Danger, 🟡 Warning, 🟢 Safe)</li>
+                            <li><strong>History:</strong> View/edit past logs using the calendar icon</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📊 4. View Options</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Card View:</strong> Detailed cards with all stats per subject</li>
+                            <li><strong>Table View:</strong> Compact spreadsheet-style view</li>
+                            <li><strong>Graph View:</strong> Visual analytics with charts</li>
+                            <li><strong>Edit:</strong> Click attendance numbers in any view to update</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📅 5. Weekly Timetable</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>View:</strong> Auto-generated from your subject schedules</li>
+                            <li><strong>Drag & Drop:</strong> Rearrange subjects by dragging</li>
+                            <li><strong>Period Times:</strong> Configure start/end times for each period</li>
+                            <li><strong>Colors:</strong> Subjects color-coded by attendance status</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🏖️ 6. Leave Planner</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Plan Leaves:</strong> Add dates you plan to skip</li>
+                            <li><strong>See Impact:</strong> View how leaves affect your attendance</li>
+                            <li><strong>Compulsory Events:</strong> Mark events you must attend</li>
+                            <li><strong>Max Safe Leave:</strong> Find maximum days you can safely skip</li>
+                            <li><strong>Long Weekend Finder:</strong> Discover best leave strategy for extended breaks</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🤔 7. Quick Tools</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Can I Skip Today?:</strong> Quick check if skipping today is safe</li>
+                            <li><strong>Per-Subject / Overall Mode:</strong> Toggle calculation mode in settings</li>
+                            <li><strong>Min Attendance %:</strong> Set your required percentage (default 75%)</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🔔 8. Notifications</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Daily Reminders:</strong> Get notified to log attendance</li>
+                            <li><strong>Custom Time:</strong> Set your preferred reminder time</li>
+                            <li><strong>Per-Class Settings:</strong> Configure separately for each class</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">💾 9. Backup & Sync</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Google Sign-in:</strong> Sync data across devices via Google Drive</li>
+                            <li><strong>Backup:</strong> Download complete backup as JSON file</li>
+                            <li><strong>Restore:</strong> Restore from backup file</li>
+                            <li><strong>Export/Import:</strong> Share class setup with friends</li>
+                            <li><strong>QR Code:</strong> Share class via scannable QR</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🤖 10. AI Assistant</h3>
+                        <ul style="line-height: 1.8; padding-left: 20px;">
+                            <li><strong>Ask Questions:</strong> Click the 🤖 button for AI help</li>
+                            <li><strong>Smart Advice:</strong> Get personalized leave recommendations</li>
+                            <li><strong>API Key:</strong> Set your Gemini API key in API Settings for unlimited use</li>
+                        </ul>
+                        
+                        <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; margin-top: 20px;">
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--dark-text);">
+                                💬 <strong>Need help?</strong> Contact the developer via WhatsApp button or ask the AI assistant!
+                            </p>
+                        </div>
+                    </div>
+                </div>`;
+                openModal('helpModal');
+            }
+
+            // Privacy Policy Modal
+            function openPrivacyPolicy() {
+                const modal = document.getElementById('privacyPolicyModal');
+                modal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+                    <button class="modal-close" onclick="closeModal('privacyPolicyModal')">&times;</button>
+                    <div class="modal-header">
+                        <h2>🔒 Privacy Policy</h2>
+                        <p>Last updated: December 2024</p>
+                    </div>
+                    
+                    <div style="text-align: left; padding: 10px; line-height: 1.8;">
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📱 Data Storage</h3>
+                        <p>Bunk it stores all your data <strong>locally on your device</strong>. Your attendance data, class information, and preferences are saved in your browser's local storage.</p>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">☁️ Google Drive Sync (Optional)</h3>
+                        <p>If you choose to sign in with Google, your data is synced to <strong>your personal Google Drive</strong> in a private app folder. We never access or store your data on our servers.</p>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📸 Image Processing</h3>
+                        <p>When you upload attendance screenshots for OCR:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Images are processed by Google's Gemini AI API</li>
+                            <li>Images are <strong>not stored</strong> on any server</li>
+                            <li>Processing happens in real-time and data is immediately discarded</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🔑 API Keys</h3>
+                        <p>Your personal Gemini API key (if provided) is stored locally on your device only. It is never sent to our servers.</p>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🌐 Third-Party Services</h3>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Google Sign-in:</strong> For optional cloud sync</li>
+                            <li><strong>Google Gemini AI:</strong> For OCR and AI assistant</li>
+                            <li><strong>Google Fonts:</strong> For typography</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📊 Analytics & Tracking</h3>
+                        <p>Bunk it does <strong>NOT</strong> use any analytics, tracking, or advertising services. We don't collect usage data, personal information, or browsing behavior.</p>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🔒 Data Security</h3>
+                        <ul style="padding-left: 20px;">
+                            <li>All data transmission uses HTTPS encryption</li>
+                            <li>Local data is protected by your device security</li>
+                            <li>Google Drive sync uses OAuth 2.0 authentication</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🗑️ Data Deletion</h3>
+                        <p>You can delete all your data at any time by:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Clearing browser data/cache</li>
+                            <li>Uninstalling the PWA</li>
+                            <li>Deleting the app folder from Google Drive (if synced)</li>
+                        </ul>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">👶 Children's Privacy</h3>
+                        <p>This app is designed for college/university students. We do not knowingly collect information from children under 13.</p>
+                        
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📧 Contact</h3>
+                        <p>For privacy concerns or questions, contact the developer via WhatsApp: +91 6386854875</p>
+                        
+                        <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; margin-top: 20px;">
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--dark-text);">
+                                ✅ <strong>Summary:</strong> Your data stays on your device. We don't collect, store, or sell any personal information. Optional Google sync stores data in YOUR Drive only.
+                            </p>
+                        </div>
+                    </div>
+                </div>`;
+                openModal('privacyPolicyModal');
             }
 
             function copyAIPrompt() {
@@ -12816,6 +13041,10 @@ CRITICAL RULES:
                         const messagesDiv = document.getElementById('chatMessages');
                         messagesDiv.scrollTop = messagesDiv.scrollHeight;
                     }
+
+                    // Expose chatbot functions globally for onclick handlers
+                    window.sendChatMessage = sendChatMessage;
+                    window.askFAQ = askFAQ;
 
                     // Shared key quota tracking (10 questions/day)
                     function getSharedQuota() {
