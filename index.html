@@ -87,33 +87,37 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bunk it - Smart Attendance Manager | Track College Attendance</title>
-    
+
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Bunk it is a smart attendance manager for college and school students. Track your attendance, plan safe bunks, calculate required classes, and never fall below 75% attendance. Works offline!">
-    <meta name="keywords" content="attendance tracker, bunk calculator, college attendance, school attendance, 75% attendance, attendance manager, student app, attendance planner, skip class calculator, PWA">
+    <meta name="description"
+        content="Bunk it is a smart attendance manager for college and school students. Track your attendance, plan safe bunks, calculate required classes, and never fall below 75% attendance. Works offline!">
+    <meta name="keywords"
+        content="attendance tracker, bunk calculator, college attendance, school attendance, 75% attendance, attendance manager, student app, attendance planner, skip class calculator, PWA">
     <meta name="author" content="Bunk it Team">
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
     <link rel="canonical" href="https://bunkon.netlify.app/">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://bunkon.netlify.app/">
     <meta property="og:title" content="Bunk it - Smart Attendance Manager">
-    <meta property="og:description" content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
+    <meta property="og:description"
+        content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
     <meta property="og:image" content="https://bunkon.netlify.app/icon-512x512.png">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta property="og:site_name" content="Bunk it">
     <meta property="og:locale" content="en_IN">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://bunkon.netlify.app/">
     <meta name="twitter:title" content="Bunk it - Smart Attendance Manager">
-    <meta name="twitter:description" content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
+    <meta name="twitter:description"
+        content="Track your attendance, plan safe bunks, and never fall below 75%. The smartest attendance app for students!">
     <meta name="twitter:image" content="https://bunkon.netlify.app/icon-512x512.png">
-    
+
     <!-- Additional SEO -->
     <meta name="application-name" content="Bunk it">
     <meta name="apple-mobile-web-app-title" content="Bunk it">
@@ -124,7 +128,7 @@
     <meta name="msapplication-TileColor" content="#667eea">
     <meta name="msapplication-TileImage" content="/icon-144x144.png">
     <meta name="msapplication-config" content="none">
-    
+
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
@@ -8318,7 +8322,7 @@ CRITICAL INSTRUCTIONS:
             function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = classes[className]; const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; openModal('exportModal'); }
             function copyExportJson() { const jsonText = document.getElementById('exportJsonTextarea').value; navigator.clipboard.writeText(jsonText).then(() => { alert('Class JSON copied to clipboard!'); closeModal('exportModal'); }, () => alert('Failed to copy.')); }
             function editSelectedClass() { const selected = document.getElementById('classSelector').value; if (selected) openAddClassModal(selected); else alert("Please select a class to edit first."); }
-            function addSubjectEntry(subject = {}) { const container = document.getElementById('subjectsContainer'); const newIndex = container.children.length + 1; container.insertAdjacentHTML('beforeend', `<div class="subject-entry"><div class="subject-entry-header"><h4>Subject ${newIndex}</h4><button type="button" class="remove-subject-btn" onclick="removeSubjectEntry(this)">Remove</button></div><div class="form-group"><input type="text" placeholder="Subject Name" class="new-subject-name" value="${subject.name || ''}"></div><div class="form-group"><input type="text" placeholder="Subject Code (e.g., 21CSC202J)" class="new-subject-code" value="${subject.code || ''}"></div><label>Weekly Schedule (Mon-Sun)</label><div class="schedule-input">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => `<div class="schedule-day"><label>${day}</label><input type="number" class="new-subject-schedule" min="0" value="${(subject.schedule && subject.schedule[i]) ?? 0}"></div>`).join('')}</div></div>`); }
+            function addSubjectEntry(subject = {}) { const container = document.getElementById('subjectsContainer'); if (!container) return; const newIndex = container.children.length + 1; container.insertAdjacentHTML('beforeend', `<div class="subject-entry"><div class="subject-entry-header"><h4>Subject ${newIndex}</h4><button type="button" class="remove-subject-btn" onclick="removeSubjectEntry(this)">Remove</button></div><div class="form-group"><input type="text" placeholder="Subject Name" class="new-subject-name" value="${subject.name || ''}"></div><div class="form-group"><input type="text" placeholder="Subject Code (e.g., 21CSC202J)" class="new-subject-code" value="${subject.code || ''}"></div><label>Weekly Schedule (Mon-Sun)</label><div class="schedule-input">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => `<div class="schedule-day"><label>${day}</label><input type="number" class="new-subject-schedule" min="0" value="${(subject.schedule && subject.schedule[i]) ?? 0}"></div>`).join('')}</div></div>`); }
             function removeSubjectEntry(button) { button.closest('.subject-entry').remove(); document.querySelectorAll('#subjectsContainer .subject-entry-header h4').forEach((h4, index) => h4.textContent = `Subject ${index + 1}`); }
             function populateHolidaysInModal(holidays) { const holidayList = document.getElementById('holidayList'); holidayList.innerHTML = ''; holidays.forEach(dateStr => { const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); }); }
             function addHolidayToModal() { const dateInput = document.getElementById('newHolidayDate'); const dateStr = dateInput.value; if (dateStr) { const holidayList = document.getElementById('holidayList'); if ([...holidayList.querySelectorAll('span')].some(span => span.textContent === dateStr)) { alert("This holiday is already in the list."); return; } const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); dateInput.value = ''; } }
@@ -10627,6 +10631,7 @@ CRITICAL RULES:
 
             function updateHistoryDropdown() {
                 const dropdown = document.getElementById('historyDropdown');
+                if (!dropdown) return; // Element doesn't exist yet
                 dropdown.innerHTML = '';
                 if (calculationHistory.length === 0) {
                     dropdown.innerHTML = '<a href="#" style="color: var(--medium-text);">No history yet.</a>';
