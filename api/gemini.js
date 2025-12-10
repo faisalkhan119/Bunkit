@@ -6,7 +6,7 @@
 let currentKeyIndex = 0;
 let exhaustedKeys = new Set();
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -44,18 +44,18 @@ export default async function handler(req, res) {
             return null; // All keys exhausted
         }
 
-        const keyData = getNextKey();
+        let keyData = getNextKey();
         if (!keyData) {
             // Reset exhausted keys and try again (daily reset simulation)
             exhaustedKeys.clear();
-            const retryKey = getNextKey();
-            if (!retryKey) {
+            keyData = getNextKey();
+            if (!keyData) {
                 return res.status(429).json({ error: 'All API keys exhausted. Try again later.' });
             }
         }
 
-        const GEMINI_API_KEY = keyData?.key || API_KEYS[0];
-        const keyIndex = keyData?.index || 0;
+        const GEMINI_API_KEY = keyData.key;
+        const keyIndex = keyData.index;
 
         const { action, prompt, imageData, mimeType, systemPrompt } = req.body;
 
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
         switch (action) {
             case 'chat':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
                     contents: [{
                         parts: systemPrompt
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
                 break;
 
             case 'vision':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
                     contents: [{
                         parts: [
@@ -142,4 +142,4 @@ export default async function handler(req, res) {
         console.error('Function error:', error);
         return res.status(500).json({ error: error.message });
     }
-}
+};

@@ -1,11 +1,4 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "api/**/*.js",
-            "use": "@vercel/node"
-        }
-    ],
     "rewrites": [
         {
             "source": "/api/gemini",
@@ -27,6 +20,10 @@
                 {
                     "key": "Referrer-Policy",
                     "value": "strict-origin-when-cross-origin"
+                },
+                {
+                    "key": "X-Content-Security-Policy",
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://accounts.google.com https://www.googleapis.com"
                 }
             ]
         }
