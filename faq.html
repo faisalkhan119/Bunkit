@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>FAQ - Bunk it</title>
+    <link rel="icon" type="image/png" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 10px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .category {
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-item {
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 18px 20px;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .faq-question:hover {
+            background: #f0f0f0;
+        }
+
+        .faq-question::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: #667eea;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-question::after {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .faq-item.active .faq-answer {
+            padding: 20px;
+            max-height: 500px;
+        }
+
+        .contact-cta {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .contact-cta h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .contact-cta p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .contact-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .center {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <img src="/icon-192x192.png" alt="Bunk it Logo">
+                <h1>Frequently Asked Questions</h1>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="faqSearch" placeholder="Search FAQs..." oninput="filterFAQs()">
+            </div>
+
+            <div class="category">
+                <h2 class="category-title">📱 Getting Started</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">How do I add my subjects?</div>
+                    <div class="faq-answer">
+                        Click on "Add Subjects" button on the home screen. Enter subject name, code (optional), and
+                        initial attendance if you have any. You can add multiple subjects and edit them anytime.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">Can I use this app without internet?</div>
+                    <div class="faq-answer">
+                        Yes! Bunk it is a Progressive Web App (PWA) that works completely offline. Your data is stored
+                        locally on your device. Internet is only needed for Google Drive sync and AI features.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">How do I install this as an app?</div>
+                    <div class="faq-answer">
+                        On mobile: Open the website in Chrome/Safari, tap the menu (⋮ or share icon), and select "Add to
+                        Home Screen" or "Install App".<br><br>
+                        On desktop: Look for the install icon in the address bar or use Chrome menu → "Install Bunk it".
+                    </div>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2 class="category-title">📊 Attendance Tracking</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">How is the "bunks available" calculated?</div>
+                    <div class="faq-answer">
+                        The calculation uses: (Current Attended - Required% × Total Classes) ÷ (Required% - 100%). It
+                        considers your remaining classes and shows how many you can skip while maintaining the minimum
+                        required attendance (usually 75%).
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">What does "Classes needed to reach 75%" mean?
+                    </div>
+                    <div class="faq-answer">
+                        If your attendance is below the required percentage, this shows how many consecutive classes you
+                        need to attend to reach the minimum. It's calculated based on your remaining classes in the
+                        semester.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">Can I track multiple semesters/classes?</div>
+                    <div class="faq-answer">
+                        Yes! Use the "Classes" feature to create separate tracking for different semesters, years, or
+                        batches. Each class can have its own subjects, timetable, and settings.
+                    </div>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2 class="category-title">☁️ Backup & Sync</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">How do I backup my data?</div>
+                    <div class="faq-answer">
+                        Sign in with Google to enable automatic Google Drive backup. Your data syncs to a file in your
+                        personal Drive. You can also manually export data from Settings → Backup/Restore.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">Is my data safe?</div>
+                    <div class="faq-answer">
+                        Yes! Your data is stored locally on your device and optionally in YOUR personal Google Drive. We
+                        never store your data on our servers. See our Privacy Policy for details.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">How do I restore data on a new phone?</div>
+                    <div class="faq-answer">
+                        Simply sign in with the same Google account on your new device. Your data will automatically
+                        restore from Google Drive. Make sure backup was enabled on your old device.
+                    </div>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2 class="category-title">🔔 Notifications</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">Why am I not receiving notifications?</div>
+                    <div class="faq-answer">
+                        Check: 1) Notifications are enabled in app settings, 2) Browser/system notifications are allowed
+                        for this site, 3) Battery saver mode may block notifications on some devices. Try adding the app
+                        to home screen for better notification reliability.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">Can I set different reminder times for each
+                        subject?</div>
+                    <div class="faq-answer">
+                        Yes! Go to Notification Settings and you can configure individual reminder times for each
+                        class/subject based on your timetable.
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-cta">
+                <h3>Still have questions?</h3>
+                <p>Couldn't find what you're looking for? We're here to help!</p>
+                <a href="/contact" class="contact-btn">📞 Contact Support</a>
+            </div>
+
+            <div class="center">
+                <a href="/" class="back-btn">← Back to App</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFAQ(element) {
+            const item = element.parentElement;
+            item.classList.toggle('active');
+        }
+
+        function filterFAQs() {
+            const query = document.getElementById('faqSearch').value.toLowerCase();
+            const items = document.querySelectorAll('.faq-item');
+
+            items.forEach(item => {
+                const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+
+                if (question.includes(query) || answer.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = query ? 'none' : 'block';
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
