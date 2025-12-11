@@ -25,6 +25,12 @@ const distDir = path.join(__dirname, 'dist');
 const filesToCopy = [
     'index.html',
     'offline.html',
+    'privacy.html',
+    'terms.html',
+    'about.html',
+    'contact.html',
+    'faq.html',
+    'support.html',
     'sw.js',
     'manifest.json',
     'netlify.toml',
