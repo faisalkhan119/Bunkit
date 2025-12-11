@@ -15,7 +15,7 @@
     
     <!-- Offline Page (for PWA) -->
     <url>
-        <loc>https://bunkitapp.in/offline</loc>
+        <loc>https://bunkitapp.in/offline.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.3</priority>
@@ -31,7 +31,7 @@
 
     <!-- Privacy Policy -->
     <url>
-        <loc>https://bunkitapp.in/privacy</loc>
+        <loc>https://bunkitapp.in/privacy.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.5</priority>
@@ -39,7 +39,7 @@
     
     <!-- Terms of Service -->
     <url>
-        <loc>https://bunkitapp.in/terms</loc>
+        <loc>https://bunkitapp.in/terms.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.5</priority>
@@ -47,7 +47,7 @@
 
     <!-- About Us -->
     <url>
-        <loc>https://bunkitapp.in/about</loc>
+        <loc>https://bunkitapp.in/about.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
@@ -55,7 +55,7 @@
 
     <!-- Contact Us -->
     <url>
-        <loc>https://bunkitapp.in/contact</loc>
+        <loc>https://bunkitapp.in/contact.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.5</priority>
@@ -63,7 +63,7 @@
 
     <!-- FAQ -->
     <url>
-        <loc>https://bunkitapp.in/faq</loc>
+        <loc>https://bunkitapp.in/faq.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
@@ -71,7 +71,7 @@
 
     <!-- Support -->
     <url>
-        <loc>https://bunkitapp.in/support</loc>
+        <loc>https://bunkitapp.in/support.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.5</priority>
