@@ -5,7 +5,7 @@
         ],
         "target": {
             "namespace": "android_app",
-            "package_name": "app.netlify.bunkon.twa",
+            "package_name": "in.bunkitapp.twa",
             "sha256_cert_fingerprints": [
                 "45:AE:3B:6E:BC:8C:0C:2A:84:24:33:57:2E:3C:5A:55:2E:24:6D:CC:14:A2:98:98:95:90:8B:63:62:5D:51:16"
             ]

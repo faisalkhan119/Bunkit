@@ -7,7 +7,7 @@
     
     <!-- Main Page -->
     <url>
-        <loc>https://bunkiton.vercel.app/</loc>
+        <loc>https://bunkitapp.in/</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
@@ -15,7 +15,7 @@
     
     <!-- Offline Page (for PWA) -->
     <url>
-        <loc>https://bunkiton.vercel.app/offline.html</loc>
+        <loc>https://bunkitapp.in/offline.html</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.3</priority>
@@ -23,7 +23,7 @@
     
     <!-- PWA Manifest -->
     <url>
-        <loc>https://bunkiton.vercel.app/manifest.json</loc>
+        <loc>https://bunkitapp.in/manifest.json</loc>
         <lastmod>2024-12-11</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.2</priority>
