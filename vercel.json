@@ -4,6 +4,10 @@
     "trailingSlash": false,
     "rewrites": [
         {
+            "source": "/index.html",
+            "destination": "/"
+        },
+        {
             "source": "/api/gemini",
             "destination": "/api/gemini.js"
         }
