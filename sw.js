@@ -1,9 +1,11 @@
-const CACHE_NAME = 'bunkit-v65';
+const CACHE_NAME = 'bunkit-v68';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './offline.html',
     './manifest.json',
+    './robots.txt',
+    './sitemap.xml',
     './icon-192x192.png',
     './icon-512x512.png',
     './badge-icon.png',
@@ -69,26 +71,48 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // === OFFLINE SUPPORT: Cache-first with network fallback ===
+    // === IMPROVED: Network-first with timeout for HTML pages ===
     // Handle navigation requests (HTML pages)
     if (event.request.mode === 'navigate') {
         event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    // Cache the latest version
-                    const responseClone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    // Offline: Return cached page or offline.html
-                    return caches.match(event.request)
-                        .then((cachedResponse) => {
-                            return cachedResponse || caches.match('./offline.html');
+            (async () => {
+                try {
+                    // Try network first with 3 second timeout
+                    const networkPromise = fetch(event.request);
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Network timeout')), 3000)
+                    );
+
+                    const response = await Promise.race([networkPromise, timeoutPromise]);
+
+                    if (response && response.ok) {
+                        // Cache the fresh response
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseClone);
                         });
-                })
+                        return response;
+                    }
+                    throw new Error('Network response not ok');
+                } catch (error) {
+                    console.log('SW: Network failed, using cache:', error.message);
+                    // Network failed or timed out - use cache
+                    const cachedResponse = await caches.match(event.request);
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // No cache - try offline page
+                    const offlinePage = await caches.match('./offline.html');
+                    if (offlinePage) {
+                        return offlinePage;
+                    }
+                    // Last resort - return error response
+                    return new Response('App is offline and not cached', {
+                        status: 503,
+                        statusText: 'Offline'
+                    });
+                }
+            })()
         );
         return;
     }
@@ -171,6 +195,36 @@ function formatLocalDate(date) {
 
 // Listen for messages from the main app
 self.addEventListener('message', async (event) => {
+    // Handle force refresh request
+    if (event.data && event.data.type === 'FORCE_REFRESH') {
+        console.log('SW: Force refresh requested');
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            // Re-cache essentials
+            const cache = await caches.open(CACHE_NAME);
+            await cache.addAll(ASSETS_TO_CACHE);
+            console.log('SW: Cache refreshed');
+            // Notify all clients
+            const clients = await self.clients.matchAll();
+            clients.forEach(client => client.postMessage({ type: 'CACHE_REFRESHED' }));
+        } catch (e) {
+            console.error('SW: Force refresh failed:', e);
+        }
+    }
+
+    // Handle cache clear request
+    if (event.data && event.data.type === 'CLEAR_CACHE') {
+        console.log('SW: Clear cache requested');
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('SW: All caches cleared');
+        } catch (e) {
+            console.error('SW: Cache clear failed:', e);
+        }
+    }
+
     if (event.data && event.data.type === 'CHECK_NOTIFICATION') {
         checkAndShowNotification();
     }

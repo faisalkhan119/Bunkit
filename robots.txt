@@ -1,0 +1,28 @@
+# Bunk it - Smart Attendance Manager
+# https://bunkiton.vercel.app
+
+# Allow all search engines to crawl everything
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://bunkiton.vercel.app/sitemap.xml
+
+# Crawl-delay for polite crawling (optional)
+Crawl-delay: 1
+
+# Block crawling of API endpoints
+Disallow: /api/
+
+# Google specific
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing specific  
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Host directive (some crawlers use this)
+Host: https://bunkiton.vercel.app
