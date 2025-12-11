@@ -4,7 +4,7 @@
     "id": "/",
     "scope": "/",
     "description": "Manage your college/school attendance like a pro. Track attendance, plan leaves, and never miss the minimum requirement.",
-    "start_url": "./index.html",
+    "start_url": "/",
     "display": "standalone",
     "display_override": [
         "standalone",
