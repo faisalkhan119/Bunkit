@@ -4,7 +4,7 @@
     "description": "Smart Attendance Manager PWA",
     "scripts": {
         "dev": "echo 'Open index.html in browser for development'",
-        "build": "echo 'Skipping build, deploying static files'",
+        "build": "node build.js",
         "build:minify": "node build.js --minify",
         "build:obfuscate": "node build.js --obfuscate",
         "build:production": "node build.js --minify --obfuscate",
