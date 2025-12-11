@@ -8,10 +8,21 @@
         (function () {
             'use strict';
 
-            // Recovery timeout - if app doesn't load in 3 seconds, try recovery
-            const APP_LOAD_TIMEOUT = 3000;
+            // EMERGENCY: If page stuck, enable this URL param to force clear
+            if (location.search.includes('forceclear')) {
+                if ('caches' in window) caches.keys().then(n => n.forEach(c => caches.delete(c)));
+                if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(s => s.unregister()));
+                localStorage.clear();
+                sessionStorage.clear();
+                alert('Cache cleared! Page will reload.');
+                location.href = location.origin + location.pathname;
+                return;
+            }
+
+            // Recovery timeout - if app doesn't load in 5 seconds, try recovery
+            const APP_LOAD_TIMEOUT = 5000;
             const RECOVERY_KEY = 'bunkit_last_recovery';
-            const RECOVERY_COOLDOWN = 60000; // 1 minute between recovery attempts
+            const RECOVERY_COOLDOWN = 30000; // 30 seconds between recovery attempts
 
             // Check if we recently attempted recovery (prevent infinite loops)
             const lastRecovery = localStorage.getItem(RECOVERY_KEY);
@@ -22,10 +33,9 @@
             const recoveryTimer = setTimeout(async () => {
                 // Check if body has content (app loaded)
                 const body = document.body;
-                const hasContent = body && body.innerHTML.trim().length > 100;
-                const isVisible = body && body.offsetHeight > 0;
+                const hasContent = body && body.innerHTML.trim().length > 500;
 
-                if (!hasContent || !isVisible) {
+                if (!hasContent) {
                     console.warn('⚠️ App appears stuck - attempting recovery...');
 
                     if (!recentRecovery) {
@@ -43,7 +53,7 @@
                             }
                         }
 
-                        // Unregister and re-register service worker
+                        // Unregister service workers
                         if ('serviceWorker' in navigator) {
                             try {
                                 const registrations = await navigator.serviceWorker.getRegistrations();
@@ -65,17 +75,13 @@
             // Cancel recovery timer when app loads successfully
             window.addEventListener('load', () => {
                 clearTimeout(recoveryTimer);
-                // Clear recovery flag after successful load
                 localStorage.removeItem(RECOVERY_KEY);
                 console.log('✅ App loaded successfully');
             });
 
             // Also cancel on DOMContentLoaded
             document.addEventListener('DOMContentLoaded', () => {
-                // Give a bit more time for JS to execute
-                setTimeout(() => {
-                    clearTimeout(recoveryTimer);
-                }, 2000);
+                setTimeout(() => clearTimeout(recoveryTimer), 3000);
             });
         })();
     </script>
