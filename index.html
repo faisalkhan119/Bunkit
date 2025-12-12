@@ -6088,110 +6088,143 @@
             }
 
             document.addEventListener('DOMContentLoaded', function () {
-                loadFromStorage();
-                document.getElementById('currentDate').value = formatLocalDate(new Date());
-                populateClassSelector();
+                initializeApp();
+            });
 
-                // Auto-restore last opened class
-                const lastClass = localStorage.getItem('lastOpenedClass');
-                if (lastClass && classes[lastClass]) {
-                    document.getElementById('classSelector').value = lastClass;
-                    onClassChange();
+            // === FIX: Reinitialize when app comes back from background ===
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    console.log('🔄 App became visible, checking state...');
+                    const selector = document.getElementById('classSelector');
+                    // If selector is empty or has issues, reinitialize
+                    if (!selector || selector.options.length <= 1 || Object.keys(classes).length === 0) {
+                        console.log('⚠️ Class selector empty or classes not loaded, reinitializing...');
+                        initializeApp();
+                    }
                 }
+            });
 
-                setupEventListeners();
+            // Main initialization function
+            function initializeApp() {
+                try {
+                    loadFromStorage();
 
-                const themeToggle = document.getElementById('theme-checkbox');
-                const savedTheme = localStorage.getItem('theme');
-                if (savedTheme) {
-                    if (savedTheme === 'dark') {
+                    // Verify classes loaded
+                    if (Object.keys(classes).length === 0) {
+                        console.log('⚠️ No classes found, loading defaults...');
+                        classes = JSON.parse(JSON.stringify(defaultExampleClass));
+                    }
+
+                    document.getElementById('currentDate').value = formatLocalDate(new Date());
+                    populateClassSelector();
+
+                    // Auto-restore last opened class
+                    const lastClass = localStorage.getItem('lastOpenedClass');
+                    const selector = document.getElementById('classSelector');
+
+                    if (lastClass && classes[lastClass]) {
+                        selector.value = lastClass;
+                        onClassChange();
+                    } else if (Object.keys(classes).length > 0) {
+                        // If no last class but classes exist, select the first one
+                        const firstClass = Object.keys(classes)[0];
+                        selector.value = firstClass;
+                        onClassChange();
+                    }
+
+                    setupEventListeners();
+
+                    const themeToggle = document.getElementById('theme-checkbox');
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme) {
+                        if (savedTheme === 'dark') {
+                            document.body.classList.add('dark-mode');
+                            themeToggle.checked = true;
+                        }
+                    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                         document.body.classList.add('dark-mode');
                         themeToggle.checked = true;
+                        localStorage.setItem('theme', 'dark');
                     }
-                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.body.classList.add('dark-mode');
-                    themeToggle.checked = true;
-                    localStorage.setItem('theme', 'dark');
-                }
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('openLog') === 'true') {
-                    // Remove the parameter from URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('openLog') === 'true') {
+                        // Remove the parameter from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
 
-                    // Auto-select last class and scroll to dashboard
-                    // Auto-select last class and open daily log
-                    const lastClass = localStorage.getItem('lastOpenedClass');
-                    if (lastClass && classes[lastClass]) {
-                        setTimeout(() => {
-                            document.getElementById('classSelector').value = lastClass;
-                            onClassChange();
-                            // Open the daily log modal directly
-                            openDailyLog();
-                        }, 500);
+                        // Auto-select last class and scroll to dashboard
+                        // Auto-select last class and open daily log
+                        const lastClass = localStorage.getItem('lastOpenedClass');
+                        if (lastClass && classes[lastClass]) {
+                            setTimeout(() => {
+                                document.getElementById('classSelector').value = lastClass;
+                                onClassChange();
+                                // Open the daily log modal directly
+                                openDailyLog();
+                            }, 500);
+                        }
                     }
-                }
 
-                // Define switchModalTab function BEFORE modal HTML
-                window.switchModalTab = function (tab) {
-                    console.log('🔘 Tab switch requested:', tab);
+                    // Define switchModalTab function BEFORE modal HTML
+                    window.switchModalTab = function (tab) {
+                        console.log('🔘 Tab switch requested:', tab);
 
-                    const tabs = {
-                        aiContent: document.getElementById('aiImportTab')
+                        const tabs = {
+                            aiContent: document.getElementById('aiImportTab')
+                        };
+
+                        // Remove active from all buttons
+                        ['formTabBtn', 'jsonTabBtn', 'scanTabBtn', 'aiImportTabBtn', 'shareTabBtn'].forEach(id => {
+                            const btn = document.getElementById(id);
+                            if (btn) btn.classList.remove('active');
+                        });
+
+                        // Hide all content
+                        ['formEntryTab', 'jsonEntryTab', 'scanEntryTab', 'aiImportTab', 'shareEntryTab'].forEach(id => {
+                            const elem = document.getElementById(id);
+                            if (elem) elem.style.display = 'none';
+                        });
+
+                        isJsonMode = false;
+
+                        // Show selected tab
+                        if (tab === 'form') {
+                            const btn = document.getElementById('formTabBtn');
+                            const content = document.getElementById('formEntryTab');
+                            if (btn) btn.classList.add('active');
+                            if (content) content.style.display = 'block';
+                        } else if (tab === 'json') {
+                            const btn = document.getElementById('jsonTabBtn');
+                            const content = document.getElementById('jsonEntryTab');
+                            if (btn) btn.classList.add('active');
+                            if (content) content.style.display = 'block';
+                            isJsonMode = true;
+                        } else if (tab === 'scan') {
+                            const btn = document.getElementById('scanTabBtn');
+                            const content = document.getElementById('scanEntryTab');
+                            if (btn) btn.classList.add('active');
+                            if (content) content.style.display = 'block';
+                            if (typeof startQRScannerInTab === 'function') startQRScannerInTab();
+                        } else if (tab === 'ai-import') {
+                            const btn = document.getElementById('aiImportTabBtn');
+                            const content = document.getElementById('aiImportTab');
+                            if (btn) btn.classList.add('active');
+                            if (content) {
+                                content.style.display = 'block';
+                                console.log('✅ AI Import tab activated successfully!');
+                            } else {
+                                console.error('❌ aiImportTab element not found!');
+                            }
+                        } else if (tab === 'share') {
+                            const btn = document.getElementById('shareTabBtn');
+                            const content = document.getElementById('shareEntryTab');
+                            if (btn) btn.classList.add('active');
+                            if (content) content.style.display = 'block';
+                            if (typeof generateShareQRInTab === 'function') generateShareQRInTab();
+                        }
                     };
 
-                    // Remove active from all buttons
-                    ['formTabBtn', 'jsonTabBtn', 'scanTabBtn', 'aiImportTabBtn', 'shareTabBtn'].forEach(id => {
-                        const btn = document.getElementById(id);
-                        if (btn) btn.classList.remove('active');
-                    });
-
-                    // Hide all content
-                    ['formEntryTab', 'jsonEntryTab', 'scanEntryTab', 'aiImportTab', 'shareEntryTab'].forEach(id => {
-                        const elem = document.getElementById(id);
-                        if (elem) elem.style.display = 'none';
-                    });
-
-                    isJsonMode = false;
-
-                    // Show selected tab
-                    if (tab === 'form') {
-                        const btn = document.getElementById('formTabBtn');
-                        const content = document.getElementById('formEntryTab');
-                        if (btn) btn.classList.add('active');
-                        if (content) content.style.display = 'block';
-                    } else if (tab === 'json') {
-                        const btn = document.getElementById('jsonTabBtn');
-                        const content = document.getElementById('jsonEntryTab');
-                        if (btn) btn.classList.add('active');
-                        if (content) content.style.display = 'block';
-                        isJsonMode = true;
-                    } else if (tab === 'scan') {
-                        const btn = document.getElementById('scanTabBtn');
-                        const content = document.getElementById('scanEntryTab');
-                        if (btn) btn.classList.add('active');
-                        if (content) content.style.display = 'block';
-                        if (typeof startQRScannerInTab === 'function') startQRScannerInTab();
-                    } else if (tab === 'ai-import') {
-                        const btn = document.getElementById('aiImportTabBtn');
-                        const content = document.getElementById('aiImportTab');
-                        if (btn) btn.classList.add('active');
-                        if (content) {
-                            content.style.display = 'block';
-                            console.log('✅ AI Import tab activated successfully!');
-                        } else {
-                            console.error('❌ aiImportTab element not found!');
-                        }
-                    } else if (tab === 'share') {
-                        const btn = document.getElementById('shareTabBtn');
-                        const content = document.getElementById('shareEntryTab');
-                        if (btn) btn.classList.add('active');
-                        if (content) content.style.display = 'block';
-                        if (typeof generateShareQRInTab === 'function') generateShareQRInTab();
-                    }
-                };
-
-                // --- MODAL HTML DEFINITIONS ---
-                const addClassModalHTML = `
+                    // --- MODAL HTML DEFINITIONS ---
+                    const addClassModalHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('addClassModal')">&times;</button>
                     <div class="modal-header"><h2 id="addClassModalTitle"></h2></div>
@@ -6289,7 +6322,7 @@
                     </div>
                 </div>`;
 
-                const helpModalHTML = `
+                    const helpModalHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
                     <div class="modal-header"><h2>💡 How to Use This Tool</h2></div>
@@ -6341,16 +6374,16 @@
                 </div>`;
 
 
-                document.getElementById('addClassModal').innerHTML = addClassModalHTML;
-                document.getElementById('helpModal').innerHTML = helpModalHTML;
-                document.getElementById('partialEntryModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('partialEntryModal')">&times;</button><div class="modal-header"><h2>Missed Subjects Entry</h2><p>OCR missed some subjects. Please enter their attendance manually.</p></div><div id="partialSubjectsGrid"></div><div class="form-actions"><button class="btn primary-btn" onclick="submitPartialEntry()">Submit & Recalculate</button></div></div>`;
-                document.getElementById('exportModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('exportModal')">&times;</button><div class="modal-header"><h2>Export/Share Class</h2><p>Copy this JSON and share it. Your friend can import it using the 'Import from JSON' tab.</p></div><div class="form-group"><textarea id="exportJsonTextarea" readonly></textarea></div><div class="form-actions"><button class="btn primary-btn" onclick="copyExportJson()">Copy to Clipboard</button></div></div>`;
-                document.getElementById('skipTodayModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('skipTodayModal')">&times;</button><div class="modal-header"><h2>Can You Skip Today?</h2></div><div id="skipTodayResults"></div></div>`;
-                document.getElementById('dailyLogModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('dailyLogModal')">&times;</button><div class="modal-header"><h2>Daily Attendance Log</h2></div><div class="form-group"><label for="logDate">Current Date:</label><input type="date" id="logDate" onchange="populateDailyLog()"></div><div id="dailyLogSubjects"></div><div class="form-actions"><button class="btn primary-btn" onclick="saveDailyLog()">Save Log</button></div><p style="font-size: 0.8rem; text-align: center; margin-top: 15px;"><strong>Note:</strong> For past dates, 'Duty Leave (OD)' must be manually reflected by adding 1 to both 'Attended' and 'Held' values in the results.</p></div>`;
-                document.getElementById('backupOptionsModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('backupOptionsModal')">&times;</button><div class="modal-header"><h2>💾 Backup Data</h2><p>Choose how you want to save your backup.</p></div><div class="form-actions" style="flex-direction: column; gap: 15px;"><button class="btn primary-btn" onclick="performBackupDownload()" style="width: 100%;">⬇️ Download JSON File</button><button class="btn success-btn" onclick="performBackupShare()" style="width: 100%;">📤 Share JSON File</button><button class="btn info-btn" onclick="performBackupCopy()" style="width: 100%;">📋 Copy JSON to Clipboard</button></div></div>`;
+                    document.getElementById('addClassModal').innerHTML = addClassModalHTML;
+                    document.getElementById('helpModal').innerHTML = helpModalHTML;
+                    document.getElementById('partialEntryModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('partialEntryModal')">&times;</button><div class="modal-header"><h2>Missed Subjects Entry</h2><p>OCR missed some subjects. Please enter their attendance manually.</p></div><div id="partialSubjectsGrid"></div><div class="form-actions"><button class="btn primary-btn" onclick="submitPartialEntry()">Submit & Recalculate</button></div></div>`;
+                    document.getElementById('exportModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('exportModal')">&times;</button><div class="modal-header"><h2>Export/Share Class</h2><p>Copy this JSON and share it. Your friend can import it using the 'Import from JSON' tab.</p></div><div class="form-group"><textarea id="exportJsonTextarea" readonly></textarea></div><div class="form-actions"><button class="btn primary-btn" onclick="copyExportJson()">Copy to Clipboard</button></div></div>`;
+                    document.getElementById('skipTodayModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('skipTodayModal')">&times;</button><div class="modal-header"><h2>Can You Skip Today?</h2></div><div id="skipTodayResults"></div></div>`;
+                    document.getElementById('dailyLogModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('dailyLogModal')">&times;</button><div class="modal-header"><h2>Daily Attendance Log</h2></div><div class="form-group"><label for="logDate">Current Date:</label><input type="date" id="logDate" onchange="populateDailyLog()"></div><div id="dailyLogSubjects"></div><div class="form-actions"><button class="btn primary-btn" onclick="saveDailyLog()">Save Log</button></div><p style="font-size: 0.8rem; text-align: center; margin-top: 15px;"><strong>Note:</strong> For past dates, 'Duty Leave (OD)' must be manually reflected by adding 1 to both 'Attended' and 'Held' values in the results.</p></div>`;
+                    document.getElementById('backupOptionsModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('backupOptionsModal')">&times;</button><div class="modal-header"><h2>💾 Backup Data</h2><p>Choose how you want to save your backup.</p></div><div class="form-actions" style="flex-direction: column; gap: 15px;"><button class="btn primary-btn" onclick="performBackupDownload()" style="width: 100%;">⬇️ Download JSON File</button><button class="btn success-btn" onclick="performBackupShare()" style="width: 100%;">📤 Share JSON File</button><button class="btn info-btn" onclick="performBackupCopy()" style="width: 100%;">📋 Copy JSON to Clipboard</button></div></div>`;
 
-                // OCR Settings Modal
-                document.getElementById('ocrSettingsModal').innerHTML = `
+                    // OCR Settings Modal
+                    document.getElementById('ocrSettingsModal').innerHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                     <div class="modal-header">
@@ -6393,7 +6426,7 @@
                     </div>
                 </div>`;
 
-                document.getElementById('restoreOptionsModal').innerHTML = `
+                    document.getElementById('restoreOptionsModal').innerHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('restoreOptionsModal')">&times;</button>
                     <div class="modal-header"><h2>♻️ Restore Data</h2><p>Choose how you want to restore your data.</p></div>
@@ -6420,7 +6453,18 @@
                         </div>
                     </div>
                 </div>`;
-            });
+                } catch (error) {
+                    console.error('❌ App initialization failed:', error);
+                    // Try to recover by reloading
+                    if (!localStorage.getItem('initRecoveryAttempt')) {
+                        localStorage.setItem('initRecoveryAttempt', Date.now().toString());
+                        location.reload();
+                    } else {
+                        localStorage.removeItem('initRecoveryAttempt');
+                        alert('App initialization failed. Please try refreshing the page or use ?forceclear in the URL to reset.');
+                    }
+                }
+            }
 
             function setupEventListeners() {
                 const uploadSection = document.getElementById('uploadSection');
