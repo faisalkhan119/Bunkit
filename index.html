@@ -6091,18 +6091,89 @@
                 initializeApp();
             });
 
-            // === FIX: Reinitialize when app comes back from background ===
-            document.addEventListener('visibilitychange', function () {
-                if (document.visibilityState === 'visible') {
-                    console.log('🔄 App became visible, checking state...');
-                    const selector = document.getElementById('classSelector');
-                    // If selector is empty or has issues, reinitialize
-                    if (!selector || selector.options.length <= 1 || Object.keys(classes).length === 0) {
-                        console.log('⚠️ Class selector empty or classes not loaded, reinitializing...');
-                        initializeApp();
-                    }
+            // === FIX: Handle PWA frozen/suspended state restoration ===
+            // pageshow fires when page is restored from bfcache (back-forward cache)
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    console.log('🔄 Page restored from bfcache, reinitializing...');
+                    restoreAppState();
                 }
             });
+
+            // visibilitychange fires when app comes back to foreground
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    console.log('🔄 App became visible, restoring state...');
+                    restoreAppState();
+                }
+            });
+
+            // Restore app state without full reinitialization (faster)
+            function restoreAppState() {
+                try {
+                    // 1. Restore classes from localStorage
+                    const storedClasses = localStorage.getItem('attendanceClasses_v2');
+                    if (storedClasses) {
+                        const parsedClasses = JSON.parse(storedClasses);
+                        if (Object.keys(parsedClasses).length > 0) {
+                            classes = parsedClasses;
+                        }
+                    }
+
+                    // 2. Restore class selector
+                    const selector = document.getElementById('classSelector');
+                    if (selector && (selector.options.length <= 1 || !selector.value)) {
+                        console.log('⚠️ Class selector needs restoration');
+                        populateClassSelector();
+
+                        const lastClass = localStorage.getItem('lastOpenedClass');
+                        if (lastClass && classes[lastClass]) {
+                            selector.value = lastClass;
+                            onClassChange();
+                        } else if (Object.keys(classes).length > 0) {
+                            selector.value = Object.keys(classes)[0];
+                            onClassChange();
+                        }
+                    }
+
+                    // 3. Restore theme
+                    const themeToggle = document.getElementById('theme-checkbox');
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme === 'dark') {
+                        if (!document.body.classList.contains('dark-mode')) {
+                            document.body.classList.add('dark-mode');
+                            if (themeToggle) themeToggle.checked = true;
+                            console.log('🌙 Dark mode restored');
+                        }
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        if (themeToggle) themeToggle.checked = false;
+                    }
+
+                    // 4. Restore user account UI
+                    if (typeof updateAccountUI === 'function') {
+                        updateAccountUI();
+                    }
+                    if (typeof updateSidebarAccountUI === 'function') {
+                        updateSidebarAccountUI();
+                    }
+
+                    // 5. Re-check login status
+                    if (typeof checkLoginStatus === 'function') {
+                        const savedUser = localStorage.getItem('googleUser');
+                        if (savedUser) {
+                            googleUser = JSON.parse(savedUser);
+                        }
+                        checkLoginStatus();
+                    }
+
+                    console.log('✅ App state restored successfully');
+                } catch (error) {
+                    console.error('❌ State restoration failed:', error);
+                    // If restoration fails, do full reinitialize
+                    initializeApp();
+                }
+            }
 
             // Main initialization function
             function initializeApp() {
