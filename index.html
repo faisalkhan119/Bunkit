@@ -5061,21 +5061,16 @@
 
             function silentTokenRefresh() {
                 if (gisInited && googleUser && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                    // Add small delay to ensure token client is fully ready
-                    setTimeout(() => {
-                        try {
-                            console.log('🔄 Attempting silent token refresh...');
-                            tokenClient.requestAccessToken({ prompt: '' });
-                        } catch (error) {
-                            console.log('Silent token refresh failed, user may need to re-login:', error);
-                        }
-                    }, 500);
-                } else {
+                    try {
+                        console.log('🔄 Attempting silent token refresh...');
+                        tokenClient.requestAccessToken({ prompt: '' });
+                    } catch (error) {
+                        console.log('Silent token refresh failed, user may need to re-login:', error);
+                    }
+                } else if (googleUser && !gisInited) {
                     console.log('⏳ Waiting for GIS to initialize for token refresh...');
                     // Retry after a delay if gis not ready
-                    if (googleUser && !gisInited) {
-                        setTimeout(silentTokenRefresh, 1000);
-                    }
+                    setTimeout(silentTokenRefresh, 500);
                 }
             }
 
@@ -5780,6 +5775,16 @@
                         }
                     );
 
+                    // Handle 403 Forbidden - need fresh consent
+                    if (response.status === 403 || response.status === 401) {
+                        console.log('⚠️ Drive download access denied, requesting fresh consent...');
+                        googleUser.accessToken = null;
+                        if (gisInited && tokenClient) {
+                            tokenClient.requestAccessToken({ prompt: 'consent' });
+                        }
+                        return null;
+                    }
+
                     if (!response.ok) throw new Error('Download failed');
 
                     const data = await response.json();
@@ -5850,7 +5855,6 @@
                 if (!response.ok) throw new Error('Create file failed');
                 return await response.json();
             }
-
             async function updateDriveFile(fileId, backupData) {
                 const response = await fetch(
                     `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
@@ -5863,6 +5867,16 @@
                         body: JSON.stringify(backupData)
                     }
                 );
+
+                // Handle 403 Forbidden - need fresh consent
+                if (response.status === 403 || response.status === 401) {
+                    alert('⚠️ Google Drive permission needed!\n\nPlease click "Sync" again and grant Drive access in the popup.');
+                    googleUser.accessToken = null;
+                    if (gisInited && tokenClient) {
+                        tokenClient.requestAccessToken({ prompt: 'consent' });
+                    }
+                    throw new Error('Drive permission denied');
+                }
 
                 if (!response.ok) throw new Error('Update file failed');
                 return await response.json();
