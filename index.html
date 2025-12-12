@@ -6092,82 +6092,58 @@
                 // Clear any recovery attempt flag after successful init
                 localStorage.removeItem('initRecoveryAttempt');
             });
+            // === SIMPLE FIX: Auto-reload when PWA resumes from frozen state ===
+            let lastActiveTime = Date.now();
 
-            // === FIX: Aggressive PWA frozen/suspended state restoration ===
-            let lastRestorationTime = 0;
-            const RESTORATION_COOLDOWN = 1000; // 1 second cooldown between restorations
+            // Track when app was last active
+            setInterval(() => { lastActiveTime = Date.now(); }, 1000);
 
-            // Helper function to check if restoration is needed
-            function needsRestoration() {
+            // Check if app state is broken (PWA frozen state issue)
+            function isStateBroken() {
                 const selector = document.getElementById('classSelector');
-                const themeToggle = document.getElementById('theme-checkbox');
-                const savedTheme = localStorage.getItem('theme');
-
-                // Check if class selector is broken
                 const selectorBroken = !selector || selector.options.length <= 1;
-
-                // Check if theme is wrong
-                const themeMismatch = savedTheme === 'dark' && !document.body.classList.contains('dark-mode');
-
-                // Check if classes are loaded
                 const classesEmpty = Object.keys(classes).length === 0;
-
-                // Check if critical functions are defined (PWA frozen state)
                 const functionsMissing = typeof window.openAIChatbot !== 'function';
+                const savedTheme = localStorage.getItem('theme');
+                const themeBroken = savedTheme === 'dark' && !document.body.classList.contains('dark-mode');
 
-                return selectorBroken || themeMismatch || classesEmpty || functionsMissing;
+                return selectorBroken || classesEmpty || functionsMissing || themeBroken;
             }
 
-            // pageshow - fires on every page show (including bfcache)
-            window.addEventListener('pageshow', function (event) {
-                console.log('📄 pageshow event, persisted:', event.persisted);
-                if (needsRestoration()) {
-                    restoreAppState();
-                }
-            });
-
-            // visibilitychange - when tab/app comes to foreground
+            // On visibility change - if state is broken, just reload
             document.addEventListener('visibilitychange', function () {
                 if (document.visibilityState === 'visible') {
-                    console.log('👁️ visibilitychange: visible');
-                    if (needsRestoration()) {
-                        restoreAppState();
-                    }
+                    // Small delay to let things settle
+                    setTimeout(() => {
+                        if (isStateBroken()) {
+                            console.log('🔄 PWA state broken, reloading page...');
+                            location.reload();
+                        }
+                    }, 100);
                 }
             });
 
-            // focus - when window gets focus
+            // On pageshow (bfcache) - if state is broken, reload
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted || isStateBroken()) {
+                    setTimeout(() => {
+                        if (isStateBroken()) {
+                            console.log('🔄 Page from bfcache with broken state, reloading...');
+                            location.reload();
+                        }
+                    }, 100);
+                }
+            });
+
+            // On focus - if state is broken, reload
             window.addEventListener('focus', function () {
-                console.log('🎯 Window gained focus');
-                if (needsRestoration()) {
-                    restoreAppState();
-                }
+                setTimeout(() => {
+                    if (isStateBroken()) {
+                        console.log('🔄 Focus with broken state, reloading...');
+                        location.reload();
+                    }
+                }, 100);
             });
-
-            // First user interaction - click or touch
-            let firstInteractionHandled = false;
-            function handleFirstInteraction() {
-                if (!firstInteractionHandled && needsRestoration()) {
-                    console.log('👆 First interaction detected, restoring...');
-                    firstInteractionHandled = true;
-                    restoreAppState();
-                }
-            }
-            document.addEventListener('click', handleFirstInteraction, { once: true, capture: true });
-            document.addEventListener('touchstart', handleFirstInteraction, { once: true, capture: true });
-
-            // Fallback: Periodic check every 2 seconds (only runs 5 times max)
-            let periodicCheckCount = 0;
-            const periodicCheck = setInterval(() => {
-                periodicCheckCount++;
-                if (needsRestoration()) {
-                    console.log('⏰ Periodic check found issue, restoring...');
-                    restoreAppState();
-                }
-                if (periodicCheckCount >= 5) {
-                    clearInterval(periodicCheck);
-                }
-            }, 2000);
 
             // Restore app state without full reinitialization (faster)
             function restoreAppState() {
