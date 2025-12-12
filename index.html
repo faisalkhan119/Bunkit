@@ -5022,8 +5022,14 @@
                 const isGuest = localStorage.getItem('isGuest');
                 const savedUser = localStorage.getItem('googleUser');
 
+                // Debug logging
+                console.log('🔍 checkLoginStatus called');
+                console.log('   isGuest:', isGuest);
+                console.log('   savedUser:', savedUser ? 'exists' : 'null');
+
                 // First time user - show login screen
                 if (isGuest === null && !savedUser) {
+                    console.log('⚠️ Showing login screen (first time user)');
                     showLoginScreen();
                     return;
                 }
