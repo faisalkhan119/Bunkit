@@ -6169,29 +6169,52 @@
             // Restore app state without full reinitialization (faster)
             function restoreAppState() {
                 try {
-                    // 1. Restore classes from localStorage
+                    // 1. Restore classes from localStorage FIRST
                     const storedClasses = localStorage.getItem('attendanceClasses_v2');
+                    console.log('📦 Stored classes found:', !!storedClasses);
+
                     if (storedClasses) {
                         const parsedClasses = JSON.parse(storedClasses);
-                        if (Object.keys(parsedClasses).length > 0) {
+                        const classCount = Object.keys(parsedClasses).length;
+                        console.log('📦 Parsed classes count:', classCount);
+
+                        if (classCount > 0) {
                             classes = parsedClasses;
                         }
                     }
 
-                    // 2. Restore class selector
+                    // 2. ALWAYS repopulate class selector if classes exist
                     const selector = document.getElementById('classSelector');
-                    if (selector && (selector.options.length <= 1 || !selector.value)) {
-                        console.log('⚠️ Class selector needs restoration');
-                        populateClassSelector();
+                    if (selector && Object.keys(classes).length > 0) {
+                        console.log('🔄 Repopulating class selector with', Object.keys(classes).length, 'classes');
 
+                        // Force clear and repopulate
+                        selector.innerHTML = '<option value="">-- Select a Class --</option>';
+                        const datalist = document.getElementById('class-suggestions');
+                        if (datalist) datalist.innerHTML = '';
+
+                        Object.keys(classes).sort().forEach(className => {
+                            selector.innerHTML += `<option value="${className}">${className}</option>`;
+                            if (datalist) datalist.innerHTML += `<option value="${className}"></option>`;
+                        });
+
+                        console.log('✅ Class selector now has', selector.options.length, 'options');
+
+                        // Restore last selected class
                         const lastClass = localStorage.getItem('lastOpenedClass');
                         if (lastClass && classes[lastClass]) {
                             selector.value = lastClass;
+                            console.log('📌 Selected last class:', lastClass);
                             onClassChange();
-                        } else if (Object.keys(classes).length > 0) {
-                            selector.value = Object.keys(classes)[0];
+                        } else {
+                            // Select first class
+                            const firstClass = Object.keys(classes)[0];
+                            selector.value = firstClass;
+                            console.log('📌 Selected first class:', firstClass);
                             onClassChange();
                         }
+                    } else {
+                        console.log('⚠️ No classes to restore or selector not found');
                     }
 
                     // 3. Restore theme
@@ -6223,6 +6246,14 @@
                             googleUser = JSON.parse(savedUser);
                         }
                         checkLoginStatus();
+                    }
+
+                    // 6. Check if modals are initialized (PWA frozen state fix)
+                    const addClassModal = document.getElementById('addClassModal');
+                    if (addClassModal && addClassModal.innerHTML.trim() === '') {
+                        console.log('⚠️ Modals not initialized, running full init...');
+                        initializeApp();
+                        return; // Exit after full init
                     }
 
                     console.log('✅ App state restored successfully');
@@ -14335,7 +14366,7 @@ CRITICAL RULES:
                     window.addEventListener('load', toggleChatbotVisibility);
 
                     // Open AI Chatbot (closes all modals first during onboarding)
-                    function openAIChatbot() {
+                    window.openAIChatbot = function () {
                         try {
                             // Remove glow from bot icon and HIDE it
                             const botBtn = document.getElementById('aiChatbotButton');
