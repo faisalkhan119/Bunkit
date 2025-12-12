@@ -8,6 +8,30 @@
             "destination": "/"
         },
         {
+            "source": "/privacy",
+            "destination": "/privacy.html"
+        },
+        {
+            "source": "/terms",
+            "destination": "/terms.html"
+        },
+        {
+            "source": "/about",
+            "destination": "/about.html"
+        },
+        {
+            "source": "/contact",
+            "destination": "/contact.html"
+        },
+        {
+            "source": "/faq",
+            "destination": "/faq.html"
+        },
+        {
+            "source": "/support",
+            "destination": "/support.html"
+        },
+        {
             "source": "/api/gemini",
             "destination": "/api/gemini.js"
         }
