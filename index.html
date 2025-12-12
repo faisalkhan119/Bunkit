@@ -6089,24 +6089,82 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 initializeApp();
+                // Clear any recovery attempt flag after successful init
+                localStorage.removeItem('initRecoveryAttempt');
             });
 
-            // === FIX: Handle PWA frozen/suspended state restoration ===
-            // pageshow fires when page is restored from bfcache (back-forward cache)
+            // === FIX: Aggressive PWA frozen/suspended state restoration ===
+            let lastRestorationTime = 0;
+            const RESTORATION_COOLDOWN = 1000; // 1 second cooldown between restorations
+
+            // Helper function to check if restoration is needed
+            function needsRestoration() {
+                const selector = document.getElementById('classSelector');
+                const themeToggle = document.getElementById('theme-checkbox');
+                const savedTheme = localStorage.getItem('theme');
+
+                // Check if class selector is broken
+                const selectorBroken = !selector || selector.options.length <= 1;
+
+                // Check if theme is wrong
+                const themeMismatch = savedTheme === 'dark' && !document.body.classList.contains('dark-mode');
+
+                // Check if classes are loaded
+                const classesEmpty = Object.keys(classes).length === 0;
+
+                return selectorBroken || themeMismatch || classesEmpty;
+            }
+
+            // pageshow - fires on every page show (including bfcache)
             window.addEventListener('pageshow', function (event) {
-                if (event.persisted) {
-                    console.log('🔄 Page restored from bfcache, reinitializing...');
+                console.log('📄 pageshow event, persisted:', event.persisted);
+                if (needsRestoration()) {
                     restoreAppState();
                 }
             });
 
-            // visibilitychange fires when app comes back to foreground
+            // visibilitychange - when tab/app comes to foreground
             document.addEventListener('visibilitychange', function () {
                 if (document.visibilityState === 'visible') {
-                    console.log('🔄 App became visible, restoring state...');
+                    console.log('👁️ visibilitychange: visible');
+                    if (needsRestoration()) {
+                        restoreAppState();
+                    }
+                }
+            });
+
+            // focus - when window gets focus
+            window.addEventListener('focus', function () {
+                console.log('🎯 Window gained focus');
+                if (needsRestoration()) {
                     restoreAppState();
                 }
             });
+
+            // First user interaction - click or touch
+            let firstInteractionHandled = false;
+            function handleFirstInteraction() {
+                if (!firstInteractionHandled && needsRestoration()) {
+                    console.log('👆 First interaction detected, restoring...');
+                    firstInteractionHandled = true;
+                    restoreAppState();
+                }
+            }
+            document.addEventListener('click', handleFirstInteraction, { once: true, capture: true });
+            document.addEventListener('touchstart', handleFirstInteraction, { once: true, capture: true });
+
+            // Fallback: Periodic check every 2 seconds (only runs 5 times max)
+            let periodicCheckCount = 0;
+            const periodicCheck = setInterval(() => {
+                periodicCheckCount++;
+                if (needsRestoration()) {
+                    console.log('⏰ Periodic check found issue, restoring...');
+                    restoreAppState();
+                }
+                if (periodicCheckCount >= 5) {
+                    clearInterval(periodicCheck);
+                }
+            }, 2000);
 
             // Restore app state without full reinitialization (faster)
             function restoreAppState() {
