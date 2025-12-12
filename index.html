@@ -6112,7 +6112,10 @@
                 // Check if classes are loaded
                 const classesEmpty = Object.keys(classes).length === 0;
 
-                return selectorBroken || themeMismatch || classesEmpty;
+                // Check if critical functions are defined (PWA frozen state)
+                const functionsMissing = typeof window.openAIChatbot !== 'function';
+
+                return selectorBroken || themeMismatch || classesEmpty || functionsMissing;
             }
 
             // pageshow - fires on every page show (including bfcache)
