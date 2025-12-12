@@ -6100,15 +6100,21 @@
             setInterval(() => { lastActiveTime = Date.now(); }, 1000);
 
             // Check if app state is broken (PWA frozen state issue)
+            // Only check things that are DEFINITELY broken, not normal states
             function isStateBroken() {
+                // Don't check during initial load
+                if (!document.body) return false;
+
                 const selector = document.getElementById('classSelector');
-                const selectorBroken = !selector || selector.options.length <= 1;
-                const classesEmpty = Object.keys(classes).length === 0;
-                const functionsMissing = typeof window.openAIChatbot !== 'function';
+                // Selector exists but has no options (not even default) = broken
+                const selectorBroken = selector && selector.options.length === 0;
+
+                // Theme saved as dark but body doesn't have class = broken
                 const savedTheme = localStorage.getItem('theme');
                 const themeBroken = savedTheme === 'dark' && !document.body.classList.contains('dark-mode');
 
-                return selectorBroken || classesEmpty || functionsMissing || themeBroken;
+                // Only reload if definitely broken
+                return selectorBroken || themeBroken;
             }
 
             // On visibility change - if state is broken, just reload
