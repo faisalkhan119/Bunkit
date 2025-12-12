@@ -4805,38 +4805,38 @@
 
                     // Check for iOS and App Mode (run on load)
                     window.addEventListener('load', () => {
-                        // ROBUST APP DETECTION: Covers TWA (Play Store), PWA Standalone, Fullscreen
-                        const isApp = window.matchMedia('(display-mode: standalone)').matches ||
-                            window.matchMedia('(display-mode: fullscreen)').matches ||
-                            window.matchMedia('(display-mode: minimal-ui)').matches ||
-                            window.navigator.standalone === true ||
-                            (document.referrer && document.referrer.includes('android-app://'));
-
-                        if (isApp) {
-                            console.log('Running in App Mode (TWA/PWA). Hiding install buttons.');
+                        try {
                             const installBtn = document.getElementById('sidebarInstallBtn');
                             const iosBtn = document.getElementById('sidebarIOSInstall');
-                            if (installBtn) installBtn.style.display = 'none';
-                            if (iosBtn) iosBtn.style.display = 'none';
-                            return;
-                        }
+                            
+                            // 1. Safe App Mode Check
+                            let isApp = false;
+                            try {
+                                isApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                                        (window.navigator && window.navigator.standalone === true);
+                                // Referrer check can be risky in some envs, skipped for safety or wrapped
+                                if (!isApp && document.referrer && document.referrer.includes('android-app://')) {
+                                    isApp = true;
+                                }
+                            } catch (e) { console.warn('App mode check failed', e); }
 
-                        // iOS Detection (Safari, Chrome on iOS, iPads)
-                        // Note: Newer iPads mimic MacOS user agent, check maxTouchPoints
-                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
-                            (!window.MSStream && /Macintosh/.test(navigator.userAgent) && 'ontouchend' in document);
-
-                        if (isIOS) {
-                            const iosBtn = document.getElementById('sidebarIOSInstall');
-                            if (iosBtn) {
-                                iosBtn.style.display = 'block';
-                                iosBtn.textContent = '📱 Install on iOS'; // Generic text for iPad/iPhone
+                            if (isApp) {
+                                if (installBtn) installBtn.style.display = 'none';
+                                if (iosBtn) iosBtn.style.display = 'none';
+                                return;
                             }
 
-                            // Hide Android button just in case
-                            const installBtn = document.getElementById('sidebarInstallBtn');
-                            if (installBtn) installBtn.style.display = 'none';
+                            // 2. Safe iOS Check
+                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                            if (isIOS) {
+                                if (iosBtn) {
+                                    iosBtn.style.display = 'block';
+                                    iosBtn.textContent = '📱 Install on iOS';
+                                }
+                                if (installBtn) installBtn.style.display = 'none';
+                            }
+                        } catch (err) {
+                            console.error('PWA Install Logic Error:', err);
                         }
                     });
 
