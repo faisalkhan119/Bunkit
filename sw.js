@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bunkit-v82';
+const CACHE_NAME = 'bunkit-v83';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -217,6 +217,12 @@ self.addEventListener('message', async (event) => {
         } catch (e) {
             console.error('SW: Force refresh failed:', e);
         }
+    }
+
+    // Handle skip waiting request (for auto-refresh on update)
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        console.log('SW: Skip waiting requested, activating immediately...');
+        self.skipWaiting();
     }
 
     // Handle cache clear request

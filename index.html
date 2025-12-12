@@ -420,6 +420,34 @@
                     const registration = await navigator.serviceWorker.register('./sw.js');
                     console.log('ServiceWorker registration successful');
 
+                    // === AUTO-REFRESH: Check for updates on every page load ===
+                    registration.update(); // Force check for new SW version
+
+                    // Listen for new service worker installing
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('New service worker found, installing...');
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New content is available, refresh the page
+                                console.log('New content available! Refreshing...');
+                                // Skip waiting and activate immediately
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    });
+
+                    // Refresh page when new service worker takes control
+                    let refreshing = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        if (!refreshing) {
+                            refreshing = true;
+                            console.log('New service worker activated, reloading page...');
+                            window.location.reload();
+                        }
+                    });
+
                     // Register for background sync if supported
                     if ('sync' in registration) {
                         // Register sync when going offline
