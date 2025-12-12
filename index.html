@@ -5027,28 +5027,36 @@
                 console.log('   isGuest:', isGuest);
                 console.log('   savedUser:', savedUser ? 'exists' : 'null');
 
-                // First time user - show login screen
-                if (isGuest === null && !savedUser) {
-                    console.log('⚠️ Showing login screen (first time user)');
-                    showLoginScreen();
-                    return;
+                // PRIORITY 1: If we have a saved Google user, they're logged in
+                if (savedUser) {
+                    try {
+                        googleUser = JSON.parse(savedUser);
+                        // Ensure isGuest is set correctly
+                        if (isGuest !== 'false') {
+                            localStorage.setItem('isGuest', 'false');
+                        }
+                        updateAccountUI();
+                        updateSidebarAccountUI();
+                        console.log('✅ Returning Google user:', googleUser.email);
+                        silentTokenRefresh();
+                        return;
+                    } catch (e) {
+                        console.error('Failed to parse savedUser:', e);
+                        localStorage.removeItem('googleUser');
+                    }
                 }
 
-                // Returning Google user
-                if (savedUser && isGuest !== 'true') {
-                    googleUser = JSON.parse(savedUser);
+                // PRIORITY 2: Guest user (explicitly set)
+                if (isGuest === 'true') {
+                    console.log('👤 Guest user mode');
                     updateAccountUI();
                     updateSidebarAccountUI();
-                    console.log('✅ Returning user detected:', googleUser.email);
-
-                    // AUTO SILENT TOKEN REFRESH: Get fresh token on app open
-                    silentTokenRefresh();
                     return;
                 }
 
-                // Guest user
-                updateAccountUI();
-                updateSidebarAccountUI();
+                // PRIORITY 3: First time user - show login screen
+                console.log('🆕 First time user, showing login screen');
+                showLoginScreen();
             }
 
             function silentTokenRefresh() {
