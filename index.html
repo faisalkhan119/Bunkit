@@ -5837,6 +5837,16 @@
                     }
                 );
 
+                // Handle 403 Forbidden - need fresh consent
+                if (response.status === 403 || response.status === 401) {
+                    alert('⚠️ Google Drive permission needed!\n\nPlease click "Sync" again and grant Drive access in the popup.');
+                    googleUser.accessToken = null;
+                    if (gisInited && tokenClient) {
+                        tokenClient.requestAccessToken({ prompt: 'consent' });
+                    }
+                    throw new Error('Drive permission denied');
+                }
+
                 if (!response.ok) throw new Error('Create file failed');
                 return await response.json();
             }
