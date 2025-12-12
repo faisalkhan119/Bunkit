@@ -5036,10 +5036,7 @@
                     console.log('✅ Returning user detected:', googleUser.email);
 
                     // AUTO SILENT TOKEN REFRESH: Get fresh token on app open
-                    // This ensures sync works without showing popup again
-                    setTimeout(() => {
-                        silentTokenRefresh();
-                    }, 2000);
+                    silentTokenRefresh();
                     return;
                 }
 
