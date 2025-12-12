@@ -5033,9 +5033,13 @@
                     googleUser = JSON.parse(savedUser);
                     updateAccountUI();
                     updateSidebarAccountUI();
-                    // Token will be requested when user clicks Sync
-                    // This avoids showing Google popup on every page refresh
                     console.log('✅ Returning user detected:', googleUser.email);
+
+                    // AUTO SILENT TOKEN REFRESH: Get fresh token on app open
+                    // This ensures sync works without showing popup again
+                    setTimeout(() => {
+                        silentTokenRefresh();
+                    }, 2000);
                     return;
                 }
 
