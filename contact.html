@@ -201,6 +201,68 @@
         .center {
             text-align: center;
         }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .card {
+                background: rgba(30, 30, 50, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .logo h1 {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+
+            h2 {
+                color: #818cf8;
+            }
+
+            p {
+                color: #c0c0c0;
+            }
+
+            .contact-card {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .contact-card:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .contact-info h3 {
+                color: #e0e0e0;
+            }
+
+            .contact-info p {
+                color: #a0a0a0;
+            }
+
+            .response-time {
+                background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(167, 139, 250, 0.1));
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .response-time h3 {
+                color: #818cf8;
+            }
+
+            .faq-link {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            ul li {
+                color: #c0c0c0;
+            }
+        }
     </style>
 </head>
 

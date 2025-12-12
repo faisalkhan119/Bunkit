@@ -206,6 +206,77 @@
         .center {
             text-align: center;
         }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .card {
+                background: rgba(30, 30, 50, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .logo h1 {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+
+            .search-box input {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #e0e0e0;
+            }
+
+            .search-box input::placeholder {
+                color: #888;
+            }
+
+            .category-title {
+                color: #818cf8;
+            }
+
+            .faq-item {
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .faq-question {
+                background: rgba(255, 255, 255, 0.05);
+                color: #e0e0e0;
+            }
+
+            .faq-question:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .faq-question::after {
+                color: #818cf8;
+            }
+
+            .faq-answer {
+                color: #c0c0c0;
+            }
+
+            .contact-cta {
+                background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(167, 139, 250, 0.1));
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .contact-cta h3 {
+                color: #818cf8;
+            }
+
+            .contact-cta p {
+                color: #a0a0a0;
+            }
+
+            .contact-btn {
+                background: #818cf8;
+            }
+        }
     </style>
 </head>
 

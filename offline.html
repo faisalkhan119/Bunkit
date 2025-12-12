@@ -157,6 +157,32 @@
             margin-bottom: 15px;
             border-radius: 12px;
         }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .offline-container {
+                background: rgba(30, 30, 50, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .features {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .retry-btn {
+                background: #818cf8;
+                color: white;
+            }
+
+            .retry-btn:hover {
+                background: #a78bfa;
+            }
+        }
     </style>
 </head>
 

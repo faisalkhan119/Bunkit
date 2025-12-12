@@ -110,6 +110,42 @@
             font-size: 0.9rem;
             margin-top: 30px;
         }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .card {
+                background: rgba(30, 30, 50, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .logo h1 {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+
+            h2 {
+                color: #818cf8;
+            }
+
+            p,
+            li {
+                color: #c0c0c0;
+            }
+
+            a {
+                color: #818cf8;
+            }
+
+            .last-updated {
+                color: #888;
+            }
+        }
     </style>
 </head>
 

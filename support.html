@@ -202,6 +202,85 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .card {
+                background: rgba(30, 30, 50, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .logo h1 {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+
+            h2 {
+                color: #818cf8;
+            }
+
+            p {
+                color: #c0c0c0;
+            }
+
+            .support-card {
+                background: rgba(255, 255, 255, 0.05);
+                border-left-color: #818cf8;
+            }
+
+            .support-card h3 {
+                color: #e0e0e0;
+            }
+
+            .support-card p {
+                color: #a0a0a0;
+            }
+
+            .support-card a {
+                color: #818cf8;
+            }
+
+            .quick-link {
+                background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(167, 139, 250, 0.1));
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #e0e0e0;
+            }
+
+            .troubleshoot {
+                background: rgba(133, 100, 4, 0.2);
+                border: 1px solid rgba(255, 243, 205, 0.2);
+            }
+
+            .troubleshoot h3 {
+                color: #ffc107;
+            }
+
+            .troubleshoot ol {
+                color: #e0c060;
+            }
+
+            .version-info {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .version-info p {
+                color: #a0a0a0;
+            }
+
+            code {
+                background: rgba(129, 140, 248, 0.2);
+                padding: 2px 6px;
+                border-radius: 4px;
+                color: #818cf8;
+            }
+        }
     </style>
 </head>
 
