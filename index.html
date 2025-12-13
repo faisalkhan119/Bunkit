@@ -4810,9 +4810,12 @@
                     .replace(/=+$/, '');
             }
 
-            // --- GOOGLE OAUTH (Token Flow for SPA) ---
-            // Using initTokenClient which handles token exchange automatically
-            // No client_secret needed for this flow
+            // --- GOOGLE OAUTH (Authorization Code Flow with Backend) ---
+            // Uses backend to exchange code for tokens (including refresh token)
+            // This enables WhatsApp-like seamless sync
+
+            const AUTH_API_URL = '/api/google-auth';
+            let codeClient = null; // For Authorization Code Flow
 
             function initGoogleAuth() {
                 // Initialize Google API client for Drive access
@@ -4824,15 +4827,24 @@
                     maybeEnableSync();
                 });
 
-                // Initialize GIS Token Client (handles tokens directly, no backend needed)
+                // Initialize GIS Code Client (Authorization Code Flow)
+                codeClient = google.accounts.oauth2.initCodeClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: OAUTH_SCOPES,
+                    ux_mode: 'popup',
+                    callback: handleCodeResponse, // Handles authorization code
+                });
+
+                // Also keep token client for fallback/silent refresh attempts
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: OAUTH_SCOPES,
                     callback: handleTokenResponse,
                 });
+
                 gisInited = true;
                 maybeEnableSync();
-                console.log('✅ Google OAuth initialized (Token Flow)');
+                console.log('✅ Google OAuth initialized (Authorization Code Flow)');
             }
 
             function maybeEnableSync() {
@@ -4842,7 +4854,59 @@
                 }
             }
 
-            // Handle token response directly (no code exchange needed)
+            // Handle authorization code from Google
+            async function handleCodeResponse(response) {
+                if (response.error) {
+                    console.error('Auth error:', response);
+                    alert('❌ Google sign-in failed: ' + response.error);
+                    return;
+                }
+
+                console.log('📤 Authorization code received, exchanging with backend...');
+                showToast('🔐 Authenticating...', 'Setting up secure sync', { duration: 3000 });
+
+                try {
+                    // Exchange code for tokens via backend
+                    const tokenResponse = await fetch(AUTH_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'exchange',
+                            code: response.code
+                        })
+                    });
+
+                    const tokenData = await tokenResponse.json();
+
+                    if (!tokenResponse.ok || tokenData.error) {
+                        throw new Error(tokenData.error || 'Token exchange failed');
+                    }
+
+                    console.log('✅ Tokens received from backend');
+
+                    // Store encrypted refresh token for seamless future logins
+                    if (tokenData.encrypted_refresh_token) {
+                        localStorage.setItem('encryptedRefreshToken', tokenData.encrypted_refresh_token);
+                        console.log('✅ Refresh token stored (encrypted)');
+                    }
+
+                    // Store token expiry time
+                    const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+                    localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+                    // Set the token for gapi client
+                    gapi.client.setToken({ access_token: tokenData.access_token });
+
+                    // Fetch user info and complete login
+                    await fetchUserInfo(tokenData.access_token);
+
+                } catch (error) {
+                    console.error('Token exchange failed:', error);
+                    alert('❌ Authentication failed: ' + error.message);
+                }
+            }
+
+            // Handle direct token response (fallback)
             async function handleTokenResponse(response) {
                 if (response.error !== undefined) {
                     console.error('Auth error:', response);
@@ -4850,7 +4914,7 @@
                     return;
                 }
 
-                console.log('✅ Access token received');
+                console.log('✅ Access token received (direct)');
 
                 try {
                     // Set the token for gapi client
@@ -4858,12 +4922,78 @@
 
                     // Fetch and store user info (this also calls syncWithDrive)
                     await fetchUserInfo(response.access_token);
-
-                    // Note: checkAndAutoSync not needed here because fetchUserInfo already syncs
                 } catch (error) {
                     console.error('Auth failed:', error);
                     alert('❌ Authentication failed: ' + error.message);
                 }
+            }
+
+            // Silently refresh token using stored encrypted refresh token
+            async function refreshAccessToken() {
+                const encryptedRefreshToken = localStorage.getItem('encryptedRefreshToken');
+                if (!encryptedRefreshToken) {
+                    console.log('No refresh token available');
+                    return null;
+                }
+
+                try {
+                    console.log('🔄 Refreshing access token via backend...');
+
+                    const response = await fetch(AUTH_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'refresh',
+                            refreshToken: encryptedRefreshToken
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || data.error) {
+                        if (data.requireReauth) {
+                            console.log('⚠️ Refresh token expired, need re-authentication');
+                            localStorage.removeItem('encryptedRefreshToken');
+                            return null;
+                        }
+                        throw new Error(data.error || 'Token refresh failed');
+                    }
+
+                    console.log('✅ Access token refreshed silently');
+
+                    // Update token expiry
+                    const expiresAt = Date.now() + (data.expires_in * 1000);
+                    localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+                    // Update googleUser
+                    if (googleUser) {
+                        googleUser.accessToken = data.access_token;
+                    }
+
+                    // Set for gapi
+                    gapi.client.setToken({ access_token: data.access_token });
+
+                    return data.access_token;
+
+                } catch (error) {
+                    console.error('Token refresh failed:', error);
+                    return null;
+                }
+            }
+
+            // Check if token needs refresh
+            async function ensureValidToken() {
+                const expiresAt = parseInt(localStorage.getItem('tokenExpiresAt') || '0');
+                const now = Date.now();
+
+                // Refresh if token expires in less than 5 minutes
+                if (expiresAt - now < 5 * 60 * 1000) {
+                    console.log('🔄 Token expiring soon, refreshing...');
+                    const newToken = await refreshAccessToken();
+                    return newToken;
+                }
+
+                return googleUser?.accessToken;
             }
 
 
@@ -4921,10 +5051,11 @@
                     return;
                 }
 
-                console.log('🔑 Requesting Google sign-in...');
+                console.log('🔑 Requesting Google sign-in (Authorization Code Flow)...');
 
-                // Request access token directly (GIS handles everything)
-                tokenClient.requestAccessToken({ prompt: 'consent' });
+                // Use Authorization Code Flow for refresh token support
+                // This enables WhatsApp-like seamless sync
+                codeClient.requestCode();
             }
 
             function continueAsGuest() {
@@ -4959,15 +5090,36 @@
                         }
                     }
 
-                    // Revoke token
+                    // Revoke tokens (both access and refresh)
                     if (googleUser?.accessToken) {
                         google.accounts.oauth2.revoke(googleUser.accessToken, () => {
-                            console.log('Token revoked');
+                            console.log('Access token revoked');
                         });
                     }
 
+                    // Revoke refresh token via backend
+                    const encryptedRefreshToken = localStorage.getItem('encryptedRefreshToken');
+                    if (encryptedRefreshToken) {
+                        try {
+                            await fetch(AUTH_API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'revoke',
+                                    refreshToken: encryptedRefreshToken
+                                })
+                            });
+                            console.log('Refresh token revoked');
+                        } catch (e) {
+                            console.log('Refresh token revoke failed:', e);
+                        }
+                    }
+
+                    // Clear all auth data
                     localStorage.setItem('isGuest', 'true');
                     localStorage.removeItem('googleUser');
+                    localStorage.removeItem('encryptedRefreshToken');
+                    localStorage.removeItem('tokenExpiresAt');
                     googleUser = null;
 
                     // Refresh page to show guest mode
@@ -5058,22 +5210,37 @@
                 showLoginScreen();
             }
 
-            function silentTokenRefresh() {
-                if (gisInited && googleUser && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                    try {
-                        console.log('🔄 Attempting silent token refresh...');
-                        tokenClient.requestAccessToken({ prompt: '' });
-                    } catch (error) {
-                        console.log('Silent token refresh failed:', error);
-                        // Show subtle notification that user needs to sync manually
-                        if (typeof showToast === 'function') {
-                            showToast('🔐 Session expired', 'Click Sync to reconnect', { duration: 4000 });
+            // Silent token refresh using backend (seamless like WhatsApp)
+            async function silentTokenRefresh() {
+                const encryptedRefreshToken = localStorage.getItem('encryptedRefreshToken');
+
+                if (!encryptedRefreshToken) {
+                    console.log('⚠️ No refresh token - user needs to re-login');
+                    // Fall back to old method as last resort
+                    if (gisInited && googleUser && tokenClient) {
+                        try {
+                            tokenClient.requestAccessToken({ prompt: '' });
+                        } catch (e) {
+                            console.log('Fallback token refresh also failed');
                         }
                     }
-                } else if (googleUser && !gisInited) {
-                    console.log('⏳ Waiting for GIS to initialize for token refresh...');
-                    // Retry after a delay if gis not ready
-                    setTimeout(silentTokenRefresh, 500);
+                    return;
+                }
+
+                try {
+                    console.log('🔄 Silently refreshing token via backend...');
+                    const newToken = await refreshAccessToken();
+
+                    if (newToken) {
+                        console.log('✅ Token refreshed silently - seamless sync ready!');
+                        // Auto-sync after successful token refresh
+                        checkAndAutoSync();
+                    } else {
+                        console.log('⚠️ Silent refresh failed - user may need to re-login');
+                        showToast('🔐 Session expired', 'Click Sync to reconnect', { duration: 4000 });
+                    }
+                } catch (error) {
+                    console.error('Silent token refresh error:', error);
                 }
             }
 
@@ -5884,14 +6051,26 @@
             }
 
             async function syncWithDrive() {
-                // Check if we have a Google user but no token
+                // First try to ensure we have a valid token (refresh if needed)
                 if (googleUser && !googleUser.accessToken) {
-                    // Request token with CONSENT - this is user-initiated so popup allowed
-                    if (gisInited && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                        showToast('🔐 Authenticating...', 'Please grant Drive access', { duration: 3000 });
-                        // Use 'consent' to ensure Drive scope is granted (not just profile)
-                        tokenClient.requestAccessToken({ prompt: 'consent' });
-                        return; // Token request will trigger handleTokenResponse which calls syncWithDrive
+                    // Try silent refresh first
+                    const encryptedRefreshToken = localStorage.getItem('encryptedRefreshToken');
+                    if (encryptedRefreshToken) {
+                        showToast('🔄 Refreshing session...', 'Please wait', { duration: 2000 });
+                        const newToken = await refreshAccessToken();
+                        if (!newToken) {
+                            // Refresh failed, need to re-login
+                            showToast('🔐 Session expired', 'Please sign in again', { duration: 3000 });
+                            codeClient.requestCode();
+                            return;
+                        }
+                    } else {
+                        // No refresh token, need to use code flow
+                        if (gisInited && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+                            showToast('🔐 Authenticating...', 'Please grant Drive access', { duration: 3000 });
+                            codeClient.requestCode();
+                            return;
+                        }
                     }
                 }
 
@@ -5899,6 +6078,9 @@
                     alert('⚠️ Please sign in with Google first.');
                     return;
                 }
+
+                // Ensure token is valid before sync
+                await ensureValidToken();
 
                 try {
                     showToast('☁️ Syncing...', 'Connecting to Google Drive', { duration: 2000 });
