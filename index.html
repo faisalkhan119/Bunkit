@@ -4856,11 +4856,10 @@
                     // Set the token for gapi client
                     gapi.client.setToken({ access_token: response.access_token });
 
-                    // Fetch and store user info
+                    // Fetch and store user info (this also calls syncWithDrive)
                     await fetchUserInfo(response.access_token);
 
-                    // Check for auto-sync after token refresh
-                    checkAndAutoSync();
+                    // Note: checkAndAutoSync not needed here because fetchUserInfo already syncs
                 } catch (error) {
                     console.error('Auth failed:', error);
                     alert('❌ Authentication failed: ' + error.message);
@@ -5065,7 +5064,11 @@
                         console.log('🔄 Attempting silent token refresh...');
                         tokenClient.requestAccessToken({ prompt: '' });
                     } catch (error) {
-                        console.log('Silent token refresh failed, user may need to re-login:', error);
+                        console.log('Silent token refresh failed:', error);
+                        // Show subtle notification that user needs to sync manually
+                        if (typeof showToast === 'function') {
+                            showToast('🔐 Session expired', 'Click Sync to reconnect', { duration: 4000 });
+                        }
                     }
                 } else if (googleUser && !gisInited) {
                     console.log('⏳ Waiting for GIS to initialize for token refresh...');
@@ -5737,6 +5740,12 @@
                     // Check if file exists
                     const fileId = await findBackupFileId();
 
+                    // Check if token was invalidated during findBackupFileId (403 error)
+                    if (!googleUser?.accessToken) {
+                        console.log('Token was cleared, consent requested. User needs to retry.');
+                        return false;
+                    }
+
                     if (fileId) {
                         // Update existing file
                         await updateDriveFile(fileId, backupData);
@@ -5902,6 +5911,14 @@
                     showToast('☁️ Syncing...', 'Connecting to Google Drive', { duration: 2000 });
 
                     const cloudBackup = await downloadBackupFromDrive();
+
+                    // Check if token was invalidated during download (403 error)
+                    if (!googleUser?.accessToken) {
+                        console.log('Token was cleared during download, consent requested. User needs to retry.');
+                        showToast('🔐 Permission needed', 'Please click Sync again after granting access', { duration: 4000 });
+                        return;
+                    }
+
                     const localBackup = getBackupDataObj();
 
                     // Check if local data is essentially empty
