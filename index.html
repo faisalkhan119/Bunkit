@@ -5786,11 +5786,9 @@
 
                     // Handle 403 Forbidden - need fresh consent
                     if (response.status === 403 || response.status === 401) {
-                        console.log('⚠️ Drive download access denied, requesting fresh consent...');
+                        console.log('⚠️ Drive download access denied, user needs to grant permission');
                         googleUser.accessToken = null;
-                        if (gisInited && tokenClient) {
-                            tokenClient.requestAccessToken({ prompt: 'consent' });
-                        }
+                        // Don't auto-request - popup blocked. Next sync click will trigger proper consent
                         return null;
                     }
 
@@ -5816,11 +5814,11 @@
 
                     // Handle 403 Forbidden - need to request consent again
                     if (response.status === 403 || response.status === 401) {
-                        console.log('⚠️ Drive access denied, requesting fresh consent...');
+                        console.log('⚠️ Drive access denied, user needs to grant permission...');
                         googleUser.accessToken = null; // Clear invalid token
-                        if (gisInited && tokenClient) {
-                            tokenClient.requestAccessToken({ prompt: 'consent' }); // Force consent popup
-                        }
+                        // DON'T auto-request consent - popup will be blocked
+                        // User needs to click Sync button which triggers user-action popup
+                        alert('🔐 Google Drive permission needed!\n\nPlease click "Sync" button again to grant Drive access.');
                         return null;
                     }
 
@@ -5853,11 +5851,8 @@
 
                 // Handle 403 Forbidden - need fresh consent
                 if (response.status === 403 || response.status === 401) {
-                    alert('⚠️ Google Drive permission needed!\n\nPlease click "Sync" again and grant Drive access in the popup.');
                     googleUser.accessToken = null;
-                    if (gisInited && tokenClient) {
-                        tokenClient.requestAccessToken({ prompt: 'consent' });
-                    }
+                    // Don't auto-request - popup blocked. Next sync click will trigger proper consent
                     throw new Error('Drive permission denied');
                 }
 
@@ -5879,11 +5874,8 @@
 
                 // Handle 403 Forbidden - need fresh consent
                 if (response.status === 403 || response.status === 401) {
-                    alert('⚠️ Google Drive permission needed!\n\nPlease click "Sync" again and grant Drive access in the popup.');
                     googleUser.accessToken = null;
-                    if (gisInited && tokenClient) {
-                        tokenClient.requestAccessToken({ prompt: 'consent' });
-                    }
+                    // Don't auto-request - popup blocked. Next sync click will trigger proper consent
                     throw new Error('Drive permission denied');
                 }
 
@@ -5894,10 +5886,11 @@
             async function syncWithDrive() {
                 // Check if we have a Google user but no token
                 if (googleUser && !googleUser.accessToken) {
-                    // Request token (will show Google popup for consent)
+                    // Request token with CONSENT - this is user-initiated so popup allowed
                     if (gisInited && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                        showToast('🔐 Authenticating...', 'Please complete Google sign-in', { duration: 3000 });
-                        tokenClient.requestAccessToken({ prompt: '' });
+                        showToast('🔐 Authenticating...', 'Please grant Drive access', { duration: 3000 });
+                        // Use 'consent' to ensure Drive scope is granted (not just profile)
+                        tokenClient.requestAccessToken({ prompt: 'consent' });
                         return; // Token request will trigger handleTokenResponse which calls syncWithDrive
                     }
                 }
