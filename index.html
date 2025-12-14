@@ -4810,9 +4810,40 @@
                     .replace(/=+$/, '');
             }
 
-            // --- GOOGLE OAUTH (Simple Token Flow - No Backend Required) ---
-            // Best practice for PWA/SPA: Use initTokenClient with proper error handling
-            // Access tokens expire in ~1 hour, we handle refresh gracefully
+            // --- GOOGLE OAUTH WITH PKCE (No Backend Required) ---
+            // OAuth 2.1 best practice for SPAs: Authorization Code Flow with PKCE
+            // More secure than implicit flow, protects against code interception attacks
+
+            // PKCE Helper Functions
+            function generateCodeVerifier() {
+                const array = new Uint8Array(32);
+                crypto.getRandomValues(array);
+                return base64UrlEncode(array);
+            }
+
+            async function generateCodeChallenge(verifier) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(verifier);
+                const digest = await crypto.subtle.digest('SHA-256', data);
+                return base64UrlEncode(new Uint8Array(digest));
+            }
+
+            function base64UrlEncode(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary)
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=+$/, '');
+            }
+
+            // OAuth Configuration
+            const OAUTH_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+            const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+            const REDIRECT_URI = window.location.origin + window.location.pathname;
 
             function initGoogleAuth() {
                 // Initialize Google API client for Drive access
@@ -4824,7 +4855,7 @@
                     maybeEnableSync();
                 });
 
-                // Initialize GIS Token Client (recommended for SPAs without backend)
+                // Also initialize GIS Token Client as fallback
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: GOOGLE_CLIENT_ID,
                     scope: OAUTH_SCOPES,
@@ -4833,8 +4864,188 @@
                 });
 
                 gisInited = true;
+
+                // Check if we're returning from OAuth redirect
+                handleOAuthCallback();
+
                 maybeEnableSync();
-                console.log('✅ Google OAuth initialized (Token Flow)');
+                console.log('✅ Google OAuth initialized (PKCE Flow)');
+            }
+
+            // Handle OAuth callback (when returning from Google login)
+            async function handleOAuthCallback() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+
+                if (!code) return; // Not a callback
+
+                // Verify state to prevent CSRF
+                const savedState = sessionStorage.getItem('oauth_state');
+                if (state !== savedState) {
+                    console.error('OAuth state mismatch - possible CSRF attack');
+                    alert('❌ Security error. Please try again.');
+                    cleanupOAuthParams();
+                    return;
+                }
+
+                // Get saved code verifier for PKCE
+                const codeVerifier = sessionStorage.getItem('code_verifier');
+                if (!codeVerifier) {
+                    console.error('No code verifier found');
+                    cleanupOAuthParams();
+                    return;
+                }
+
+                console.log('🔄 Exchanging authorization code for tokens...');
+                showToast('🔐 Completing sign-in...', 'Please wait', { duration: 3000 });
+
+                try {
+                    // Exchange code for tokens (PKCE allows this without client_secret)
+                    const tokenResponse = await fetch(OAUTH_TOKEN_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            client_id: GOOGLE_CLIENT_ID,
+                            code: code,
+                            code_verifier: codeVerifier,
+                            grant_type: 'authorization_code',
+                            redirect_uri: REDIRECT_URI,
+                        }),
+                    });
+
+                    const tokenData = await tokenResponse.json();
+
+                    if (tokenData.error) {
+                        throw new Error(tokenData.error_description || tokenData.error);
+                    }
+
+                    console.log('✅ Tokens received via PKCE');
+
+                    // Store token expiry
+                    const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+                    localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+                    // Store refresh token if provided (for seamless refresh!)
+                    if (tokenData.refresh_token) {
+                        localStorage.setItem('refreshToken', tokenData.refresh_token);
+                        console.log('✅ Refresh token stored for seamless sync!');
+                    }
+
+                    // Set token for gapi
+                    gapi.client.setToken({ access_token: tokenData.access_token });
+
+                    // Fetch user info
+                    await fetchUserInfo(tokenData.access_token);
+
+                    showToast('✅ Signed in successfully!', 'Sync enabled', { duration: 3000 });
+
+                } catch (error) {
+                    console.error('Token exchange failed:', error);
+                    alert('❌ Sign-in failed: ' + error.message);
+                } finally {
+                    cleanupOAuthParams();
+                }
+            }
+
+            function cleanupOAuthParams() {
+                // Clean up URL and session storage
+                sessionStorage.removeItem('oauth_state');
+                sessionStorage.removeItem('code_verifier');
+
+                // Remove OAuth params from URL
+                const url = new URL(window.location);
+                url.searchParams.delete('code');
+                url.searchParams.delete('state');
+                url.searchParams.delete('scope');
+                window.history.replaceState({}, document.title, url.pathname);
+            }
+
+            // Start PKCE OAuth flow
+            async function startPKCEFlow() {
+                // Generate PKCE parameters
+                const codeVerifier = generateCodeVerifier();
+                const codeChallenge = await generateCodeChallenge(codeVerifier);
+                const state = generateCodeVerifier(); // Random state for CSRF protection
+
+                // Save for later use
+                sessionStorage.setItem('code_verifier', codeVerifier);
+                sessionStorage.setItem('oauth_state', state);
+
+                // Build authorization URL
+                const authUrl = new URL(OAUTH_AUTH_URL);
+                authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
+                authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+                authUrl.searchParams.set('response_type', 'code');
+                authUrl.searchParams.set('scope', OAUTH_SCOPES);
+                authUrl.searchParams.set('state', state);
+                authUrl.searchParams.set('code_challenge', codeChallenge);
+                authUrl.searchParams.set('code_challenge_method', 'S256');
+                authUrl.searchParams.set('access_type', 'offline'); // Request refresh token
+                authUrl.searchParams.set('prompt', 'consent'); // Force consent to get refresh token
+
+                console.log('🔑 Starting PKCE OAuth flow...');
+
+                // Redirect to Google login
+                window.location.href = authUrl.toString();
+            }
+
+            // Silent refresh using stored refresh token
+            async function refreshWithToken() {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (!refreshToken) {
+                    console.log('No refresh token available');
+                    return null;
+                }
+
+                try {
+                    console.log('🔄 Refreshing token silently...');
+
+                    const response = await fetch(OAUTH_TOKEN_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            client_id: GOOGLE_CLIENT_ID,
+                            refresh_token: refreshToken,
+                            grant_type: 'refresh_token',
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        console.log('Refresh failed:', data.error);
+                        // Refresh token expired/revoked
+                        if (data.error === 'invalid_grant') {
+                            localStorage.removeItem('refreshToken');
+                        }
+                        return null;
+                    }
+
+                    console.log('✅ Token refreshed silently!');
+
+                    // Update token expiry
+                    const expiresAt = Date.now() + (data.expires_in * 1000);
+                    localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+
+                    // Update googleUser
+                    if (googleUser) {
+                        googleUser.accessToken = data.access_token;
+                    }
+
+                    // Set for gapi
+                    gapi.client.setToken({ access_token: data.access_token });
+
+                    return data.access_token;
+
+                } catch (error) {
+                    console.error('Refresh error:', error);
+                    return null;
+                }
             }
 
             function maybeEnableSync() {
@@ -4942,22 +5153,17 @@
                 }
             }
 
-            // Main sign-in function
+            // Main sign-in function - uses PKCE for security and refresh tokens
             async function signInWithGoogle() {
-                if (!gisInited) {
-                    alert('⏳ Google services still loading. Please wait...');
-                    return;
-                }
-
                 if (GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
                     alert('⚠️ Google Sign-In not configured yet.\n\nPlease add your Google Cloud Client ID in the code.');
                     return;
                 }
 
-                console.log('🔑 Requesting Google sign-in...');
+                console.log('🔑 Starting Google sign-in with PKCE...');
 
-                // Request token with consent to ensure all scopes are granted
-                requestToken({ prompt: 'consent' });
+                // Use PKCE flow for better security and refresh token support
+                await startPKCEFlow();
             }
 
             function continueAsGuest() {
@@ -5003,6 +5209,7 @@
                     localStorage.setItem('isGuest', 'true');
                     localStorage.removeItem('googleUser');
                     localStorage.removeItem('tokenExpiresAt');
+                    localStorage.removeItem('refreshToken'); // Clear PKCE refresh token
                     googleUser = null;
 
                     // Refresh page to show guest mode
@@ -5093,10 +5300,10 @@
                 showLoginScreen();
             }
 
-            // Silent token refresh (try to get new token without user interaction)
-            function silentTokenRefresh() {
-                if (!gisInited || !tokenClient || !googleUser) {
-                    console.log('⚠️ Cannot refresh - not fully initialized or no user');
+            // Silent token refresh - uses stored refresh token for seamless sync
+            async function silentTokenRefresh() {
+                if (!googleUser) {
+                    console.log('⚠️ Cannot refresh - no user');
                     return;
                 }
 
@@ -5111,17 +5318,31 @@
                     if (googleUser.accessToken) {
                         gapi.client.setToken({ access_token: googleUser.accessToken });
                     }
+                    // Still auto-sync
+                    checkAndAutoSync();
                     return;
                 }
 
                 console.log('🔄 Token expired/expiring, attempting silent refresh...');
 
-                // Try silent refresh - this may open a popup if Google session expired
-                // Using prompt: '' attempts to refresh without user interaction
-                try {
-                    requestToken({ prompt: '' });
-                } catch (error) {
-                    console.log('Silent refresh failed:', error);
+                // PRIORITY 1: Try PKCE refresh token (seamless like WhatsApp!)
+                const newToken = await refreshWithToken();
+                if (newToken) {
+                    console.log('✅ Seamless refresh successful!');
+                    checkAndAutoSync();
+                    return;
+                }
+
+                // PRIORITY 2: Try GIS silent refresh as fallback
+                if (gisInited && tokenClient) {
+                    try {
+                        console.log('🔄 Trying GIS silent refresh...');
+                        requestToken({ prompt: '' });
+                    } catch (error) {
+                        console.log('Silent refresh failed:', error);
+                        showToast('🔐 Session expired', 'Click Sync to reconnect', { duration: 4000 });
+                    }
+                } else {
                     showToast('🔐 Session expired', 'Click Sync to reconnect', { duration: 4000 });
                 }
             }
@@ -5935,11 +6156,15 @@
             async function syncWithDrive() {
                 // Check if user has token
                 if (googleUser && !googleUser.accessToken) {
-                    // No token - request one with consent
-                    if (gisInited && GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                        showToast('🔐 Authenticating...', 'Please grant Drive access', { duration: 3000 });
-                        requestToken({ prompt: 'consent' });
-                        return; // Token callback will handle the rest
+                    // Try to refresh token first
+                    const newToken = await refreshWithToken();
+                    if (newToken) {
+                        console.log('✅ Token refreshed, proceeding with sync');
+                    } else {
+                        // No token and can't refresh - need to sign in again
+                        showToast('🔐 Session expired', 'Please sign in again', { duration: 3000 });
+                        await startPKCEFlow();
+                        return;
                     }
                 }
 
