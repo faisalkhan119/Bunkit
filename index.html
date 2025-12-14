@@ -4919,6 +4919,21 @@
                     const tokenData = await tokenResponse.json();
 
                     if (tokenData.error) {
+                        // Check if it's the client_secret issue
+                        if (tokenData.error === 'invalid_request' &&
+                            tokenData.error_description?.includes('client_secret')) {
+                            console.log('⚠️ PKCE requires Desktop app client type. Falling back to GIS Token Flow...');
+                            showToast('🔄 Using alternative login...', 'Please wait', { duration: 2000 });
+                            cleanupOAuthParams();
+
+                            // Fall back to GIS Token Flow (works with Web Application client)
+                            if (gisInited && tokenClient) {
+                                requestToken({ prompt: 'consent' });
+                            } else {
+                                alert('❌ Please try again after page loads completely.');
+                            }
+                            return;
+                        }
                         throw new Error(tokenData.error_description || tokenData.error);
                     }
 
@@ -5153,17 +5168,25 @@
                 }
             }
 
-            // Main sign-in function - uses PKCE for security and refresh tokens
+            // Main sign-in function
+            // Uses GIS Token Flow (works with Web Application client)
+            // PKCE is available but requires Desktop app client type
             async function signInWithGoogle() {
                 if (GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
                     alert('⚠️ Google Sign-In not configured yet.\n\nPlease add your Google Cloud Client ID in the code.');
                     return;
                 }
 
-                console.log('🔑 Starting Google sign-in with PKCE...');
+                if (!gisInited || !tokenClient) {
+                    alert('⏳ Google services still loading. Please wait...');
+                    return;
+                }
 
-                // Use PKCE flow for better security and refresh token support
-                await startPKCEFlow();
+                console.log('🔑 Starting Google sign-in...');
+
+                // Use GIS Token Flow - works with Web Application client
+                // (PKCE requires Desktop app client type in Google Cloud Console)
+                requestToken({ prompt: 'consent' });
             }
 
             function continueAsGuest() {
@@ -6161,9 +6184,13 @@
                     if (newToken) {
                         console.log('✅ Token refreshed, proceeding with sync');
                     } else {
-                        // No token and can't refresh - need to sign in again
-                        showToast('🔐 Session expired', 'Please sign in again', { duration: 3000 });
-                        await startPKCEFlow();
+                        // No token and can't refresh - request via GIS
+                        if (gisInited && tokenClient) {
+                            showToast('🔐 Session expired', 'Please grant access', { duration: 3000 });
+                            requestToken({ prompt: 'consent' });
+                        } else {
+                            alert('⚠️ Please sign in with Google first.');
+                        }
                         return;
                     }
                 }
