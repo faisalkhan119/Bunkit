@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -2376,6 +2376,66 @@
         .leave-period-entry input[type="date"],
         .compulsory-period-entry input[type="date"] {
             flex-grow: 1;
+            min-width: 120px;
+            padding: 10px 8px;
+            font-size: 14px;
+            color: var(--main-text);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Ensure date text is visible on mobile */
+        .leave-period-entry input[type="date"]::-webkit-datetime-edit,
+        .compulsory-period-entry input[type="date"]::-webkit-datetime-edit {
+            color: var(--main-text);
+        }
+
+        .leave-period-entry input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+        .compulsory-period-entry input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+            color: var(--main-text);
+        }
+
+        /* Dark mode specific styling for leave planner dates */
+        body.dark-mode .leave-period-entry input[type="date"],
+        body.dark-mode .compulsory-period-entry input[type="date"] {
+            color: #ecf0f1;
+            background-color: #2c2c2c;
+            border-color: #444444;
+        }
+
+        body.dark-mode .leave-period-entry input[type="date"]::-webkit-datetime-edit,
+        body.dark-mode .compulsory-period-entry input[type="date"]::-webkit-datetime-edit,
+        body.dark-mode .leave-period-entry input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+        body.dark-mode .compulsory-period-entry input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+            color: #ecf0f1;
+        }
+
+        /* Mobile responsive adjustments for leave planner */
+        @media (max-width: 600px) {
+
+            .leave-period-entry,
+            .compulsory-period-entry {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .leave-period-entry label,
+            .compulsory-period-entry label {
+                font-size: 12px;
+                min-width: 35px;
+            }
+
+            .leave-period-entry input[type="date"],
+            .compulsory-period-entry input[type="date"] {
+                flex: 1 1 40%;
+                min-width: 100px;
+                font-size: 13px;
+                padding: 8px 6px;
+            }
         }
 
         /* iOS-style Input Styling for All Form Elements */
@@ -5169,24 +5229,10 @@
             }
 
             // Main sign-in function
-            // Uses GIS Token Flow (works with Web Application client)
-            // PKCE is available but requires Desktop app client type
+            // TEMPORARILY DISABLED - Database work in progress
             async function signInWithGoogle() {
-                if (GOOGLE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                    alert('⚠️ Google Sign-In not configured yet.\n\nPlease add your Google Cloud Client ID in the code.');
-                    return;
-                }
-
-                if (!gisInited || !tokenClient) {
-                    alert('⏳ Google services still loading. Please wait...');
-                    return;
-                }
-
-                console.log('🔑 Starting Google sign-in...');
-
-                // Use GIS Token Flow - works with Web Application client
-                // (PKCE requires Desktop app client type in Google Cloud Console)
-                requestToken({ prompt: 'consent' });
+                alert('🚧 Google Sign-In is temporarily unavailable.\n\nWe are currently working on the database.\n\nPlease click "Continue as Guest" for now. Your data will be saved locally on this device.');
+                return;
             }
 
             function continueAsGuest() {
@@ -6432,6 +6478,12 @@
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
+            }
+
+            // Parse YYYY-MM-DD string to local midnight Date (avoids UTC timezone issues)
+            function parseLocalDate(dateStr) {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                return new Date(year, month - 1, day); // month is 0-indexed
             }
 
             // --- INITIALIZATION & DATA MANAGEMENT ---
@@ -9276,7 +9328,7 @@ CRITICAL INSTRUCTIONS:
                 navigator.clipboard.writeText(promptText).then(() => alert('Prompt copied to clipboard!'), () => alert('Failed to copy prompt.'));
             }
 
-            function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = classes[className]; const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; openModal('exportModal'); }
+            function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = { ...classes[className] }; const timetableArrangement = localStorage.getItem(`timetable_arrangement_${className}`); if (timetableArrangement) { classData.timetableArrangement = JSON.parse(timetableArrangement); } const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; openModal('exportModal'); }
             function copyExportJson() { const jsonText = document.getElementById('exportJsonTextarea').value; navigator.clipboard.writeText(jsonText).then(() => { alert('Class JSON copied to clipboard!'); closeModal('exportModal'); }, () => alert('Failed to copy.')); }
             function editSelectedClass() { const selected = document.getElementById('classSelector').value; if (selected) openAddClassModal(selected); else alert("Please select a class to edit first."); }
             function addSubjectEntry(subject = {}) { const container = document.getElementById('subjectsContainer'); if (!container) return; const newIndex = container.children.length + 1; container.insertAdjacentHTML('beforeend', `<div class="subject-entry"><div class="subject-entry-header"><h4>Subject ${newIndex}</h4><button type="button" class="remove-subject-btn" onclick="removeSubjectEntry(this)">Remove</button></div><div class="form-group"><input type="text" placeholder="Subject Name" class="new-subject-name" value="${subject.name || ''}"></div><div class="form-group"><input type="text" placeholder="Subject Code (e.g., 21CSC202J)" class="new-subject-code" value="${subject.code || ''}"></div><label>Weekly Schedule (Mon-Sun)</label><div class="schedule-input">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => `<div class="schedule-day"><label>${day}</label><input type="number" class="new-subject-schedule" min="0" value="${(subject.schedule && subject.schedule[i]) ?? 0}"></div>`).join('')}</div></div>`); }
@@ -9284,7 +9336,7 @@ CRITICAL INSTRUCTIONS:
             function populateHolidaysInModal(holidays) { const holidayList = document.getElementById('holidayList'); holidayList.innerHTML = ''; holidays.forEach(dateStr => { const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); }); }
             function addHolidayToModal() { const dateInput = document.getElementById('newHolidayDate'); const dateStr = dateInput.value; if (dateStr) { const holidayList = document.getElementById('holidayList'); if ([...holidayList.querySelectorAll('span')].some(span => span.textContent === dateStr)) { alert("This holiday is already in the list."); return; } const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); dateInput.value = ''; } }
             function submitClassForm() { if (isJsonMode) { submitClassFromJson(); } else { submitClassFromForm(); } }
-            function submitClassFromForm() { const className = document.getElementById('newClassName').value.trim(); const lastDate = document.getElementById('newClassLastDate').value; if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; } const subjects = []; let isValid = true; document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => { const name = entry.querySelector('.new-subject-name').value.trim(); const code = entry.querySelector('.new-subject-code').value.trim(); const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0); if (!name || !code) isValid = false; subjects.push({ name, code, schedule }); }); if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; } const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort(); if (editingClassName && editingClassName !== className) { const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_']; keyPrefixes.forEach(prefix => { const oldData = localStorage.getItem(`${prefix}${editingClassName}`); if (oldData) { localStorage.setItem(`${prefix}${className}`, oldData); localStorage.removeItem(`${prefix}${editingClassName}`); } }); delete classes[editingClassName]; } classes[className] = { lastDate, subjects, holidays }; localStorage.removeItem(`timetable_arrangement_${className}`); saveToStorage(); alert(`Class "${className}" saved successfully!`); closeModal('addClassModal'); populateClassSelector(); document.getElementById('classSelector').value = className; onClassChange(); }
+            function submitClassFromForm() { const className = document.getElementById('newClassName').value.trim(); const lastDate = document.getElementById('newClassLastDate').value; if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; } const subjects = []; let isValid = true; document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => { const name = entry.querySelector('.new-subject-name').value.trim(); const code = entry.querySelector('.new-subject-code').value.trim(); const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0); if (!name || !code) isValid = false; subjects.push({ name, code, schedule }); }); if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; } const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort(); if (editingClassName && editingClassName !== className) { const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_']; keyPrefixes.forEach(prefix => { const oldData = localStorage.getItem(`${prefix}${editingClassName}`); if (oldData) { localStorage.setItem(`${prefix}${className}`, oldData); localStorage.removeItem(`${prefix}${editingClassName}`); } }); delete classes[editingClassName]; } const existingClass = classes[editingClassName] || classes[className] || {}; classes[className] = { ...existingClass, lastDate, subjects, holidays }; saveToStorage(); alert(`Class "${className}" saved successfully!`); closeModal('addClassModal'); populateClassSelector(); document.getElementById('classSelector').value = className; onClassChange(); }
             function submitClassFromJson() {
                 const jsonString = document.getElementById('jsonPasteArea').value;
                 if (!jsonString) {
@@ -9329,7 +9381,15 @@ CRITICAL INSTRUCTIONS:
                         alert('✅ Data loaded into form.\n\nPlease VERIFY the Weekly Schedule for each subject, then click "Save Class".');
                     } else {
                         // Save directly without verification
-                        classes[className] = classData;
+                        // Preserve existing properties (like portalSetup) if class already exists
+                        const existingClass = classes[className] || {};
+                        classes[className] = { ...existingClass, ...classData };
+
+                        // Save timetable arrangement if present in imported data
+                        if (classData.timetableArrangement) {
+                            localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(classData.timetableArrangement));
+                        }
+
                         saveToStorage();
                         alert(`Class "${className}" imported successfully!`);
                         closeModal('addClassModal');
@@ -12153,15 +12213,15 @@ CRITICAL RULES:
 
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                 const today = new Date();
-                const semStart = new Date(selectedClass.portalSetup.semesterStartDate);
+                const semStart = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
 
                 let lastLogDate = null;
 
                 // Find the most recent log date
                 Object.keys(logs).forEach(dateStr => {
-                    const logDate = new Date(dateStr);
+                    const logDate = parseLocalDate(dateStr);
                     if (logDate >= semStart && logDate <= today) {
-                        if (!lastLogDate || logDate > new Date(lastLogDate)) {
+                        if (!lastLogDate || logDate > parseLocalDate(lastLogDate)) {
                             lastLogDate = dateStr;
                         }
                     }
@@ -12640,7 +12700,7 @@ CRITICAL RULES:
                 if (!selectedClass || !selectedClass.portalSetup) return;
 
                 const baseline = selectedClass.portalSetup.baselineData;
-                const baselineDate = new Date(selectedClass.portalSetup.baselineDate);
+                const baselineDate = parseLocalDate(selectedClass.portalSetup.baselineDate);
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
 
                 // Check for incomplete logs to determine effective "current date"
@@ -12667,7 +12727,7 @@ CRITICAL RULES:
                 const pastLogStats = {};
 
                 Object.keys(logs).forEach(dateStr => {
-                    const logDate = new Date(dateStr);
+                    const logDate = parseLocalDate(dateStr);
                     // Check if log is before or on baseline date
                     if (logDate <= baselineDate) {
                         const dayLog = logs[dateStr];
@@ -12707,10 +12767,10 @@ CRITICAL RULES:
                 });
 
                 // 3. Add logs AFTER baseline date (but only up to effective current date)
-                const effectiveDateObj = new Date(effectiveCurrentDate);
+                const effectiveDateObj = parseLocalDate(effectiveCurrentDate);
 
                 Object.keys(logs).forEach(dateStr => {
-                    const logDate = new Date(dateStr);
+                    const logDate = parseLocalDate(dateStr);
                     if (logDate > baselineDate && logDate <= effectiveDateObj) {
                         const dayLog = logs[dateStr];
                         Object.keys(dayLog).forEach(code => {
@@ -13325,8 +13385,9 @@ CRITICAL RULES:
                 try {
                     const rawData = JSON.parse(decodedText);
                     let classData = {};
+                    let timetableArrangement = null;
 
-                    // Handle Minified Format (n=name, l=lastDate, s=subjects, h=holidays)
+                    // Handle Minified Format (n=name, l=lastDate, s=subjects, h=holidays, ta=timetableArrangement)
                     if (rawData.n && rawData.s) {
                         classData = {
                             name: rawData.n,
@@ -13338,9 +13399,17 @@ CRITICAL RULES:
                             })),
                             holidays: rawData.h || []
                         };
+                        // Extract timetable arrangement if present
+                        if (rawData.ta) {
+                            timetableArrangement = rawData.ta;
+                        }
                     } else {
                         // Handle Legacy Format
                         classData = rawData;
+                        // Check for timetableArrangement in legacy format
+                        if (rawData.timetableArrangement) {
+                            timetableArrangement = rawData.timetableArrangement;
+                        }
                     }
 
                     if (!classData.name || !classData.subjects || !Array.isArray(classData.subjects)) {
@@ -13362,6 +13431,12 @@ CRITICAL RULES:
                         holidays: classData.holidays || []
                     };
                     saveToStorage();
+
+                    // Save timetable arrangement if present
+                    if (timetableArrangement) {
+                        localStorage.setItem(`timetable_arrangement_${newName}`, JSON.stringify(timetableArrangement));
+                    }
+
                     populateClassSelector();
 
                     // Select the new class
@@ -13382,7 +13457,7 @@ CRITICAL RULES:
 
                 const classData = classes[editingClassName];
 
-                // Minify data for QR code (n=name, l=lastDate, s=subjects, h=holidays)
+                // Minify data for QR code (n=name, l=lastDate, s=subjects, h=holidays, ta=timetableArrangement)
                 // Subject: n=name, c=code, sc=schedule
                 const dataToShare = {
                     n: editingClassName,
@@ -13394,6 +13469,12 @@ CRITICAL RULES:
                     })),
                     h: classData.holidays || []
                 };
+
+                // Include timetable arrangement if exists
+                const timetableArrangement = localStorage.getItem(`timetable_arrangement_${editingClassName}`);
+                if (timetableArrangement) {
+                    dataToShare.ta = JSON.parse(timetableArrangement);
+                }
 
                 const jsonString = JSON.stringify(dataToShare);
                 const qrContainer = document.getElementById('qrcodeTab');
