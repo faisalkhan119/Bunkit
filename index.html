@@ -9312,7 +9312,16 @@ ${subjectLines.join('\n')}
         "schedule": [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
       },
       ...
-    ]
+    ],
+    "timetableArrangement": {
+      "Mon": ["SUBJECT-CODE-1", "SUBJECT-CODE-2", ...],
+      "Tue": ["SUBJECT-CODE-1", "SUBJECT-CODE-3", ...],
+      "Wed": [...],
+      "Thu": [...],
+      "Fri": [...],
+      "Sat": [...],
+      "Sun": [...]
+    }
   }
 }
 
@@ -9324,7 +9333,8 @@ CRITICAL INSTRUCTIONS:
 5.  Use the ATTENDANCE screenshot to identify which subjects are officially tracked. ONLY include these subjects in the JSON.
 6.  The 'subjects' array in the JSON output MUST follow the EXACT SAME SEQUENCE as the subjects appear in the attendance screenshot. This is crucial for correctness.
 7.  Use the TIMETABLE screenshot to fill the 'schedule' array for each subject. It MUST have exactly 7 integer elements (Mon-Sun), representing the number of classes per day. Use 0 for days with no classes.
-8.  Provide ONLY the JSON code block in your response, with no extra text or explanations.`;
+8.  'timetableArrangement' contains the SEQUENCE of subject codes for each day, in the ORDER they appear on the timetable (period 1, period 2, etc.). Use subject CODES, not names. Include a subject code multiple times if it has multiple periods that day.
+9.  Provide ONLY the JSON code block in your response, with no extra text or explanations.`;
                 navigator.clipboard.writeText(promptText).then(() => alert('Prompt copied to clipboard!'), () => alert('Failed to copy prompt.'));
             }
 
@@ -9449,7 +9459,16 @@ Generate a JSON object following this EXACT structure:
         "code": "SUBJECT-CODE",
         "schedule": [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
       }
-    ]
+    ],
+    "timetableArrangement": {
+      "Mon": ["SUBJECT-CODE-1", "SUBJECT-CODE-2", ...],
+      "Tue": ["SUBJECT-CODE-1", "SUBJECT-CODE-3", ...],
+      "Wed": [...],
+      "Thu": [...],
+      "Fri": [...],
+      "Sat": [...],
+      "Sun": [...]
+    }
   }
 }
 
@@ -9458,7 +9477,8 @@ CRITICAL RULES:
 2. Set lastDate to the semester end date (if not provided, infer from context or use a reasonable future date).
 3. Extract holidays from the text or image if available.
 4. For each subject: Extract full name, subject code, and the weekly schedule (array of 7 integers representing Mon-Sun class counts, use 0 for no classes).
-5. Provide ONLY the JSON code block, no explanations.`;
+5. 'timetableArrangement' contains the SEQUENCE of subject codes for each day, in the ORDER they appear on the timetable (period 1, period 2, etc.). Use subject CODES, not names. Include a subject code multiple times if it has multiple periods that day.
+6. Provide ONLY the JSON code block, no explanations.`;
 
                     // Convert images to base64
                     const imageParts = [];
