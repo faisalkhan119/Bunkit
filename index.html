@@ -13740,15 +13740,101 @@ CRITICAL RULES:
                     let classData = {};
                     let timetableArrangement = null;
 
-                    // === NEW FORMAT: Class name as top-level key ===
-                    // Format: { "ClassName": { lastDate, holidays, subjects: [{name, shortName, code, schedule}], qrCode } }
-                    const topLevelKeys = Object.keys(rawData);
-                    const isNewFullFormat = topLevelKeys.length === 1 &&
-                        rawData[topLevelKeys[0]] &&
-                        rawData[topLevelKeys[0]].subjects &&
-                        Array.isArray(rawData[topLevelKeys[0]].subjects);
+                    // === NEW MINIFIED FORMAT (v2): t, ld, h, s with sch ===
+                    // Format: { t: "ClassName", ld: "260401", h: ["250809"], s: [{n, sn, c, sch: "1|1,2|0|..."}] }
+                    const isMinifiedV2 = rawData.t && rawData.s && Array.isArray(rawData.s) &&
+                        rawData.s.length > 0 && rawData.s[0].sch !== undefined;
 
-                    if (isNewFullFormat) {
+                    if (isMinifiedV2) {
+                        console.log('Detected minified QR format v2');
+
+                        // Helper: Convert YYMMDD to YYYY-MM-DD
+                        const expandDate = (yymmdd) => {
+                            if (!yymmdd || yymmdd.length !== 6) return '';
+                            const yy = yymmdd.slice(0, 2);
+                            const mm = yymmdd.slice(2, 4);
+                            const dd = yymmdd.slice(4, 6);
+                            const century = parseInt(yy) > 50 ? '19' : '20';
+                            return `${century}${yy}-${mm}-${dd}`;
+                        };
+
+                        // Parse subjects
+                        const processedSubjects = rawData.s.map(sub => {
+                            // Parse pipe-delimited schedule: "1|1,2|0|3|0|0|0" -> [1, 2, 0, 1, 0, 0, 0] (counts)
+                            const schParts = (sub.sch || '0|0|0|0|0|0|0').split('|');
+                            const schedule = schParts.map(part => {
+                                if (!part || part === '0') return 0;
+                                return part.split(',').filter(p => p.trim() && p.trim() !== '0').length;
+                            });
+
+                            return {
+                                name: sub.n,
+                                shortName: sub.sn || getSubjectShortName(sub.n),
+                                code: sub.c,
+                                schedule: schedule
+                            };
+                        });
+
+                        // Generate timetable arrangement from sch strings
+                        timetableArrangement = {};
+                        let maxPeriods = 0;
+
+                        // Calculate max periods
+                        rawData.s.forEach(sub => {
+                            const schParts = (sub.sch || '').split('|');
+                            schParts.forEach(part => {
+                                if (part && part !== '0') {
+                                    const periods = part.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
+                                    if (periods.length > 0) {
+                                        maxPeriods = Math.max(maxPeriods, Math.max(...periods));
+                                    }
+                                }
+                            });
+                        });
+
+                        // Build arrangement using day indices (0-6)
+                        [0, 1, 2, 3, 4, 5, 6].forEach(dayIndex => {
+                            timetableArrangement[dayIndex] = Array(maxPeriods).fill(null);
+
+                            rawData.s.forEach(sub => {
+                                const schParts = (sub.sch || '').split('|');
+                                const daySchedule = schParts[dayIndex] || '0';
+
+                                if (daySchedule && daySchedule !== '0') {
+                                    const periods = daySchedule.split(',')
+                                        .map(p => parseInt(p.trim()))
+                                        .filter(p => !isNaN(p) && p > 0);
+
+                                    periods.forEach(periodNum => {
+                                        if (periodNum > 0 && periodNum <= maxPeriods) {
+                                            timetableArrangement[dayIndex][periodNum - 1] = sub.c;
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Clean up trailing nulls
+                            while (timetableArrangement[dayIndex].length > 0 &&
+                                timetableArrangement[dayIndex][timetableArrangement[dayIndex].length - 1] === null) {
+                                timetableArrangement[dayIndex].pop();
+                            }
+                        });
+
+                        classData = {
+                            name: rawData.t,
+                            lastDate: expandDate(rawData.ld),
+                            subjects: processedSubjects,
+                            holidays: (rawData.h || []).map(expandDate)
+                        };
+                    }
+                    // === OLD FULL FORMAT: Class name as top-level key ===
+                    // Format: { "ClassName": { lastDate, holidays, subjects: [{name, shortName, code, schedule}], qrCode } }
+                    else if (Object.keys(rawData).length === 1 &&
+                        rawData[Object.keys(rawData)[0]] &&
+                        rawData[Object.keys(rawData)[0]].subjects &&
+                        Array.isArray(rawData[Object.keys(rawData)[0]].subjects)) {
+
+                        const topLevelKeys = Object.keys(rawData);
                         const className = topLevelKeys[0];
                         const data = rawData[className];
 
@@ -13980,61 +14066,71 @@ CRITICAL RULES:
                     // Get timetable arrangement for accurate period numbers
                     const arrangement = getTimetableArrangement(editingClassName);
 
-                    // Build full JSON format matching export (with shortName and string schedules)
-                    const dataToShare = {
-                        [editingClassName]: {
-                            lastDate: classData.lastDate,
-                            holidays: classData.holidays || [],
-                            subjects: classData.subjects.map((subject, index) => {
-                                // Add shortName if not present
-                                const shortName = subject.shortName || getSubjectShortName(subject.name);
+                    // === MINIFIED FORMAT for low-density QR ===
+                    // t=title, ld=lastDate(YYMMDD), h=holidays, s=subjects
+                    // Subject: n=name, sn=shortName, c=code, sch=schedule(pipe-delimited)
 
-                                // Convert schedule to new string format using timetable arrangement
-                                let newSchedule = [];
-                                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                                days.forEach((dayName, dayIndex) => {
-                                    if (arrangement && arrangement[dayIndex]) {
-                                        // Find which periods this subject occupies
-                                        const periods = [];
-                                        arrangement[dayIndex].forEach((item, periodIndex) => {
-                                            const itemCode = (typeof item === 'string') ? item : (item?.code || null);
-                                            if (itemCode === subject.code) {
-                                                periods.push(periodIndex + 1);
-                                            }
-                                        });
-                                        newSchedule.push(periods.length > 0 ? periods.join(',') : '0');
-                                    } else {
-                                        // Fallback: use count-based format
-                                        const count = subject.schedule?.[dayIndex] || 0;
-                                        if (count > 0) {
-                                            const periods = Array.from({ length: count }, (_, i) => i + 1);
-                                            newSchedule.push(periods.join(','));
-                                        } else {
-                                            newSchedule.push('0');
-                                        }
-                                    }
-                                });
-
-                                return {
-                                    name: subject.name,
-                                    shortName: shortName,
-                                    code: subject.code,
-                                    schedule: newSchedule
-                                };
-                            }),
-                            qrCode: ''
-                        }
+                    // Helper: Convert YYYY-MM-DD to YYMMDD
+                    const compressDate = (dateStr) => {
+                        if (!dateStr) return '';
+                        return dateStr.replace(/-/g, '').slice(2); // "2025-08-09" -> "250809"
                     };
 
-                    const jsonString = JSON.stringify(dataToShare);
+                    // Build minified data
+                    const minifiedData = {
+                        t: editingClassName,
+                        ld: compressDate(classData.lastDate),
+                        h: (classData.holidays || []).map(compressDate),
+                        s: classData.subjects.map((subject) => {
+                            // Get shortName
+                            const shortName = subject.shortName || getSubjectShortName(subject.name);
+
+                            // Build schedule string (pipe-delimited)
+                            let scheduleArr = [];
+                            [0, 1, 2, 3, 4, 5, 6].forEach(dayIndex => {
+                                if (arrangement && arrangement[dayIndex]) {
+                                    // Find which periods this subject occupies
+                                    const periods = [];
+                                    arrangement[dayIndex].forEach((item, periodIndex) => {
+                                        const itemCode = (typeof item === 'string') ? item : (item?.code || null);
+                                        if (itemCode === subject.code) {
+                                            periods.push(periodIndex + 1);
+                                        }
+                                    });
+                                    scheduleArr.push(periods.length > 0 ? periods.join(',') : '0');
+                                } else {
+                                    // Fallback: use count-based format
+                                    const count = subject.schedule?.[dayIndex] || 0;
+                                    if (count > 0) {
+                                        const periods = Array.from({ length: count }, (_, i) => i + 1);
+                                        scheduleArr.push(periods.join(','));
+                                    } else {
+                                        scheduleArr.push('0');
+                                    }
+                                }
+                            });
+
+                            return {
+                                n: subject.name,
+                                sn: shortName,
+                                c: subject.code,
+                                sch: scheduleArr.join('|') // "1|1,2|1|0|1|1|0"
+                            };
+                        })
+                    };
+
+                    const jsonString = JSON.stringify(minifiedData);
                     qrContainer.innerHTML = '';
 
-                    // Check if data is too large for QR (limit ~2KB for reliable scanning)
+                    // Show size info
+                    console.log(`QR Data size: ${jsonString.length} chars`);
+
+                    // Check if data is too large for QR (limit ~2.5KB for reliable scanning)
                     if (jsonString.length > 2500) {
                         qrContainer.innerHTML = `<div style="color:var(--warning-color); padding:20px; text-align:center;">
                             <p>⚠️ Class data is too large for QR Code (${jsonString.length} chars).</p>
                             <p style="font-size:0.8rem">Use "Copy JSON" to share via text instead.</p>
-                            <button class="btn primary-btn" onclick="navigator.clipboard.writeText(JSON.stringify(${JSON.stringify(dataToShare)}, null, 2)).then(() => alert('JSON copied!'))">📋 Copy JSON</button>
+                            <button class="btn primary-btn" onclick="copyMinifiedQRData()">📋 Copy JSON</button>
                         </div>`;
                         return;
                     }
@@ -14047,6 +14143,12 @@ CRITICAL RULES:
                         colorLight: "#ffffff",
                         correctLevel: QRCode.CorrectLevel.L
                     });
+
+                    // Center the QR code
+                    qrContainer.style.display = 'flex';
+                    qrContainer.style.flexDirection = 'column';
+                    qrContainer.style.alignItems = 'center';
+                    qrContainer.style.justifyContent = 'center';
                 } catch (error) {
                     console.error("QR Gen Error:", error);
                     qrContainer.innerHTML = `<div style="color:var(--danger-color); padding:20px; text-align:center;">
@@ -14055,6 +14157,40 @@ CRITICAL RULES:
                     </div>`;
                     alert("Error generating QR code. The class data might be too large.");
                 }
+            }
+
+            // Helper to copy minified QR data
+            function copyMinifiedQRData() {
+                if (!editingClassName || !classes[editingClassName]) return;
+                const classData = classes[editingClassName];
+                const arrangement = getTimetableArrangement(editingClassName);
+
+                const compressDate = (dateStr) => dateStr ? dateStr.replace(/-/g, '').slice(2) : '';
+
+                const minifiedData = {
+                    t: editingClassName,
+                    ld: compressDate(classData.lastDate),
+                    h: (classData.holidays || []).map(compressDate),
+                    s: classData.subjects.map(subject => ({
+                        n: subject.name,
+                        sn: subject.shortName || getSubjectShortName(subject.name),
+                        c: subject.code,
+                        sch: [0, 1, 2, 3, 4, 5, 6].map(dayIndex => {
+                            if (arrangement && arrangement[dayIndex]) {
+                                const periods = [];
+                                arrangement[dayIndex].forEach((item, pi) => {
+                                    const code = typeof item === 'string' ? item : item?.code;
+                                    if (code === subject.code) periods.push(pi + 1);
+                                });
+                                return periods.length > 0 ? periods.join(',') : '0';
+                            }
+                            return '0';
+                        }).join('|')
+                    }))
+                };
+
+                navigator.clipboard.writeText(JSON.stringify(minifiedData))
+                    .then(() => alert('Minified JSON copied!'));
             }
 
             function shareQRImageTab() {
