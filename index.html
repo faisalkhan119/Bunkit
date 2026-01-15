@@ -2258,7 +2258,8 @@
         .schedule-input {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
+            gap: 4px;
+            /* Reduced gap to fit small screens */
             margin-top: 10px;
         }
 
@@ -2271,11 +2272,14 @@
 
         .schedule-day input {
             width: 100%;
-            padding: 8px;
+            min-width: 32px;
+            padding: 0;
+            /* MAX space */
             text-align: center;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 1rem;
+            font-size: 8px;
+            /* Reduced to 10px */
             -moz-appearance: textfield;
             appearance: textfield;
         }
@@ -2359,9 +2363,12 @@
         .leave-period-entry,
         .compulsory-period-entry {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            /* Allow wrapping on small screens */
+            gap: 5px;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            /* Increased bottom margin for wrapped items */
             transition: border-color 0.3s;
             border: 2px solid transparent;
             padding: 5px;
@@ -2376,13 +2383,21 @@
         .leave-period-entry input[type="date"],
         .compulsory-period-entry input[type="date"] {
             flex-grow: 1;
-            min-width: 120px;
+            /* Default: Desktop (Inline) */
+            flex-basis: auto;
+            width: auto;
+            min-width: 140px;
             padding: 10px 8px;
-            font-size: 14px;
-            color: var(--main-text);
+            margin-bottom: 0;
+            font-size: 16px;
+            color: var(--main-text) !important;
+            /* Force visibility */
             background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            /* Match card background */
+            /* Force opacity */
+            opacity: 1 !important;
+            z-index: 1;
+            position: relative;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -2435,6 +2450,28 @@
                 min-width: 100px;
                 font-size: 13px;
                 padding: 8px 6px;
+            }
+        }
+
+        /* Mobile Layout: Stack Dates */
+        @media (max-width: 768px) {
+
+            .leave-period-entry input[type="date"],
+            .compulsory-period-entry input[type="date"] {
+                flex-basis: 100% !important;
+                /* Force full width (new line) */
+                width: 100% !important;
+                min-width: unset;
+                /* Allow it to shrink if container is small */
+                margin-bottom: 5px;
+                /* Add spacing between lines */
+                display: block;
+                /* Ensure block behavior */
+            }
+
+            .leave-period-entry,
+            .compulsory-period-entry {
+                flex-wrap: wrap !important;
             }
         }
 
@@ -9299,54 +9336,207 @@ ${subjectLines.join('\n')}
             }
 
             function copyAIPrompt() {
-                const promptText = `Analyze the provided university timetable screenshot, ATTENDANCE DETAILS screenshot, list of holidays, and last working date. Your task is to generate a single JSON object that strictly follows this structure:
+                const promptText = `Generate a JSON structure for a weekly class timetable.
 
+**Global Fields:**
+* Include \`lastDate\` (validity as YYYY-MM-DD), a list of \`holidays\` (array of YYYY-MM-DD strings), and a \`qrCode\` string (for export/sharing - use empty string).
+
+**Subjects Array:**
+* The structure must **not** include a separate \`timetableArrangement\` object. All scheduling logic belongs inside \`subjects\`.
+* Each subject object must contain: \`name\`, \`code\`, \`shortName\`, and \`schedule\`.
+
+**Schedule Logic:**
+* The \`schedule\` key must be an array of 7 strings (representing days 0-6, Mon-Sun).
+* Use the period number as a string (e.g., \`"1"\`).
+* If a subject occupies multiple periods on one day, separate them with commas (e.g., \`"2,3"\`).
+* If there is no class, use \`"0"\`.
+
+EXACT JSON STRUCTURE:
 {
   "CLASS NAME": {
     "lastDate": "YYYY-MM-DD",
-    "holidays": ["YYYY-MM-DD", "YYYY-MM-DD", ...],
+    "qrCode": "",
+    "holidays": ["YYYY-MM-DD", "YYYY-MM-DD"],
     "subjects": [
       {
         "name": "Full Subject Name",
+        "shortName": "ABBR",
         "code": "SUBJECT-CODE",
-        "schedule": [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
-      },
-      ...
-    ],
-    "timetableArrangement": {
-      "Mon": ["SUBJECT-CODE-1", "SUBJECT-CODE-2", ...],
-      "Tue": ["SUBJECT-CODE-1", "SUBJECT-CODE-3", ...],
-      "Wed": [...],
-      "Thu": [...],
-      "Fri": [...],
-      "Sat": [...],
-      "Sun": [...]
-    }
+        "schedule": ["1", "1,2", "0", "3", "0", "0", "0"]
+      }
+    ]
   }
 }
 
 CRITICAL INSTRUCTIONS:
-1.  The top-level key MUST be the class name (e.g., "CSE Core - H").
-2.  'lastDate' is the single last working day of the semester.
-3.  'holidays' is an array of strings for all given holiday dates.
-4.  'subjects' is an array of objects.
-5.  Use the ATTENDANCE screenshot to identify which subjects are officially tracked. ONLY include these subjects in the JSON.
-6.  The 'subjects' array in the JSON output MUST follow the EXACT SAME SEQUENCE as the subjects appear in the attendance screenshot. This is crucial for correctness.
-7.  Use the TIMETABLE screenshot to fill the 'schedule' array for each subject. It MUST have exactly 7 integer elements (Mon-Sun), representing the number of classes per day. Use 0 for days with no classes.
-8.  'timetableArrangement' contains the SEQUENCE of subject codes for each day, in the ORDER they appear on the timetable (period 1, period 2, etc.). Use subject CODES, not names. Include a subject code multiple times if it has multiple periods that day.
-9.  Provide ONLY the JSON code block in your response, with no extra text or explanations.`;
+1. The top-level key MUST be the class name (e.g., "CSE Core - H").
+2. 'lastDate' is the single last working day of the semester.
+3. 'holidays' is an array of date strings for all holiday dates.
+4. For 'shortName', use a short abbreviation (2-5 characters) like "DS&A", "OS", "CO&A".
+5. The 'schedule' array represents Mon(0) to Sun(6). Use period numbers as strings.
+6. Provide ONLY the JSON code block in your response, with no extra text.`;
                 navigator.clipboard.writeText(promptText).then(() => alert('Prompt copied to clipboard!'), () => alert('Failed to copy prompt.'));
             }
 
-            function openExportModal() { const className = document.getElementById('classSelector').value; if (!className) { alert('Please select a class to export.'); return; } const classData = { ...classes[className] }; const timetableArrangement = localStorage.getItem(`timetable_arrangement_${className}`); if (timetableArrangement) { classData.timetableArrangement = JSON.parse(timetableArrangement); } const exportObject = { [className]: classData }; const jsonString = JSON.stringify(exportObject, null, 2); document.getElementById('exportJsonTextarea').value = jsonString; openModal('exportModal'); }
+            function openExportModal() {
+                const className = document.getElementById('classSelector').value;
+                if (!className) { alert('Please select a class to export.'); return; }
+
+                const classData = { ...classes[className] };
+
+                // Add qrCode field (empty placeholder)
+                classData.qrCode = classData.qrCode || '';
+
+                // Get timetable arrangement and convert to new string schedule format
+                const arrangement = getTimetableArrangement(className);
+
+                // Process subjects to include shortName and convert schedule to string format
+                if (classData.subjects) {
+                    classData.subjects = classData.subjects.map((subject, index) => {
+                        // Add shortName if not present
+                        const shortName = subject.shortName || getSubjectShortName(subject.name);
+
+                        // Convert schedule to new string format using timetable arrangement
+                        let newSchedule = [];
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        days.forEach((dayName, dayIndex) => {
+                            if (arrangement && arrangement[dayIndex]) {
+                                // Find which periods this subject occupies
+                                const periods = [];
+                                arrangement[dayIndex].forEach((item, periodIndex) => {
+                                    const itemCode = (typeof item === 'string') ? item : (item?.code || null);
+                                    if (itemCode === subject.code) {
+                                        periods.push(periodIndex + 1);
+                                    }
+                                });
+                                newSchedule.push(periods.length > 0 ? periods.join(',') : '0');
+                            } else {
+                                // Fallback: use count-based format
+                                const count = subject.schedule?.[dayIndex] || 0;
+                                if (count > 0) {
+                                    const periods = Array.from({ length: count }, (_, i) => i + 1);
+                                    newSchedule.push(periods.join(','));
+                                } else {
+                                    newSchedule.push('0');
+                                }
+                            }
+                        });
+
+                        return {
+                            name: subject.name,
+                            shortName: shortName,
+                            code: subject.code,
+                            schedule: newSchedule
+                        };
+                    });
+                }
+
+                // Remove timetableArrangement from export (not part of new format)
+                delete classData.timetableArrangement;
+
+                const exportObject = { [className]: classData };
+                const jsonString = JSON.stringify(exportObject, null, 2);
+                document.getElementById('exportJsonTextarea').value = jsonString;
+                openModal('exportModal');
+            }
             function copyExportJson() { const jsonText = document.getElementById('exportJsonTextarea').value; navigator.clipboard.writeText(jsonText).then(() => { alert('Class JSON copied to clipboard!'); closeModal('exportModal'); }, () => alert('Failed to copy.')); }
             function editSelectedClass() { const selected = document.getElementById('classSelector').value; if (selected) openAddClassModal(selected); else alert("Please select a class to edit first."); }
             function addSubjectEntry(subject = {}) { const container = document.getElementById('subjectsContainer'); if (!container) return; const newIndex = container.children.length + 1; container.insertAdjacentHTML('beforeend', `<div class="subject-entry"><div class="subject-entry-header"><h4>Subject ${newIndex}</h4><button type="button" class="remove-subject-btn" onclick="removeSubjectEntry(this)">Remove</button></div><div class="form-group"><input type="text" placeholder="Subject Name" class="new-subject-name" value="${subject.name || ''}"></div><div class="form-group"><input type="text" placeholder="Subject Code (e.g., 21CSC202J)" class="new-subject-code" value="${subject.code || ''}"></div><label>Weekly Schedule (Mon-Sun)</label><div class="schedule-input">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => `<div class="schedule-day"><label>${day}</label><input type="number" class="new-subject-schedule" min="0" value="${(subject.schedule && subject.schedule[i]) ?? 0}"></div>`).join('')}</div></div>`); }
             function removeSubjectEntry(button) { button.closest('.subject-entry').remove(); document.querySelectorAll('#subjectsContainer .subject-entry-header h4').forEach((h4, index) => h4.textContent = `Subject ${index + 1}`); }
             function populateHolidaysInModal(holidays) { const holidayList = document.getElementById('holidayList'); holidayList.innerHTML = ''; holidays.forEach(dateStr => { const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); }); }
             function addHolidayToModal() { const dateInput = document.getElementById('newHolidayDate'); const dateStr = dateInput.value; if (dateStr) { const holidayList = document.getElementById('holidayList'); if ([...holidayList.querySelectorAll('span')].some(span => span.textContent === dateStr)) { alert("This holiday is already in the list."); return; } const li = document.createElement('li'); li.innerHTML = `<span>${dateStr}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`; holidayList.appendChild(li); dateInput.value = ''; } }
+            let tempTimetableArrangement = null; // Temporary storage for import verification
+
+            function generateDefaultTimetable(subjects) {
+                const ta = {};
+                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                days.forEach((day, dayIndex) => {
+                    const dailySequence = [];
+                    subjects.forEach(subject => {
+                        // Handle subject.schedule which might be array or map ? 
+                        // The app uses array [Mon, Tue...] usually.
+                        const count = (subject.schedule && subject.schedule[dayIndex]) || 0;
+                        for (let k = 0; k < count; k++) {
+                            dailySequence.push(subject.code);
+                        }
+                    });
+                    ta[day] = dailySequence;
+                });
+                return ta;
+            }
+
             function submitClassForm() { if (isJsonMode) { submitClassFromJson(); } else { submitClassFromForm(); } }
-            function submitClassFromForm() { const className = document.getElementById('newClassName').value.trim(); const lastDate = document.getElementById('newClassLastDate').value; if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; } const subjects = []; let isValid = true; document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => { const name = entry.querySelector('.new-subject-name').value.trim(); const code = entry.querySelector('.new-subject-code').value.trim(); const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0); if (!name || !code) isValid = false; subjects.push({ name, code, schedule }); }); if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; } const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort(); if (editingClassName && editingClassName !== className) { const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_']; keyPrefixes.forEach(prefix => { const oldData = localStorage.getItem(`${prefix}${editingClassName}`); if (oldData) { localStorage.setItem(`${prefix}${className}`, oldData); localStorage.removeItem(`${prefix}${editingClassName}`); } }); delete classes[editingClassName]; } const existingClass = classes[editingClassName] || classes[className] || {}; classes[className] = { ...existingClass, lastDate, subjects, holidays }; saveToStorage(); alert(`Class "${className}" saved successfully!`); closeModal('addClassModal'); populateClassSelector(); document.getElementById('classSelector').value = className; onClassChange(); }
+
+            function submitClassFromForm() {
+                const className = document.getElementById('newClassName').value.trim();
+                const lastDate = document.getElementById('newClassLastDate').value;
+                if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; }
+                const subjects = [];
+                let isValid = true;
+                document.querySelectorAll('#subjectsContainer .subject-entry').forEach(entry => {
+                    const name = entry.querySelector('.new-subject-name').value.trim();
+                    const code = entry.querySelector('.new-subject-code').value.trim();
+                    const schedule = Array.from(entry.querySelectorAll('.new-subject-schedule')).map(i => parseInt(i.value) || 0);
+                    if (!name || !code) isValid = false;
+                    subjects.push({ name, code, schedule });
+                });
+                if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; }
+                const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort();
+
+                if (editingClassName && editingClassName !== className) {
+                    const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_'];
+                    keyPrefixes.forEach(prefix => {
+                        const oldData = localStorage.getItem(`${prefix}${editingClassName}`);
+                        if (oldData) {
+                            localStorage.setItem(`${prefix}${className}`, oldData);
+                            localStorage.removeItem(`${prefix}${editingClassName}`);
+                        }
+                    });
+                    delete classes[editingClassName];
+                }
+
+                const existingClass = classes[editingClassName] || classes[className] || {};
+                classes[className] = { ...existingClass, lastDate, subjects, holidays };
+
+                // === Handle Pending Imported Timetable ===
+                if (tempTimetableArrangement) {
+                    localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(tempTimetableArrangement));
+                    tempTimetableArrangement = null; // Clear after saving
+                } else {
+                    // Check if existing timetable is valid (not just exists, but has content)
+                    const existingTAJson = localStorage.getItem(`timetable_arrangement_${className}`);
+                    let isValidTA = false;
+
+                    if (existingTAJson) {
+                        try {
+                            const parsedTA = JSON.parse(existingTAJson);
+                            // Check if it has keys and at least one day is not empty
+                            if (parsedTA && Object.keys(parsedTA).length > 0) {
+                                const hasContent = Object.values(parsedTA).some(dayArr => Array.isArray(dayArr) && dayArr.length > 0);
+                                if (hasContent) isValidTA = true;
+                            }
+                        } catch (e) {
+                            console.warn("Invalid TA JSON found, regenerating...");
+                        }
+                    }
+
+                    // If missing or invalid, force regeneration
+                    if (!isValidTA) {
+                        const defaultAT = generateDefaultTimetable(subjects);
+                        if (Object.keys(defaultAT).length > 0) {
+                            localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(defaultAT));
+                        }
+                    }
+                }
+
+                saveToStorage();
+                alert(`Class "${className}" saved successfully!`);
+                closeModal('addClassModal');
+                populateClassSelector();
+                document.getElementById('classSelector').value = className;
+                onClassChange();
+            }
+
             function submitClassFromJson() {
                 const jsonString = document.getElementById('jsonPasteArea').value;
                 if (!jsonString) {
@@ -9355,12 +9545,119 @@ CRITICAL INSTRUCTIONS:
                 }
 
                 try {
-                    const data = JSON.parse(jsonString);
+                    let data = JSON.parse(jsonString);
+
+                    // === NORMALIZE MINIFIED QR FORMAT ===
+                    // QR codes use compressed keys: n=name, l=lastDate, s=subjects, sc=schedule, h=holidays, tt=timetableArrangement
+                    const isMinifiedFormat = data.n && data.s && Array.isArray(data.s);
+
+                    if (isMinifiedFormat) {
+                        console.log('Detected minified QR format, normalizing...');
+                        const className = data.n;
+                        const normalizedData = {
+                            [className]: {
+                                lastDate: data.l || '',
+                                qrCode: '',
+                                holidays: data.h || [],
+                                subjects: (data.s || []).map(sub => ({
+                                    name: sub.n || '',
+                                    code: sub.c || '',
+                                    shortName: sub.sn || '', // If provided
+                                    schedule: sub.sc || [0, 0, 0, 0, 0, 0, 0]
+                                })),
+                                timetableArrangement: data.tt || null
+                            }
+                        };
+                        data = normalizedData;
+                    }
+
                     const className = Object.keys(data)[0];
                     if (!className) throw new Error("JSON is missing the top-level class name key.");
                     const classData = data[className];
                     if (!classData.lastDate || !Array.isArray(classData.holidays) || !Array.isArray(classData.subjects)) {
                         throw new Error("JSON structure is invalid. Missing 'lastDate', 'holidays', or 'subjects'.");
+                    }
+
+                    // === DETECT AND CONVERT SCHEDULE FORMAT ===
+                    // Check if using new string format (e.g., ["1", "1,2", "0"]) or old integer format (e.g., [1, 2, 0])
+                    const isNewFormat = classData.subjects.some(subject => {
+                        if (!subject.schedule || !Array.isArray(subject.schedule)) return false;
+                        return subject.schedule.some(val => typeof val === 'string' && val !== '0' && val.includes(','));
+                    }) || classData.subjects.every(subject => {
+                        if (!subject.schedule || !Array.isArray(subject.schedule)) return false;
+                        return subject.schedule.every(val => typeof val === 'string');
+                    });
+
+                    console.log('Schedule format detected:', isNewFormat ? 'NEW (string-based)' : 'OLD (integer-based)');
+
+                    // Prepare Timetable Arrangement (Use imported or Generate from schedule)
+                    let arrangement = classData.timetableArrangement;
+
+                    if (isNewFormat && (!arrangement || Object.keys(arrangement).length === 0)) {
+                        // Generate arrangement from new string schedule format
+                        arrangement = {};
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+                        // Calculate max periods per day
+                        let maxPeriods = 0;
+                        classData.subjects.forEach(subject => {
+                            subject.schedule.forEach(daySchedule => {
+                                if (daySchedule && daySchedule !== '0') {
+                                    const periods = String(daySchedule).split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+                                    if (periods.length > 0) {
+                                        maxPeriods = Math.max(maxPeriods, Math.max(...periods));
+                                    }
+                                }
+                            });
+                        });
+
+                        // Build arrangement from schedule strings
+                        days.forEach((dayName, dayIndex) => {
+                            arrangement[dayIndex] = Array(maxPeriods).fill(null);
+
+                            classData.subjects.forEach(subject => {
+                                if (subject.schedule && subject.schedule[dayIndex] && subject.schedule[dayIndex] !== '0') {
+                                    const periods = String(subject.schedule[dayIndex]).split(',')
+                                        .map(p => parseInt(p.trim()))
+                                        .filter(p => !isNaN(p) && p > 0);
+
+                                    periods.forEach(periodNum => {
+                                        if (periodNum > 0 && periodNum <= maxPeriods) {
+                                            arrangement[dayIndex][periodNum - 1] = subject.code;
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Clean up trailing nulls
+                            while (arrangement[dayIndex].length > 0 && arrangement[dayIndex][arrangement[dayIndex].length - 1] === null) {
+                                arrangement[dayIndex].pop();
+                            }
+                        });
+
+                        // Convert subject schedule from string to integer count for internal use
+                        classData.subjects = classData.subjects.map(subject => ({
+                            ...subject,
+                            shortName: subject.shortName || getSubjectShortName(subject.name),
+                            schedule: subject.schedule.map(daySchedule => {
+                                if (!daySchedule || daySchedule === '0') return 0;
+                                return String(daySchedule).split(',').filter(p => p.trim() && p.trim() !== '0').length;
+                            })
+                        }));
+                    } else if (!arrangement || Object.keys(arrangement).length === 0) {
+                        // OLD FORMAT: Generate default timetable
+                        arrangement = generateDefaultTimetable(classData.subjects);
+
+                        // Ensure shortName exists
+                        classData.subjects = classData.subjects.map(subject => ({
+                            ...subject,
+                            shortName: subject.shortName || getSubjectShortName(subject.name)
+                        }));
+                    }
+
+                    // Store qrCode if provided
+                    if (classData.qrCode) {
+                        classData.qrCode = classData.qrCode;
                     }
 
                     // Ask user if they want to verify before saving
@@ -9369,6 +9666,9 @@ CRITICAL INSTRUCTIONS:
                     const shouldVerify = confirm(verifyMessage);
 
                     if (shouldVerify) {
+                        // Store arrangement in temp variable for submitClassFromForm to pick up
+                        tempTimetableArrangement = arrangement;
+
                         // Populate form for verification
                         document.getElementById('newClassName').value = className;
                         document.getElementById('newClassLastDate').value = classData.lastDate;
@@ -9391,13 +9691,12 @@ CRITICAL INSTRUCTIONS:
                         alert('✅ Data loaded into form.\n\nPlease VERIFY the Weekly Schedule for each subject, then click "Save Class".');
                     } else {
                         // Save directly without verification
-                        // Preserve existing properties (like portalSetup) if class already exists
                         const existingClass = classes[className] || {};
                         classes[className] = { ...existingClass, ...classData };
 
-                        // Save timetable arrangement if present in imported data
-                        if (classData.timetableArrangement) {
-                            localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(classData.timetableArrangement));
+                        // Save timetable arrangement
+                        if (arrangement) {
+                            localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(arrangement));
                         }
 
                         saveToStorage();
@@ -9452,33 +9751,30 @@ Generate a JSON object following this EXACT structure:
 {
   "<CLASS_NAME>": {
     "lastDate": "YYYY-MM-DD",
-    "holidays": ["YYYY-MM-DD", ...],
+    "qrCode": "",
+    "holidays": ["YYYY-MM-DD"],
     "subjects": [
       {
         "name": "Full Subject Name",
+        "shortName": "ABBR",
         "code": "SUBJECT-CODE",
-        "schedule": [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+        "schedule": ["1", "1,2", "0", "3", "0", "0", "0"]
       }
-    ],
-    "timetableArrangement": {
-      "Mon": ["SUBJECT-CODE-1", "SUBJECT-CODE-2", ...],
-      "Tue": ["SUBJECT-CODE-1", "SUBJECT-CODE-3", ...],
-      "Wed": [...],
-      "Thu": [...],
-      "Fri": [...],
-      "Sat": [...],
-      "Sun": [...]
-    }
+    ]
   }
 }
 
 CRITICAL RULES:
 1. Use the CLASS NAME from the image or the additional text provided.
-2. Set lastDate to the semester end date (if not provided, infer from context or use a reasonable future date).
+2. Set lastDate to the semester end date (if not provided, use a reasonable future date).
 3. Extract holidays from the text or image if available.
-4. For each subject: Extract full name, subject code, and the weekly schedule (array of 7 integers representing Mon-Sun class counts, use 0 for no classes).
-5. 'timetableArrangement' contains the SEQUENCE of subject codes for each day, in the ORDER they appear on the timetable (period 1, period 2, etc.). Use subject CODES, not names. Include a subject code multiple times if it has multiple periods that day.
-6. Provide ONLY the JSON code block, no explanations.`;
+4. For 'shortName', create a short abbreviation (2-5 chars) like "DS&A", "OS", "CO&A".
+5. The 'schedule' array represents Mon(0) to Sun(6). For each day, use period numbers as strings.
+   - If subject has class in period 1: use "1"
+   - If subject has classes in periods 2 and 3: use "2,3"
+   - If no class that day: use "0"
+6. DO NOT include timetableArrangement - all scheduling is in the schedule array.
+7. Provide ONLY the JSON code block, no explanations.`;
 
                     // Convert images to base64
                     const imageParts = [];
@@ -10934,6 +11230,24 @@ CRITICAL RULES:
                 alert('✅ Period times saved successfully!');
             }
 
+            // Generate short name / abbreviation from subject name
+            function getSubjectShortName(name) {
+                if (!name) return '?';
+                // Try to create acronym from first letters of each word
+                const words = name.split(/\s+/).filter(w => w.length > 0);
+                if (words.length > 1) {
+                    // Multi-word: take first letter of each significant word
+                    return words
+                        .filter(w => !['and', 'of', 'the', 'for', 'in', 'to', 'a', 'an'].includes(w.toLowerCase()))
+                        .map(w => w[0].toUpperCase())
+                        .join('')
+                        .substring(0, 5) || name.substring(0, 4).toUpperCase();
+                } else {
+                    // Single word: take first 4 characters
+                    return name.substring(0, 4).toUpperCase();
+                }
+            }
+
             // Generate the weekly timetable (ROWS = days, COLUMNS = periods)
             function generateTimetable() {
                 const grid = document.getElementById('timetableGrid');
@@ -11000,7 +11314,7 @@ CRITICAL RULES:
                                 arrangement[day.index].push({
                                     code: subject.code,
                                     name: subject.name,
-                                    shortName: getSubjectShortName(subject.name)
+                                    shortName: subject.shortName || getSubjectShortName(subject.name)
                                 });
                             }
                         });
@@ -11033,7 +11347,26 @@ CRITICAL RULES:
                     // Cells for each period
                     for (let period = 0; period < maxPeriods; period++) {
                         const cellId = `cell_${day.index}_${period}`;
-                        const subjectAtPeriod = dayArrangement[period];
+                        const rawSubject = dayArrangement[period];
+
+                        // Normalize subject (Handle both String Codes and Legacy Objects)
+                        let subjectAtPeriod = null;
+                        if (rawSubject) {
+                            if (typeof rawSubject === 'string') {
+                                // Format: "SUBCODE"
+                                const subObj = selectedClass.subjects.find(s => s.code === rawSubject);
+                                if (subObj) {
+                                    subjectAtPeriod = {
+                                        code: subObj.code,
+                                        name: subObj.name,
+                                        shortName: subObj.shortName || getSubjectShortName(subObj.name)
+                                    };
+                                }
+                            } else if (typeof rawSubject === 'object' && rawSubject !== null) {
+                                // Legacy Format: { code, name, shortName }
+                                subjectAtPeriod = rawSubject;
+                            }
+                        }
 
                         let cellContent = '';
                         if (subjectAtPeriod) {
@@ -13407,8 +13740,91 @@ CRITICAL RULES:
                     let classData = {};
                     let timetableArrangement = null;
 
+                    // === NEW FORMAT: Class name as top-level key ===
+                    // Format: { "ClassName": { lastDate, holidays, subjects: [{name, shortName, code, schedule}], qrCode } }
+                    const topLevelKeys = Object.keys(rawData);
+                    const isNewFullFormat = topLevelKeys.length === 1 &&
+                        rawData[topLevelKeys[0]] &&
+                        rawData[topLevelKeys[0]].subjects &&
+                        Array.isArray(rawData[topLevelKeys[0]].subjects);
+
+                    if (isNewFullFormat) {
+                        const className = topLevelKeys[0];
+                        const data = rawData[className];
+
+                        // Detect if schedule is string-based (new format) and convert to integer
+                        const processedSubjects = data.subjects.map(sub => {
+                            let schedule = sub.schedule;
+
+                            // Check if schedule is string array and convert to integer counts
+                            if (Array.isArray(schedule) && schedule.length > 0 && typeof schedule[0] === 'string') {
+                                schedule = schedule.map(daySchedule => {
+                                    if (!daySchedule || daySchedule === '0') return 0;
+                                    return String(daySchedule).split(',').filter(p => p.trim() && p.trim() !== '0').length;
+                                });
+                            }
+
+                            return {
+                                name: sub.name,
+                                shortName: sub.shortName || getSubjectShortName(sub.name),
+                                code: sub.code,
+                                schedule: schedule
+                            };
+                        });
+
+                        // Generate timetable arrangement from string schedules (period positions)
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        timetableArrangement = {};
+
+                        // Calculate max periods from string schedules
+                        let maxPeriods = 0;
+                        data.subjects.forEach(subject => {
+                            if (subject.schedule) {
+                                subject.schedule.forEach(daySchedule => {
+                                    if (daySchedule && daySchedule !== '0') {
+                                        const periods = String(daySchedule).split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+                                        if (periods.length > 0) {
+                                            maxPeriods = Math.max(maxPeriods, Math.max(...periods));
+                                        }
+                                    }
+                                });
+                            }
+                        });
+
+                        // Build arrangement from string schedules - USE DAY INDEX as key (not name)
+                        days.forEach((dayName, dayIndex) => {
+                            timetableArrangement[dayIndex] = Array(maxPeriods).fill(null);
+
+                            data.subjects.forEach(subject => {
+                                if (subject.schedule && subject.schedule[dayIndex] && subject.schedule[dayIndex] !== '0') {
+                                    const periods = String(subject.schedule[dayIndex]).split(',')
+                                        .map(p => parseInt(p.trim()))
+                                        .filter(p => !isNaN(p) && p > 0);
+
+                                    periods.forEach(periodNum => {
+                                        if (periodNum > 0 && periodNum <= maxPeriods) {
+                                            timetableArrangement[dayIndex][periodNum - 1] = subject.code;
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Clean up trailing nulls
+                            while (timetableArrangement[dayIndex].length > 0 &&
+                                timetableArrangement[dayIndex][timetableArrangement[dayIndex].length - 1] === null) {
+                                timetableArrangement[dayIndex].pop();
+                            }
+                        });
+
+                        classData = {
+                            name: className,
+                            lastDate: data.lastDate,
+                            subjects: processedSubjects,
+                            holidays: data.holidays || []
+                        };
+                    }
                     // Handle Minified Format (n=name, l=lastDate, s=subjects, h=holidays, ta=timetableArrangement)
-                    if (rawData.n && rawData.s) {
+                    else if (rawData.n && rawData.s) {
                         classData = {
                             name: rawData.n,
                             lastDate: rawData.l,
@@ -13419,9 +13835,55 @@ CRITICAL RULES:
                             })),
                             holidays: rawData.h || []
                         };
+
                         // Extract timetable arrangement if present
-                        if (rawData.ta) {
+                        if (rawData.ti) {
+                            // Reconstruct from Timetable Indices (ti)
+                            // Now supporting ARRAY format [MonArray, TueArray...]
+                            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                            timetableArrangement = {};
+
+                            // Check if it's an array (new format) or object (old format/backup)
+                            if (Array.isArray(rawData.ti)) {
+                                rawData.ti.forEach((dayIndices, dayIndex) => {
+                                    const dayName = days[dayIndex];
+                                    if (dayIndices && dayIndices.length > 0) {
+                                        timetableArrangement[dayIndex] = dayIndices.map(index => {
+                                            if (index === -1) return null; // Free Period
+                                            return classData.subjects[index] ? classData.subjects[index].code : null;
+                                        });
+                                    }
+                                });
+                            } else {
+                                // Object format (legacy intermediate step)
+                                Object.keys(rawData.ti).forEach(day => {
+                                    timetableArrangement[day] = rawData.ti[day].map(index => {
+                                        if (index === -1) return null;
+                                        return classData.subjects[index] ? classData.subjects[index].code : null;
+                                    });
+                                });
+                            }
+                        } else if (rawData.ta) {
                             timetableArrangement = rawData.ta;
+                        }
+
+                        // === FALLBACK: Generate Default Arrangement if Missing ===
+                        // If no arrangement found, generate one from the subject schedule counts - USE INDEX as key
+                        if (!timetableArrangement || Object.keys(timetableArrangement).length === 0) {
+                            timetableArrangement = {};
+
+                            [0, 1, 2, 3, 4, 5, 6].forEach(dayIndex => {
+                                const dailySequence = [];
+                                classData.subjects.forEach(subject => {
+                                    // Check how many classes this subject has on this day
+                                    // Handle array schedule (new format) or mapped schedule
+                                    const count = subject.schedule[dayIndex] || 0;
+                                    for (let k = 0; k < count; k++) {
+                                        dailySequence.push(subject.code);
+                                    }
+                                });
+                                timetableArrangement[dayIndex] = dailySequence;
+                            });
                         }
                     } else {
                         // Handle Legacy Format
@@ -13452,9 +13914,45 @@ CRITICAL RULES:
                     };
                     saveToStorage();
 
-                    // Save timetable arrangement if present
-                    if (timetableArrangement) {
-                        localStorage.setItem(`timetable_arrangement_${newName}`, JSON.stringify(timetableArrangement));
+                    // Save timetable arrangement if present, otherwise generate default
+                    let validTA = false;
+                    if (timetableArrangement && Object.keys(timetableArrangement).length > 0) {
+                        try {
+                            // Check if it has actual content
+                            const hasContent = Object.values(timetableArrangement).some(dayArr => Array.isArray(dayArr) && dayArr.length > 0);
+                            if (hasContent) validTA = true;
+                        } catch (e) { }
+                    }
+
+                    if (validTA) {
+                        // Convert day names to indices if needed before saving
+                        const convertedTA = {};
+                        const dayNameToIndex = { 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6 };
+                        Object.keys(timetableArrangement).forEach(key => {
+                            // If key is a day name, convert to index
+                            if (dayNameToIndex[key] !== undefined) {
+                                convertedTA[dayNameToIndex[key]] = timetableArrangement[key];
+                            } else {
+                                convertedTA[key] = timetableArrangement[key];
+                            }
+                        });
+                        localStorage.setItem(`timetable_arrangement_${newName}`, JSON.stringify(convertedTA));
+                    } else {
+                        // Force generation of default timetable if missing from QR - USE INDEX as key
+                        const defaultTA = {};
+                        [0, 1, 2, 3, 4, 5, 6].forEach(dayIndex => {
+                            const dailySequence = [];
+                            classData.subjects.forEach(subject => {
+                                const count = (subject.schedule && subject.schedule[dayIndex]) || 0;
+                                for (let k = 0; k < count; k++) {
+                                    dailySequence.push(subject.code);
+                                }
+                            });
+                            defaultTA[dayIndex] = dailySequence;
+                        });
+                        if (Object.keys(defaultTA).length > 0) {
+                            localStorage.setItem(`timetable_arrangement_${newName}`, JSON.stringify(defaultTA));
+                        }
                     }
 
                     populateClassSelector();
@@ -13476,38 +13974,87 @@ CRITICAL RULES:
                 if (!editingClassName || !classes[editingClassName]) return;
 
                 const classData = classes[editingClassName];
-
-                // Minify data for QR code (n=name, l=lastDate, s=subjects, h=holidays, ta=timetableArrangement)
-                // Subject: n=name, c=code, sc=schedule
-                const dataToShare = {
-                    n: editingClassName,
-                    l: classData.lastDate,
-                    s: classData.subjects.map(s => ({
-                        n: s.name,
-                        c: s.code,
-                        sc: s.schedule
-                    })),
-                    h: classData.holidays || []
-                };
-
-                // Include timetable arrangement if exists
-                const timetableArrangement = localStorage.getItem(`timetable_arrangement_${editingClassName}`);
-                if (timetableArrangement) {
-                    dataToShare.ta = JSON.parse(timetableArrangement);
-                }
-
-                const jsonString = JSON.stringify(dataToShare);
                 const qrContainer = document.getElementById('qrcodeTab');
-                qrContainer.innerHTML = '';
 
-                new QRCode(qrContainer, {
-                    text: jsonString,
-                    width: 300,
-                    height: 300,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.L
-                });
+                try {
+                    // Get timetable arrangement for accurate period numbers
+                    const arrangement = getTimetableArrangement(editingClassName);
+
+                    // Build full JSON format matching export (with shortName and string schedules)
+                    const dataToShare = {
+                        [editingClassName]: {
+                            lastDate: classData.lastDate,
+                            holidays: classData.holidays || [],
+                            subjects: classData.subjects.map((subject, index) => {
+                                // Add shortName if not present
+                                const shortName = subject.shortName || getSubjectShortName(subject.name);
+
+                                // Convert schedule to new string format using timetable arrangement
+                                let newSchedule = [];
+                                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                                days.forEach((dayName, dayIndex) => {
+                                    if (arrangement && arrangement[dayIndex]) {
+                                        // Find which periods this subject occupies
+                                        const periods = [];
+                                        arrangement[dayIndex].forEach((item, periodIndex) => {
+                                            const itemCode = (typeof item === 'string') ? item : (item?.code || null);
+                                            if (itemCode === subject.code) {
+                                                periods.push(periodIndex + 1);
+                                            }
+                                        });
+                                        newSchedule.push(periods.length > 0 ? periods.join(',') : '0');
+                                    } else {
+                                        // Fallback: use count-based format
+                                        const count = subject.schedule?.[dayIndex] || 0;
+                                        if (count > 0) {
+                                            const periods = Array.from({ length: count }, (_, i) => i + 1);
+                                            newSchedule.push(periods.join(','));
+                                        } else {
+                                            newSchedule.push('0');
+                                        }
+                                    }
+                                });
+
+                                return {
+                                    name: subject.name,
+                                    shortName: shortName,
+                                    code: subject.code,
+                                    schedule: newSchedule
+                                };
+                            }),
+                            qrCode: ''
+                        }
+                    };
+
+                    const jsonString = JSON.stringify(dataToShare);
+                    qrContainer.innerHTML = '';
+
+                    // Check if data is too large for QR (limit ~2KB for reliable scanning)
+                    if (jsonString.length > 2500) {
+                        qrContainer.innerHTML = `<div style="color:var(--warning-color); padding:20px; text-align:center;">
+                            <p>⚠️ Class data is too large for QR Code (${jsonString.length} chars).</p>
+                            <p style="font-size:0.8rem">Use "Copy JSON" to share via text instead.</p>
+                            <button class="btn primary-btn" onclick="navigator.clipboard.writeText(JSON.stringify(${JSON.stringify(dataToShare)}, null, 2)).then(() => alert('JSON copied!'))">📋 Copy JSON</button>
+                        </div>`;
+                        return;
+                    }
+
+                    new QRCode(qrContainer, {
+                        text: jsonString,
+                        width: 300,
+                        height: 300,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
+                } catch (error) {
+                    console.error("QR Gen Error:", error);
+                    qrContainer.innerHTML = `<div style="color:var(--danger-color); padding:20px; text-align:center;">
+                        <p>⚠️ Failed to generate QR Code.</p>
+                        <p style="font-size:0.8rem">Data might be too large or invalid.</p>
+                    </div>`;
+                    alert("Error generating QR code. The class data might be too large.");
+                }
             }
 
             function shareQRImageTab() {
@@ -13681,9 +14228,9 @@ CRITICAL RULES:
                 }
 
                 // Get date range (semester start to today)
-                const startDate = new Date(selectedClass.portalSetup.semesterStartDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const startDate = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
+                // Use parseLocalDate with formatLocalDate to get "Today" at midnight local time
+                const today = parseLocalDate(formatLocalDate(new Date()));
 
                 // Group dates by month
                 const monthGroups = {};
