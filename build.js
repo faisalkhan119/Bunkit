@@ -78,6 +78,17 @@ files.forEach(f => {
                 "const SHARED_CHATBOT_KEY = '';",
                 `const SHARED_CHATBOT_KEY = '${keys}';`
             );
+
+            // CRITICAL: Overwrite the SOURCE file too!
+            // This ensures that if Vercel serves the root directory (default),
+            // it serves the injected file.
+            try {
+                fs.writeFileSync(srcPath, content);
+                console.log('⚠️ Overwrote source index.html for direct serving');
+            } catch (err) {
+                console.error('Failed to overwrite source index.html:', err);
+            }
+
         } else {
             console.log('⚠️ GEMINI_API_KEYS not found in environment. Skipping injection.');
         }
