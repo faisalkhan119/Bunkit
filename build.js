@@ -60,45 +60,8 @@ function copyDir(src, dest) {
     }
 }
 
-// 1. Copy specific files (with processing for index.html)
-files.forEach(f => {
-    const srcPath = path.join(srcDir, f);
-    const destPath = path.join(distDir, f);
-
-    if (f === 'index.html') {
-        // Special processing for index.html: Inject Environment Variables
-        let content = fs.readFileSync(srcPath, 'utf8');
-
-        // Inject GEMINI_API_KEYS if present in environment (Vercel)
-        if (process.env.GEMINI_API_KEYS) {
-            console.log('🔑 Injecting GEMINI_API_KEYS into index.html...');
-            const keys = process.env.GEMINI_API_KEYS;
-            // Replace the placeholder with actual keys
-            content = content.replace(
-                "const SHARED_CHATBOT_KEY = '';",
-                `const SHARED_CHATBOT_KEY = '${keys}';`
-            );
-
-            // CRITICAL: Overwrite the SOURCE file too!
-            // This ensures that if Vercel serves the root directory (default),
-            // it serves the injected file.
-            try {
-                fs.writeFileSync(srcPath, content);
-                console.log('⚠️ Overwrote source index.html for direct serving');
-            } catch (err) {
-                console.error('Failed to overwrite source index.html:', err);
-            }
-
-        } else {
-            console.log('⚠️ GEMINI_API_KEYS not found in environment. Skipping injection.');
-        }
-
-        fs.writeFileSync(destPath, content);
-        console.log(`✓ Processed & Copied ${f}`);
-    } else {
-        copyFile(srcPath, destPath);
-    }
-});
+// 1. Copy specific files
+files.forEach(f => copyFile(path.join(srcDir, f), path.join(distDir, f)));
 
 // 2. Copy all PNGs (icons)
 fs.readdirSync(srcDir).forEach(file => {
@@ -111,5 +74,31 @@ fs.readdirSync(srcDir).forEach(file => {
 directories.forEach(dir => {
     copyDir(path.join(srcDir, dir), path.join(distDir, dir));
 });
+
+// 4. GENERATE CONFIG FILE (Secure Key Injection)
+console.log('🔧 Generating Environment Config...');
+const jsDistDir = path.join(distDir, 'js');
+if (!fs.existsSync(jsDistDir)) {
+    fs.mkdirSync(jsDistDir, { recursive: true });
+}
+
+const envKeys = process.env.GEMINI_API_KEYS || '';
+const configContent = `window.SHARED_CHATBOT_KEY = '${envKeys}';
+console.log('✅ Config Loaded: ' + (window.SHARED_CHATBOT_KEY ? 'Keys Present' : 'No Keys'));`;
+
+fs.writeFileSync(path.join(jsDistDir, 'env-config.js'), configContent);
+console.log('✅ Generated dist/js/env-config.js with injected keys');
+
+// Also create in SOURCE js folder for direct serving fallback (if needed)
+// BUT add to gitignore!
+const jsSrcDir = path.join(srcDir, 'js');
+if (fs.existsSync(jsSrcDir)) {
+    try {
+        fs.writeFileSync(path.join(jsSrcDir, 'env-config.js'), configContent);
+        console.log('⚠️ Generated source js/env-config.js for fallback');
+    } catch (e) {
+        console.log('Could not write source config (optional step failed)');
+    }
+}
 
 console.log('✅ Build complete (dist folder populated)');

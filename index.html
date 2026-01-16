@@ -19,6 +19,9 @@
             y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
         })(window, document, "clarity", "script", "ujzwruoqtu");
     </script>
+    <!-- Environment Config (Generated at Build Time) -->
+    <!-- Contains SHARED_CHATBOT_KEY for Direct API Calls -->
+    <script src="js/env-config.js"></script>
     <!-- App Recovery: Detect and fix black screen issues -->
     <script>
         (function () {
@@ -15568,17 +15571,9 @@ CRITICAL RULES:
                         return { key: null, index: -1, useProxy: true };
                     }
 
-                    // Legacy variable for backward compatibility
-                    const SHARED_CHATBOT_KEY = '';
+                    // Key is now loaded from js/env-config.js (generated at build time)
+                    // If file is missing (dev mode), window.SHARED_CHATBOT_KEY will be undefined.
 
-                    // DEBUG: API Key Injection Status
-                    console.log('🔍 App Version: Build-Time-Injection-Check');
-                    if (SHARED_CHATBOT_KEY && SHARED_CHATBOT_KEY.length > 10) {
-                        console.log('✅ Shared Key Injection: SUCCESS (Key starts with ' + SHARED_CHATBOT_KEY.substring(0, 5) + '...)');
-                    } else {
-                        console.log('❌ Shared Key Injection: FAILED (Key is empty or missing)');
-                        console.log('👉 If you see this on Vercel, check "Output Directory" is set to "dist"');
-                    }
 
 
                     // === AI CHATBOT FUNCTIONS ===
