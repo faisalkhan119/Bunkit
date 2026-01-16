@@ -258,6 +258,13 @@ self.addEventListener('message', async (event) => {
             scheduleNextNotification(settings.time);
         }
     }
+
+    if (event.data && event.data.type === 'KEEP_ALIVE') {
+        // This message keeps the SW alive and triggers a check
+        // console.log('SW: Keep-alive ping received');
+        checkAndShowNotification();
+        checkSmartReminders();
+    }
 });
 
 // Experimental: Schedule Notification using TimestampTrigger

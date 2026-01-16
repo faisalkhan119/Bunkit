@@ -467,6 +467,32 @@
                             }
                         });
                     }
+
+                    // === OPTIMIZATION: Request Periodic Background Sync (Chrome/Android) ===
+                    if ('periodicSync' in registration) {
+                        try {
+                            const status = await navigator.permissions.query({
+                                name: 'periodic-background-sync',
+                            });
+
+                            if (status.state === 'granted') {
+                                await registration.periodicSync.register('check-notification', {
+                                    minInterval: 12 * 60 * 60 * 1000 // 12 hours (browser minimum)
+                                });
+                                console.log('Periodic background sync registered');
+                            }
+                        } catch (e) {
+                            console.log('Periodic sync registration failed:', e);
+                        }
+                    }
+
+                    // === OPTIMIZATION: Keep-Alive Heartbeat ===
+                    // Pings the SW every 25s to keep it from going idle while app is in background (but not closed)
+                    setInterval(() => {
+                        if (navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({ type: 'KEEP_ALIVE' });
+                        }
+                    }, 25000);
                 } catch (err) {
                     console.log('ServiceWorker registration failed: ', err);
                 }
@@ -8366,12 +8392,17 @@ CRITICAL INSTRUCTIONS:
                     const enabled = document.getElementById('notificationEnabled').checked;
                     const time = document.getElementById('notificationTime').value;
 
-                    // Get the class name from the modal (set in openNotificationSettings)
+                    // Get the class name from the modal dataset OR fallback to selector
                     const modal = document.getElementById('notificationSettingsModal');
-                    const className = modal.dataset.className;
+                    let className = modal.dataset.className;
 
                     if (!className) {
-                        showToast('Error: No class selected for notification settings.', 'error');
+                        className = document.getElementById('classSelector')?.value;
+                        console.warn('Modal dataset.className missing, using selector value:', className);
+                    }
+
+                    if (!className) {
+                        alert('Error: No class selected. Please close and re-open the settings.');
                         return;
                     }
 
@@ -8495,9 +8526,11 @@ CRITICAL INSTRUCTIONS:
                         }
 
                         showToast(`Daily notifications enabled at ${time}!`, 'success');
+                        alert(`✅ Notifications enabled for ${time}!`);
                     } else {
                         stopNotificationChecker();
                         showToast('Daily notifications disabled.', 'info');
+                        alert('🔕 Notifications disabled.');
                     }
 
                     closeModal('notificationSettingsModal');
@@ -13084,10 +13117,14 @@ CRITICAL RULES:
                     // Check if log is before or on baseline date
                     if (logDate <= baselineDate) {
                         const dayLog = logs[dateStr];
-                        Object.keys(dayLog).forEach(code => {
+                        Object.keys(dayLog).forEach(key => {
+                            // Extract base subject code from Subject_pX or use as-is (legacy)
+                            // e.g., "MATH_p1" -> "MATH", "ENG" -> "ENG"
+                            const code = key.split('_p')[0];
+
                             if (!pastLogStats[code]) pastLogStats[code] = { attended: 0, total: 0 };
 
-                            const status = dayLog[code];
+                            const status = dayLog[key];
                             if (status === 'Attended' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)') {
                                 pastLogStats[code].attended++;
                                 pastLogStats[code].total++;
@@ -13109,14 +13146,21 @@ CRITICAL RULES:
                     const base = baseline[code] || { attended: 0, total: 0 };
                     const past = pastLogStats[code] || { attended: 0, total: 0 };
 
-                    // If past logs sum is greater than baseline, use past logs. Otherwise use baseline.
-                    // Wait, user said "until sum attend and held classes of before base line date is more than the attend and held date on the date of baseline date"
-                    // This implies max(baseline, pastLogs).
-
-                    effectiveStats[code] = {
-                        attended: Math.max(base.attended, past.attended),
-                        total: Math.max(base.total, past.total)
-                    };
+                    // Logic: If user has logged enough classes to match the baseline total, 
+                    // trust the LOGS (Fact) over the BASELINE (Estimate).
+                    // This fixes the case where user backfills logs (e.g. 45/100) but baseline was higher (50/100).
+                    if (past.total >= base.total && base.total > 0) {
+                        effectiveStats[code] = {
+                            attended: past.attended,
+                            total: past.total
+                        };
+                    } else {
+                        // Otherwise, assume logs are incomplete and trust baseline (or simple max if no baseline)
+                        effectiveStats[code] = {
+                            attended: Math.max(base.attended, past.attended),
+                            total: Math.max(base.total, past.total)
+                        };
+                    }
                 });
 
                 // 3. Add logs AFTER baseline date (but only up to effective current date)
@@ -13216,43 +13260,63 @@ CRITICAL RULES:
                 const customSchedule = getCustomScheduleForDate(dateStr);
 
                 selectedClass.subjects.forEach(subject => {
-                    // Check if this subject should be shown
-                    let showSubject = false;
+                    // Check if this subject should be shown and how many times
+                    let periodCount = 0;
 
                     if (customSchedule) {
-                        // Custom schedule exists - check both old array format and new object format
+                        // Custom schedule exists
                         if (Array.isArray(customSchedule)) {
-                            // Old format: array of codes
-                            showSubject = customSchedule.includes(subject.code);
+                            // Old format: array of codes (count occurrences)
+                            periodCount = customSchedule.filter(code => code === subject.code).length;
+                            // Fallback for old format which might have only 1 entry for duplicate subject
+                            if (periodCount === 0 && customSchedule.includes(subject.code)) periodCount = 1;
                         } else {
                             // New format: object {code: count}
-                            showSubject = (customSchedule[subject.code] || 0) > 0;
+                            periodCount = customSchedule[subject.code] || 0;
                         }
                     } else {
-                        // Use default schedule - only show if classes on this day
+                        // Use default schedule
                         const date = new Date(dateStr);
                         const dayOfWeek = date.getDay();
                         const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                        showSubject = subject.schedule[scheduleIndex] > 0;
+                        periodCount = subject.schedule[scheduleIndex] || 0;
                     }
 
-                    if (!showSubject) return;
+                    if (periodCount === 0) return;
 
-                    const currentStatus = dayLog[subject.code] || 'Default';
-                    const div = document.createElement('div');
-                    div.className = 'subject-log-entry';
-                    div.innerHTML = `
-                    <label>${subject.name} (${subject.code})</label>
-                    <select data-code="${subject.code}" data-previous-value="${currentStatus}" onchange="handleStatusChange(this)">
-                        <option value="Default" ${currentStatus === 'Default' ? 'selected' : ''}>Default (Held)</option>
-                        <option value="Attended" ${currentStatus === 'Attended' ? 'selected' : ''}>Attended</option>
-                        <option value="Skipped" ${currentStatus === 'Skipped' ? 'selected' : ''}>Skipped</option>
-                        <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                        <option value="Duty Leave (OD)" ${currentStatus === 'Duty Leave (OD)' ? 'selected' : ''}>Duty Leave (OD)</option>
-                        <option value="Medical Leave (ML)" ${currentStatus === 'Medical Leave (ML)' ? 'selected' : ''}>Medical Leave (ML)</option>
-                    </select>
-                `;
-                    subjectList.appendChild(div);
+                    // Render a dropdown for EACH period of this subject
+                    for (let i = 1; i <= periodCount; i++) {
+                        // Key for storage: SUBJECT_p1, SUBJECT_p2, etc.
+                        // BACKWARD COMPATIBILITY: If _p1 doesn't exist, check base code (legacy data)
+                        // If it's the first period, we might have stored it as just "SUBJECT"
+                        const periodKey = `${subject.code}_p${i}`;
+                        let currentStatus = dayLog[periodKey];
+
+                        if (!currentStatus && i === 1) {
+                            // Fallback to legacy key 'SUBJECT' if 'SUBJECT_p1' is missing
+                            currentStatus = dayLog[subject.code];
+                        }
+
+                        // Default fallback
+                        currentStatus = currentStatus || 'Default';
+
+                        const div = document.createElement('div');
+                        div.className = 'subject-log-entry';
+                        const labelSuffix = periodCount > 1 ? ` (Period ${i})` : '';
+
+                        div.innerHTML = `
+                        <label>${subject.name} ${labelSuffix}</label>
+                        <select data-code="${periodKey}" data-previous-value="${currentStatus}" onchange="handleStatusChange(this)">
+                            <option value="Default" ${currentStatus === 'Default' ? 'selected' : ''}>Default (Held)</option>
+                            <option value="Attended" ${currentStatus === 'Attended' ? 'selected' : ''}>Attended</option>
+                            <option value="Skipped" ${currentStatus === 'Skipped' ? 'selected' : ''}>Skipped</option>
+                            <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            <option value="Duty Leave (OD)" ${currentStatus === 'Duty Leave (OD)' ? 'selected' : ''}>Duty Leave (OD)</option>
+                            <option value="Medical Leave (ML)" ${currentStatus === 'Medical Leave (ML)' ? 'selected' : ''}>Medical Leave (ML)</option>
+                        </select>
+                    `;
+                        subjectList.appendChild(div);
+                    }
                 });
             }
 
@@ -14524,25 +14588,50 @@ CRITICAL RULES:
                                         status: dayLog[code]
                                     });
                                 });
-                            } else {
                                 // Timetable matches - use timetable sequence
                                 // Null periods = free periods
+                                const seenCounts = {};
+
                                 periodsToShow = timetablePeriods.map(p => {
                                     if (!p) return { code: null, name: 'Free', status: 'free' };
+
+                                    // Track which instance of this subject this is (e.g. 1st Math, 2nd Math)
+                                    seenCounts[p.code] = (seenCounts[p.code] || 0) + 1;
+                                    const instance = seenCounts[p.code];
+
+                                    // Try specific key first (SUBJECT_p1), then legacy key (SUBJECT) for first instance
+                                    const specificKey = `${p.code}_p${instance}`;
+                                    let status = dayLog[specificKey];
+
+                                    if (!status && instance === 1) {
+                                        status = dayLog[p.code];
+                                    }
+
                                     return {
                                         code: p.code,
+                                        // Pass the SPECIFIC key (e.g. MATH_p1) as the code for editing
+                                        // This ensures we save to the unique slot, not the generic subject
+                                        editKey: specificKey,
                                         name: p.name,
-                                        status: dayLog[p.code] || 'Default'
+                                        status: status || 'Default'
                                     };
                                 });
                             }
                         } else {
                             // No log data - show timetable periods as "not logged"
                             // Null periods = free periods
+                            const seenCounts = {};
+
                             periodsToShow = timetablePeriods.map(p => {
                                 if (!p) return { code: null, name: 'Free', status: 'free' };
+
+                                seenCounts[p.code] = (seenCounts[p.code] || 0) + 1;
+                                const instance = seenCounts[p.code];
+                                const specificKey = `${p.code}_p${instance}`;
+
                                 return {
                                     code: p.code,
+                                    editKey: specificKey,
                                     name: p.name,
                                     status: 'Default'
                                 };
@@ -14598,13 +14687,17 @@ CRITICAL RULES:
                                 const glowColor = subjectColor ? subjectColor.glow : '#667eea';
                                 const glowStyle = `box-shadow: 0 0 8px 2px ${glowColor}40, inset 0 0 0 2px ${glowColor};`;
 
+                                // Use editKey if available (new logic), otherwise fallback to code
+                                const codeToUse = period.editKey || period.code;
+                                const safeName = period.name.replace(/'/g, "\\'");
+
                                 modalHTML += `<div class="period-cell ${cellClass}" 
                                     style="${glowStyle}"
                                     data-date="${dateStr}" 
-                                    data-code="${period.code}"
+                                    data-code="${codeToUse}"
                                     data-period="${p}"
                                     title="${period.name} | ${status}"
-                                    onclick="openPeriodEditPopup(event, '${dateStr}', '${period.code}', '${period.name}')">${symbol}</div>`;
+                                    onclick="openPeriodEditPopup(event, '${dateStr}', '${codeToUse}', '${safeName}')">${symbol}</div>`;
                             } else {
                                 modalHTML += `<div class="period-cell no-class">-</div>`;
                             }
