@@ -15571,6 +15571,15 @@ CRITICAL RULES:
                     // Legacy variable for backward compatibility
                     const SHARED_CHATBOT_KEY = '';
 
+                    // DEBUG: API Key Injection Status
+                    console.log('🔍 App Version: Build-Time-Injection-Check');
+                    if (SHARED_CHATBOT_KEY && SHARED_CHATBOT_KEY.length > 10) {
+                        console.log('✅ Shared Key Injection: SUCCESS (Key starts with ' + SHARED_CHATBOT_KEY.substring(0, 5) + '...)');
+                    } else {
+                        console.log('❌ Shared Key Injection: FAILED (Key is empty or missing)');
+                        console.log('👉 If you see this on Vercel, check "Output Directory" is set to "dist"');
+                    }
+
 
                     // === AI CHATBOT FUNCTIONS ===
 

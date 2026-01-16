@@ -4,32 +4,36 @@
     "trailingSlash": false,
     "rewrites": [
         {
+            "source": "/",
+            "destination": "/dist/index.html"
+        },
+        {
             "source": "/index.html",
-            "destination": "/"
+            "destination": "/dist/index.html"
         },
         {
             "source": "/privacy",
-            "destination": "/privacy.html"
+            "destination": "/dist/privacy.html"
         },
         {
             "source": "/terms",
-            "destination": "/terms.html"
+            "destination": "/dist/terms.html"
         },
         {
             "source": "/about",
-            "destination": "/about.html"
+            "destination": "/dist/about.html"
         },
         {
             "source": "/contact",
-            "destination": "/contact.html"
+            "destination": "/dist/contact.html"
         },
         {
             "source": "/faq",
-            "destination": "/faq.html"
+            "destination": "/dist/faq.html"
         },
         {
             "source": "/support",
-            "destination": "/support.html"
+            "destination": "/dist/support.html"
         },
         {
             "source": "/api/gemini",
