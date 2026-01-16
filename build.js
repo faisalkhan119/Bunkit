@@ -60,8 +60,34 @@ function copyDir(src, dest) {
     }
 }
 
-// 1. Copy specific files
-files.forEach(f => copyFile(path.join(srcDir, f), path.join(distDir, f)));
+// 1. Copy specific files (with processing for index.html)
+files.forEach(f => {
+    const srcPath = path.join(srcDir, f);
+    const destPath = path.join(distDir, f);
+
+    if (f === 'index.html') {
+        // Special processing for index.html: Inject Environment Variables
+        let content = fs.readFileSync(srcPath, 'utf8');
+
+        // Inject GEMINI_API_KEYS if present in environment (Vercel)
+        if (process.env.GEMINI_API_KEYS) {
+            console.log('🔑 Injecting GEMINI_API_KEYS into index.html...');
+            const keys = process.env.GEMINI_API_KEYS;
+            // Replace the placeholder with actual keys
+            content = content.replace(
+                "const SHARED_CHATBOT_KEY = '';",
+                `const SHARED_CHATBOT_KEY = '${keys}';`
+            );
+        } else {
+            console.log('⚠️ GEMINI_API_KEYS not found in environment. Skipping injection.');
+        }
+
+        fs.writeFileSync(destPath, content);
+        console.log(`✓ Processed & Copied ${f}`);
+    } else {
+        copyFile(srcPath, destPath);
+    }
+});
 
 // 2. Copy all PNGs (icons)
 fs.readdirSync(srcDir).forEach(file => {

@@ -16097,28 +16097,73 @@ Answer helpfully using this context.`;
 
 
                         try {
-                            let response;
-
+                            // Determine which keys to use
+                            const keysToUse = [];
                             if (personalKey) {
-                                // Use personal key with direct API call
-                                console.log('🤖 Chatbot: Using personal API key');
-                                response = await fetch(
-                                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`,
-                                    {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            contents: [{
-                                                parts: [
-                                                    { text: systemPrompt },
-                                                    { text: `User question: ${userQuestion}` }
-                                                ]
-                                            }]
-                                        })
+                                // Priority 1: Personal Key (User entered in Settings)
+                                keysToUse.push(...personalKey.split(',').map(k => k.trim()).filter(k => k));
+                                console.log('🤖 Chatbot: Using Personal Key(s)');
+                            } else if (SHARED_CHATBOT_KEY && SHARED_CHATBOT_KEY.length > 5) {
+                                // Priority 2: Injected Shared Keys (From Build/Env)
+                                keysToUse.push(...SHARED_CHATBOT_KEY.split(',').map(k => k.trim()).filter(k => k));
+                                console.log('🤖 Chatbot: Using Injected Shared Keys');
+                            }
+
+                            if (keysToUse.length > 0) {
+                                // === DIRECT API CALL WITH ROTATION ===
+                                let lastError = null;
+
+                                for (let i = 0; i < keysToUse.length; i++) {
+                                    const currentKey = keysToUse[i];
+                                    try {
+                                        console.log(`🤖 Chatbot: Attempting key ${i + 1}/${keysToUse.length}`);
+
+                                        response = await fetch(
+                                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey}`,
+                                            {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    contents: [{
+                                                        parts: [
+                                                            { text: systemPrompt },
+                                                            { text: `User question: ${userQuestion}` }
+                                                        ]
+                                                    }]
+                                                })
+                                            }
+                                        );
+
+                                        if (response.ok) {
+                                            console.log('🤖 Chatbot: Success!');
+                                            const result = await response.json();
+                                            return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+                                        }
+
+                                        // If Quota Exceeded (429), try next key
+                                        if (response.status === 429) {
+                                            console.warn(`🤖 Chatbot: Key ${i + 1} exhausted (429). Rotating...`);
+                                            lastError = `Quota exceeded for key ${i + 1}`;
+                                            continue;
+                                        }
+
+                                        // Other errors - throw immediately
+                                        const errorData = await response.json().catch(() => ({}));
+                                        throw new Error(`API Error ${response.status}: ${errorData.error?.message || 'Unknown'}`);
+
+                                    } catch (err) {
+                                        console.error(`🤖 Chatbot: Key ${i + 1} failed:`, err);
+                                        lastError = err.message;
+                                        // If last key, don't continue loop effectively, just fall through
                                     }
-                                );
+                                }
+
+                                // If we get here, all keys failed
+                                throw new Error(`All API keys failed. Last error: ${lastError}`);
+
                             } else {
-                                // Use backend proxy (keys are safe on server)
+                                // === FALLBACK: BACKEND PROXY ===
+                                // Priority 3: Vercel Proxy (if no keys found in frontend)
                                 console.log('🤖 Chatbot: Using backend proxy');
                                 response = await fetch('/api/gemini', {
                                     method: 'POST',
@@ -16129,18 +16174,15 @@ Answer helpfully using this context.`;
                                         prompt: `User question: ${userQuestion}`
                                     })
                                 });
+
+                                if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({}));
+                                    throw new Error(`Proxy Error ${response.status}: ${errorData.error || 'Unknown'}`);
+                                }
+
+                                const result = await response.json();
+                                return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
                             }
-
-                            console.log('🤖 Chatbot: Response status:', response.status);
-
-                            if (!response.ok) {
-                                const errorData = await response.json().catch(() => ({}));
-                                console.error('🤖 Chatbot: API Error:', response.status, errorData);
-                                return `❌ API Error ${response.status}: ${errorData.error || 'Unknown error'}`;
-                            }
-
-                            const result = await response.json();
-                            return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
 
                         } catch (error) {
                             console.error('Gemini API error:', error);
