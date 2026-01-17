@@ -166,7 +166,7 @@
                 if (widthThreshold || heightThreshold) {
                     if (!devToolsOpen) {
                         devToolsOpen = true;
-                        console.log('%c?? DevTools detected - Welcome developer! ', 'font-size: 20px; color: #ff6b6b;');
+                        console.log('%c👋 DevTools detected - Welcome developer! ', 'font-size: 20px; color: #ff6b6b;');
                     }
                 } else {
                     devToolsOpen = false;
@@ -183,7 +183,7 @@
                 }
             });
 
-            console.log('%c??  🔒 Security measures active', 'color: #28a745; font-weight: bold;');
+            console.log('%c👮 🔒 Security measures active', 'color: #28a745; font-weight: bold;');
         })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -4387,12 +4387,12 @@
 
         <!-- Account Options -->
         <a href="#" onclick="openProfileNameModal(); closeNav();">&#9999;&#65039; Edit Profile Name</a>
-        <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">&#128273; Sign in with Google</a>
-        <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">&#9729;&#65039; Sync with
+        <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">🔐 Sign in with Google</a>
+        <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">☁ Sync with
             Google Drive</a>
         <div id="sidebarLastSynced"
             style="display: none; padding: 5px 22px; font-size: 0.75rem; color: var(--medium-text);">
-            &#128260; Last synced: Never
+            🕐 Last synced: Never
         </div>
         <a href="#" id="sidebarSignOutBtn" onclick="signOutGoogle(); closeNav();"
             style="display: none; color: #dc3545;">&#128682; Sign Out</a>
@@ -4410,7 +4410,7 @@
         </div>
 
         <a href="#" onclick="openNotificationSettings(); closeNav();"> Notification Settings</a>
-        <a href="#" onclick="openAPISettings(); closeNav();">⚙ API Settings</a>
+        <a href="#" onclick="openAPISettings(); closeNav();">🔑 API Settings</a>
         <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)"> View Options <span>▼</span></a>
         <div class="sidenav-dropdown-content">
             <a href="#" onclick="switchView('cards')"> Card View</a>
@@ -4418,13 +4418,12 @@
             <a href="#" onclick="switchView('graph')"> Analytics Graph</a>
         </div>
 
-        <a href="#" id="periodViewMenuItem" onclick="openPeriodAttendanceModal(); closeNav();" style="display: none;">??
-            Period-wise Attendance</a>
+        <a href="#" id="periodViewMenuItem" onclick="openPeriodAttendanceModal(); closeNav();" style="display: none;">🕜 Period-wise Attendance</a>
 
-        <a href="#" onclick="openHelpModal(); closeNav();">❓ How to Use</a>
+        <a href="#" onclick="openHelpModal(); closeNav();">💡 How to Use</a>
 
         <!-- Legal & Info Dropdown -->
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">⚖ Legal & Info <span>▼</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📋 Legal & Info <span>▼</span></a>
         <div class="sidenav-dropdown-content">
             <a href="/about.html" onclick="closeNav();">ℹ About Us</a>
             <a href="/faq.html" onclick="closeNav();">? FAQ</a>
@@ -4523,7 +4522,7 @@
                          Smart Baseline: Portal logs before baseline intelligently merged</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ⏳ Auto History: Last 10 calculations saved - restore anytime</div>
+                        📜 Auto History: Last 10 calculations saved - restore anytime</div>
                 </div>
             </div>
         </header>
@@ -4742,7 +4741,7 @@
         <!-- AI Chatbot Floating Button -->
         <button id="aiChatbotButton" onclick="openAIChatbot()"
             style="display: flex; border: none; cursor: pointer; align-items: center; justify-content: center;">
-            ??
+            🕜
         </button>
 
         <!-- AI Chat Panel -->
@@ -4751,7 +4750,7 @@
             <div
                 style="padding: 15px 20px; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); color: white; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.5rem;">??</span>
+                    <span style="font-size: 1.5rem;">💬</span>
                     <span style="font-weight: 600; font-size: 1.1rem;">AI Assistant</span>
                 </div>
                 <button onclick="closeAIChatbot()"
@@ -4777,7 +4776,7 @@
 
             <!-- Chat Messages -->
             <div id="chatMessages" class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px;">
-                <div class="chat-message system">?? Hi! I'm here to help you with the app. Ask me anything!</div>
+                <div class="chat-message system">👋 Hi! I'm here to help you with the app. Ask me anything!</div>
             </div>
 
             <!-- Chat Input -->
@@ -4794,7 +4793,7 @@
                 console.error('Global Error:', msg, url, line, col, error);
                 // Only alert for critical script errors that might break functionality
                 if (msg.includes('SyntaxError') || msg.includes('ReferenceError') || msg.includes('TypeError')) {
-                    alert(`?? App Error: ${msg}\n\nLine: ${line}\nPlease report this to the developer.`);
+                    alert(`❌ App Error: ${msg}\n\nLine: ${line}\nPlease report this to the developer.`);
                 }
                 return false;
             };
@@ -4819,7 +4818,7 @@
             ];
 
             // --- GOOGLE AUTH CONFIG ---
-            // ?? REPLACE THIS WITH YOUR CLIENT ID FROM GOOGLE CLOUD CONSOLE
+            // ⚠ REPLACE THIS WITH YOUR CLIENT ID FROM GOOGLE CLOUD CONSOLE
             const GOOGLE_CLIENT_ID = '692376293711-jsrogchpholoqg7mutd4igb8nfp5jfd2.apps.googleusercontent.com';
             const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
             const BACKUP_FILENAME = 'bunkit_backup.json';
@@ -5327,7 +5326,7 @@
 
                     // Warn if sync failed
                     if (!syncSuccess && googleUser?.accessToken) {
-                        if (!confirm('?? Sync failed! Recent changes may not be saved to cloud.\n\nSign out anyway?')) {
+                        if (!confirm('⚠ Sync failed! Recent changes may not be saved to cloud.\n\nSign out anyway?')) {
                             return; // User cancelled
                         }
                     }
@@ -5524,13 +5523,13 @@
                     if (user.picture) {
                         avatar.innerHTML = `<img src="${user.picture}" alt="Profile">`;
                     } else {
-                        avatar.innerHTML = user.name ? user.name.charAt(0).toUpperCase() : '??';
+                        avatar.innerHTML = user.name ? user.name.charAt(0).toUpperCase() : '👤';
                     }
 
                     const lastSync = localStorage.getItem('lastDriveSync');
                     if (lastSync) {
                         document.getElementById('syncStatus').textContent =
-                            `&#128260; Last synced: ${new Date(lastSync).toLocaleString()}`;
+                            `🕐 Last synced: ${new Date(lastSync).toLocaleString()}`;
                     }
                 } else {
                     // Guest user
@@ -5548,7 +5547,7 @@
                         <div class="modal-content" style="max-width: 400px;">
                             <button class="modal-close" onclick="closeModal('profileNameModal')">&times;</button>
                             <div class="modal-header">
-                                <h2>?? Edit Profile Name</h2>
+                                <h2>✏ Edit Profile Name</h2>
                                 <p>Update your display name</p>
                             </div>
                             <div class="form-group">
@@ -5557,7 +5556,7 @@
                             </div>
                             <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                                 <button class="btn secondary-btn" onclick="closeModal('profileNameModal')">Cancel</button>
-                                <button class="btn primary-btn" onclick="saveProfileName()">?? Save</button>
+                                <button class="btn primary-btn" onclick="saveProfileName()">💾 Save</button>
                             </div>
                         </div>
                     </div>`;
@@ -5570,7 +5569,7 @@
                     <div id="firstLoginPromptModal" class="modal">
                         <div class="modal-content" style="max-width: 420px;">
                             <div class="modal-header" style="text-align: center;">
-                                <div style="font-size: 3rem; margin-bottom: 10px;">??</div>
+                                <div style="font-size: 3rem; margin-bottom: 10px;">✨</div>
                                 <h2>Welcome to BunkIt!</h2>
                                 <p>Let's get you set up. What should we call you?</p>
                             </div>
@@ -5666,7 +5665,7 @@
                 modal.innerHTML = `
                 <div class="modal-content" style="max-width: 400px;">
                     <div class="modal-header" style="text-align: center;">
-                        <div style="font-size: 2.5rem; margin-bottom: 10px;">??</div>
+                        <div style="font-size: 2.5rem; margin-bottom: 10px;">👋</div>
                         <h2>Setup Your Class</h2>
                         <p>Choose how you want to get started</p>
                     </div>
@@ -5676,7 +5675,7 @@
                             ? Create New Class
                         </button>
                         <button class="btn secondary-btn" onclick="useExampleClass();" style="padding: 18px; font-size: 1.1rem;">
-                            ?? Use Example Class
+                            📋 Use Example Class
                         </button>
                     </div>
                 </div>`;
@@ -5827,31 +5826,31 @@
 
                 // Tutorial messages in Hinglish
                 const introMessages = [
-                    `?? Hey ${userName}! Main <b>Bunkmate</b> hoon - tumhara personal AI assistant jo tumhari attendance manage karne mein help karega!`,
-                    `?? Bunkit app se tum dekh sakte ho ki <b>kitne lectures bunk</b> kar sakte ho bina attendance giraye. Mast hai na? ??`,
-                    `?? App tumhe batayega ki <b>75% attendance</b> maintain karne ke liye kitne classes attend karne hain ya kitne bunk kar sakte ho!`
+                    `👋 Hey ${userName}! Main <b>Bunkmate</b> hoon - tumhara personal AI assistant jo tumhari attendance manage karne mein help karega!`,
+                    `📱 Bunkit app se tum dekh sakte ho ki <b>kitne lectures bunk</b> kar sakte ho bina attendance giraye. Mast hai na? 😎`,
+                    `📊 App tumhe batayega ki <b>75% attendance</b> maintain karne ke liye kitne classes attend karne hain ya kitne bunk kar sakte ho!`
                 ];
 
                 const newClassMessages = [
-                    `?? <b>Form Entry Tab:</b> Yahaan manually apni class ka naam likho, last working date daalo, aur ek ek subject add karo with weekly schedule!`,
-                    `?? <b>Weekly Schedule:</b> Har subject ke liye Monday se Sunday tak <b>kitne lectures</b> hain wo batana hai. Jaise Monday ko 2 lectures, Tuesday ko 1, etc.`,
-                    `?? <b>Inbuilt AI Import:</b> Sabse easy tarika! Apni <b>timetable ki photo</b> upload karo, AI khud subjects aur schedule extract kar lega!`,
+                    `📝 <b>Form Entry Tab:</b> Yahaan manually apni class ka naam likho, last working date daalo, aur ek ek subject add karo with weekly schedule!`,
+                    `📅 <b>Weekly Schedule:</b> Har subject ke liye Monday se Sunday tak <b>kitne lectures</b> hain wo batana hai. Jaise Monday ko 2 lectures, Tuesday ko 1, etc.`,
+                    `🤖 <b>Inbuilt AI Import:</b> Sabse easy tarika! Apni <b>timetable ki photo</b> upload karo, AI khud subjects aur schedule extract kar lega!`,
                     `? <b>AI Tip:</b> Best results ke liye <b>clear photo</b> lo jisme text properly dikh raha ho. Blurry photo se galat data aa sakta hai!`,
-                    `?? <b>Import from JSON:</b> Agar tumhare dost ne class export ki hai ya pehle backup liya tha, to yahan <b>paste</b> karke import karo!`,
-                    `?? <b>Scan QR:</b> Dost ki class ka QR code scan karo aur <b>instantly</b> same class import ho jayegi. Sharing is caring! ??`,
-                    `?? <b>Pro Tip:</b> Class banana ke baad <b>hamburger menu</b> (?) se backup le lo taaki data safe rahe!`,
-                    `?? <b>Need Help?</b> Kabhi bhi confuse ho to neeche right side mein mera <b>chat icon</b> ?? hai - kuch bhi poocho!`
+                    `📥 <b>Import from JSON:</b> Agar tumhare dost ne class export ki hai ya pehle backup liya tha, to yahan <b>paste</b> karke import karo!`,
+                    `📸 <b>Scan QR:</b> Dost ki class ka QR code scan karo aur <b>instantly</b> same class import ho jayegi. Sharing is caring! 😉`,
+                    `💡 <b>Pro Tip:</b> Class banana ke baad <b>hamburger menu</b> (☰) se backup le lo taaki data safe rahe!`,
+                    `🆘 <b>Need Help?</b> Kabhi bhi confuse ho to neeche right side mein mera <b>chat icon</b> 💬 hai - kuch bhi poocho!`
                 ];
 
                 const exampleMessages = [
-                    `?? Ye ek <b>Example Class</b> hai - CSE Core H semester ka demo! Isse samajh lo app kaise kaam karta hai.`,
-                    `?? Dekho - <b>Class Name</b> upar hai, <b>Last Working Date</b> semester end date hai, aur neeche saare <b>subjects</b> hain!`,
-                    `?? Har subject mein <b>Weekly Schedule</b> hai - matlab Mon-Sun kitne lectures hain. Ye attendance calculate karne ke liye zaroori hai!`,
-                    `?? <b>Edit kaise kare:</b> Subject name click karke change karo, schedule mein numbers change karo, ya <b>Remove</b> button se delete karo!`,
+                    `📋 Ye ek <b>Example Class</b> hai - CSE Core H semester ka demo! Isse samajh lo app kaise kaam karta hai.`,
+                    `👀 Dekho - <b>Class Name</b> upar hai, <b>Last Working Date</b> semester end date hai, aur neeche saare <b>subjects</b> hain!`,
+                    `📚 Har subject mein <b>Weekly Schedule</b> hai - matlab Mon-Sun kitne lectures hain. Ye attendance calculate karne ke liye zaroori hai!`,
+                    `✏ <b>Edit kaise kare:</b> Subject name click karke change karo, schedule mein numbers change karo, ya <b>Remove</b> button se delete karo!`,
                     `? <b>Naya Subject:</b> Neeche <b>"+ Add Subject"</b> button hai - click karke apne subjects add karo!`,
-                    `?? <b>Save karna mat bhoolna:</b> Saare changes karne ke baad <b>Save Class</b> button zaroor dabao!`,
-                    `?? <b>Attendance Track:</b> Save karne ke baad main screen pe subjects dikhenge - wahan se daily attendance mark karo!`,
-                    `?? <b>Confused?</b> Koi tension nahi! Neeche right side mein mera <b>chat icon</b> ?? hai - mujhse kuch bhi poocho, main hoon na! ??`
+                    `💾 <b>Save karna mat bhoolna:</b> Saare changes karne ke baad <b>Save Class</b> button zaroor dabao!`,
+                    `📈 <b>Attendance Track:</b> Save karne ke baad main screen pe subjects dikhenge - wahan se daily attendance mark karo!`,
+                    `🤔 <b>Confused?</b> Koi tension nahi! Neeche right side mein mera <b>chat icon</b> 💬 hai - mujhse kuch bhi poocho, main hoon na! 😊`
                 ];
 
                 tutorialMessages = [...introMessages, ...(type === 'newclass' ? newClassMessages : exampleMessages)];
@@ -5963,7 +5962,7 @@
                     </style>
                     <div class="bunkmate-cloud">
                         <div class="bunkmate-cloud-header">
-                            <span>??</span> Bunkmate
+                            <span>🤖</span> Bunkmate
                         </div>
                         <div class="bunkmate-cloud-text" id="bunkmateCloudText"></div>
                         <div class="bunkmate-progress" id="bunkmateProgress"></div>
@@ -6039,7 +6038,7 @@
                 <div class="modal-content" style="max-width: 400px;">
                     <button class="modal-close" onclick="closeModal('profileNameModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>?? Edit Profile</h2>
+                        <h2>✏ Edit Profile</h2>
                         <p>Customize how your name appears</p>
                     </div>
                     <div class="form-group">
@@ -6047,7 +6046,7 @@
                         <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="50">
                     </div>
                     <div class="form-actions">
-                        <button class="btn primary-btn" onclick="saveProfileName()">?? Save</button>
+                        <button class="btn primary-btn" onclick="saveProfileName()">💾 Save</button>
                         <button class="btn secondary-btn" onclick="closeModal('profileNameModal')">Cancel</button>
                     </div>
                 </div>`;
@@ -6060,7 +6059,7 @@
                 firstLoginModal.innerHTML = `
                 <div class="modal-content" style="max-width: 400px;">
                     <div class="modal-header" style="text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">??</div>
+                        <div style="font-size: 3rem; margin-bottom: 10px;">✨</div>
                         <h2>Welcome to Bunk it!</h2>
                         <p>Let's personalize your experience</p>
                     </div>
@@ -6106,9 +6105,9 @@
                             const syncDate = new Date(parseInt(lastSyncTime));
                             const formattedDate = syncDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                             const formattedTime = syncDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                            lastSyncedDiv.textContent = `&#128260; Last synced: ${formattedDate}, ${formattedTime}`;
+                            lastSyncedDiv.textContent = `🕐 Last synced: ${formattedDate}, ${formattedTime}`;
                         } else {
-                            lastSyncedDiv.textContent = '&#128260; Last synced: Never';
+                            lastSyncedDiv.textContent = '🕐 Last synced: Never';
                         }
                     }
 
@@ -6132,7 +6131,7 @@
                     userEmail.textContent = profileName ? 'Guest Mode' : 'Not signed in';
 
                     if (userAvatar) {
-                        const initial = profileName ? profileName.charAt(0).toUpperCase() : '??';
+                        const initial = profileName ? profileName.charAt(0).toUpperCase() : '👤';
                         userAvatar.innerHTML = initial;
                     }
                 }
@@ -6394,10 +6393,10 @@
                             } else {
                                 // Local is NEWER - this is unusual, ask user (might be on friend's device)
                                 const userChoice = confirm(
-                                    `?? First sync on this device!\n\n` +
+                                    `📱 First sync on this device!\n\n` +
                                     `This device has NEWER data than your cloud backup:\n` +
-                                    `?? Cloud backup: ${cloudClasses} class(es)\n` +
-                                    `?? This device: ${localClasses} class(es)\n\n` +
+                                    `☁ Cloud backup: ${cloudClasses} class(es)\n` +
+                                    `📱 This device: ${localClasses} class(es)\n\n` +
                                     `Choose wisely:\n` +
                                     `� OK = Restore YOUR backup from Google Drive\n` +
                                     `� Cancel = Keep this device's data (will overwrite cloud!)`
@@ -6411,7 +6410,7 @@
                                 } else {
                                     // User chose device data - double confirm for safety
                                     const doubleConfirm = confirm(
-                                        `?? Are you SURE?\n\n` +
+                                        `🤔 Are you SURE?\n\n` +
                                         `This will PERMANENTLY replace your cloud backup ` +
                                         `(${cloudClasses} classes) with this device's data (${localClasses} classes).\n\n` +
                                         `This cannot be undone!`
@@ -7017,14 +7016,14 @@
 
                     <div id="aiImportTab" style="display: none;">
                         <div class="json-instructions">
-                            <strong>?? Inbuilt AI Import:</strong>
+                            <strong>🕜 Inbuilt AI Import:</strong>
                             <p>Upload your <strong>Timetable</strong>, <strong>Attendance Screenshot</strong>, or any other class details. The AI will read them and fill out the form for you!</p>
                         </div>
                         
                         <div class="form-group">
                             <label>1. Upload Files (Images/Screenshots):</label>
                             <div style="border: 2px dashed #ccc; border-color: var(--border-color, #ccc); padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.02);" onclick="document.getElementById('aiImportFiles').click()">
-                                <span style="font-size: 2rem;">??</span><br>
+                                <span style="font-size: 2rem;">🚧</span><br>
                                 <span style="color: #666; color: var(--medium-text, #666);">Click to upload Timetable, Attendance, etc.</span>
                             </div>
                             <input type="file" id="aiImportFiles" multiple accept="image/*" style="display: none;" onchange="updateAIFileCount(this)">
@@ -7038,7 +7037,7 @@
 
                         <div id="aiImportLoading" style="display: none; text-align: center; margin: 20px 0;">
                             <div class="spinner"></div>
-                            <p>?? AI is analyzing your files...<br>This may take a few seconds.</p>
+                            <p>🕜 AI is analyzing your files...<br>This may take a few seconds.</p>
                         </div>
 
                         <button class="btn primary-btn" onclick="handleAIClassImport()" style="width: 100%;">? Run Inbuilt AI Import</button>
@@ -7070,21 +7069,21 @@
                          <!-- File Upload Option -->
                         <div style="margin-bottom: 20px; text-align: center;">
                             <input type="file" id="qrInputFileTab" accept="image/*" style="display: none;" onchange="handleQRFileUploadInTab(this)">
-                            <button class="btn secondary-btn" onclick="document.getElementById('qrInputFileTab').click()">?? Upload QR Image</button>
+                            <button class="btn secondary-btn" onclick="document.getElementById('qrInputFileTab').click()">🕜 Upload QR Image</button>
                         </div>
                         <div id="readerTab" style="width: 100%; min-height: 300px;"></div>
                     </div>
 
                     <div id="shareEntryTab" style="display: none;">
                         <div class="modal-header" style="text-align: center; margin-bottom: 20px;">
-                            <h2>?? Share Class</h2>
+                            <h2>🕜 Share Class</h2>
                             <p>Scan this QR code to import this class setup on another device.</p>
                         </div>
                         <div id="qrcodeTab" style="display: inline-block; padding: 20px; background: white; margin: 20px auto; display: flex; justify-content: center;"></div>
                         <p style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 20px; text-align: center;">Includes subjects and holidays. Does not include your personal attendance logs.</p>
                         <div style="display: flex; gap: 10px; justify-content: center;">
-                            <button class="btn success-btn" onclick="shareQRImageTab()">?? Share via App</button>
-                            <button class="btn secondary-btn" onclick="downloadQRImageTab()">?? Download QR</button>
+                            <button class="btn success-btn" onclick="shareQRImageTab()">🕜 Share via App</button>
+                            <button class="btn secondary-btn" onclick="downloadQRImageTab()">🕜 Download QR</button>
                         </div>
                     </div>
 
@@ -7097,7 +7096,7 @@
                     const helpModalHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
-                    <div class="modal-header"><h2>❓ How to Use This Tool</h2></div>
+                    <div class="modal-header"><h2>💡 How to Use This Tool</h2></div>
                     
                     <div class="alert-message warning" style="border-left-color: var(--warning-color);">
                         <strong>Important:</strong> OCR (image reading) is accurate only about 95% of the time. <strong>Always compare the extracted numbers</strong> with your screenshot to ensure they are correct. You can edit them directly in the results cards.
@@ -7152,19 +7151,19 @@
                     document.getElementById('exportModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('exportModal')">&times;</button><div class="modal-header"><h2>Export/Share Class</h2><p>Copy this JSON and share it. Your friend can import it using the 'Import from JSON' tab.</p></div><div class="form-group"><textarea id="exportJsonTextarea" readonly></textarea></div><div class="form-actions"><button class="btn primary-btn" onclick="copyExportJson()">Copy to Clipboard</button></div></div>`;
                     document.getElementById('skipTodayModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('skipTodayModal')">&times;</button><div class="modal-header"><h2>Can You Skip Today?</h2></div><div id="skipTodayResults"></div></div>`;
                     document.getElementById('dailyLogModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('dailyLogModal')">&times;</button><div class="modal-header"><h2>Daily Attendance Log</h2></div><div class="form-group"><label for="logDate">Current Date:</label><input type="date" id="logDate" onchange="populateDailyLog()"></div><div id="dailyLogSubjects"></div><div class="form-actions"><button class="btn primary-btn" onclick="saveDailyLog()">Save Log</button></div><p style="font-size: 0.8rem; text-align: center; margin-top: 15px;"><strong>Note:</strong> For past dates, 'Duty Leave (OD)' must be manually reflected by adding 1 to both 'Attended' and 'Held' values in the results.</p></div>`;
-                    document.getElementById('backupOptionsModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('backupOptionsModal')">&times;</button><div class="modal-header"><h2>?? Backup Data</h2><p>Choose how you want to save your backup.</p></div><div class="form-actions" style="flex-direction: column; gap: 15px;"><button class="btn primary-btn" onclick="performBackupDownload()" style="width: 100%;">?? Download JSON File</button><button class="btn success-btn" onclick="performBackupShare()" style="width: 100%;">?? Share JSON File</button><button class="btn info-btn" onclick="performBackupCopy()" style="width: 100%;">?? Copy JSON to Clipboard</button></div></div>`;
+                    document.getElementById('backupOptionsModal').innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('backupOptionsModal')">&times;</button><div class="modal-header"><h2>⬅ Backup Data</h2><p>Choose how you want to save your backup.</p></div><div class="form-actions" style="flex-direction: column; gap: 15px;"><button class="btn primary-btn" onclick="performBackupDownload()" style="width: 100%;">🕜 Download JSON File</button><button class="btn success-btn" onclick="performBackupShare()" style="width: 100%;">🕜 Share JSON File</button><button class="btn info-btn" onclick="performBackupCopy()" style="width: 100%;">🕜 Copy JSON to Clipboard</button></div></div>`;
 
                     // OCR Settings Modal
                     document.getElementById('ocrSettingsModal').innerHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>⚙ API Settings</h2>
+                        <h2>🔑 API Settings</h2>
                         <p>Configure AI-powered attendance extraction</p>
                     </div>
                     
                     <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-                        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">?? Your Personal API Key</h3>
+                        <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🕜 Your Personal API Key</h3>
                         <p style="margin-bottom: 15px; color: var(--medium-text); font-size: 0.9rem;">
                             Get your own <strong>free 10,000/day quota</strong> by adding your personal Gemini API key.
                         </p>
@@ -7183,7 +7182,7 @@
                     </div>
                     
                     <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="margin-bottom: 10px; font-size: 1rem;">?? How to Get Free API Key:</h4>
+                        <h4 style="margin-bottom: 10px; font-size: 1rem;">🕜 How to Get Free API Key:</h4>
                         <ol style="margin: 0; padding-left: 20px; color: var(--dark-text);">
                             <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--primary-grad-start);">Google AI Studio</a></li>
                             <li>Click <strong>"Get API Key"</strong> or <strong>"Create API Key"</strong></li>
@@ -7193,15 +7192,15 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button class="btn primary-btn" onclick="saveAPISettings()">?? Save Settings</button>
-                        <button class="btn secondary-btn" onclick="testPersonalKey()">?? Test My Key</button>
+                        <button class="btn primary-btn" onclick="saveAPISettings()">💾 Save Settings</button>
+                        <button class="btn secondary-btn" onclick="testPersonalKey()">🕜 Test My Key</button>
                     </div>
                 </div>`;
 
                     document.getElementById('restoreOptionsModal').innerHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('restoreOptionsModal')">&times;</button>
-                    <div class="modal-header"><h2>?? Restore Data</h2><p>Choose how you want to restore your data.</p></div>
+                    <div class="modal-header"><h2>🕜 Restore Data</h2><p>Choose how you want to restore your data.</p></div>
                     
                     <div class="modal-tabs">
                         <button id="restoreFileTabBtn" class="active" onclick="switchRestoreTab('file')">Upload File</button>
@@ -7211,7 +7210,7 @@
                     <div id="restoreFileTab">
                         <div style="text-align: center; padding: 20px;">
                             <p style="margin-bottom: 20px;">Upload a previously backed up .json file.</p>
-                            <button class="btn primary-btn" onclick="document.getElementById('restoreInput').click()">?? Select Backup File</button>
+                            <button class="btn primary-btn" onclick="document.getElementById('restoreInput').click()">🕜 Select Backup File</button>
                         </div>
                     </div>
 
@@ -7468,7 +7467,7 @@
                     // Process each image
                     for (let i = 0; i < filesArray.length; i++) {
                         const file = filesArray[i];
-                        console.log(`?? Processing image ${i + 1} of ${filesArray.length}...`);
+                        console.log(`⏳ Processing image ${i + 1} of ${filesArray.length}...`);
 
                         const result = await processAttendanceImage(file, true);
 
@@ -7477,7 +7476,7 @@
                             // Merge data from this image
                             mergedData = { ...mergedData, ...result.data };
                         } else {
-                            console.warn(`?? Failed to process image ${i + 1}: ${result.error}`);
+                            console.warn(`❌ Failed to process image ${i + 1}: ${result.error}`);
                         }
                     }
 
@@ -7540,7 +7539,7 @@
                     console.log('Attempting OCR with shared Gemini API keys...');
                     let keyData = getNextAvailableOCRKey();
                     while (keyData) {
-                        console.log(`?? Trying OCR Key #${keyData.index + 1}...`);
+                        console.log(`🔑 Trying OCR Key #${keyData.index + 1}...`);
                         const sharedResult = await processImageWithGemini(file, keyData.key);
                         if (sharedResult.success) {
                             return { success: true, data: sharedResult.data, method: `Shared Gemini API (Key #${keyData.index + 1})` };
@@ -7681,7 +7680,7 @@ CRITICAL RULES:
             function extractDataToJson(text, subjects) { const jsonData = {}; const lines = text.split('\n'); const usedLines = new Set(); const history = { totals: [], weeklyClasses: [] }; const processAllSubjects = () => { subjects.forEach(subject => { if (jsonData[subject.code]) return; let bestMatch = { line: null, confidence: 0, index: -1, word: null }; lines.forEach((line, index) => { if (usedLines.has(index)) return; for (const word of line.split(/\s+/)) { const result = fuzzyMatch(word, subject.code); if (result.match && result.confidence > bestMatch.confidence) { bestMatch = { line, confidence: result.confidence, index, word }; } } }); if (bestMatch.line && bestMatch.confidence >= 65) { usedLines.add(bestMatch.index); const context = {}; if (history.totals.length > 0) { context.avgTotal = history.totals.reduce((a, b) => a + b, 0) / history.totals.length; const avgWeekly = history.weeklyClasses.reduce((a, b) => a + b, 0) / history.weeklyClasses.length; context.avgWeeklyClasses = avgWeekly > 0 ? avgWeekly : 1; } processLine(bestMatch.line, subject, jsonData, bestMatch.word, context); if (jsonData[subject.code]) { history.totals.push(jsonData[subject.code].total); const weeklySum = subject.schedule.reduce((a, b) => a + b, 0); history.weeklyClasses.push(weeklySum > 0 ? weeklySum : 1); } } }); }; processAllSubjects(); processAllSubjects(); return jsonData; }
             function processOCRText(text) { const extractedJson = extractDataToJson(text, selectedClass.subjects); console.log("Extracted JSON:", JSON.stringify(extractedJson, null, 2)); processJsonAndCalculate(extractedJson); }
             function validateAndCorrectData(jsonData) { if (!selectedClass || !selectedClass.subjects) return jsonData; const frequencyGroups = {}; selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { const weeklyFrequency = subject.schedule.reduce((a, b) => a + b, 0); if (weeklyFrequency > 0) { if (!frequencyGroups[weeklyFrequency]) { frequencyGroups[weeklyFrequency] = []; } frequencyGroups[weeklyFrequency].push(subject.code); } } }); for (const freq in frequencyGroups) { const subjectCodes = frequencyGroups[freq]; if (subjectCodes.length < 2) continue; const totals = subjectCodes.map(code => jsonData[code].total).sort((a, b) => a - b); const mid = Math.floor(totals.length / 2); const medianTotal = totals.length % 2 !== 0 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2); subjectCodes.forEach(code => { const originalData = jsonData[code]; if (Math.abs(originalData.total - medianTotal) > 15) { console.warn(`Data Correction: Subject ${code} total (${originalData.total}) is an outlier compared to its group median (${medianTotal}). Auto-correcting.`); const originalPercent = originalData.total > 0 ? (originalData.present / originalData.total) : 0; const newTotal = medianTotal; const newPresent = Math.round(newTotal * originalPercent); jsonData[code] = { total: newTotal, present: newPresent }; } }); } return jsonData; }
-            function processJsonAndCalculate(jsonData) { jsonData = validateAndCorrectData(jsonData); const attendanceDataForCalc = [], missedSubjects = []; const classSubjectCodes = new Set(selectedClass.subjects.map(s => s.code)); selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { attendanceDataForCalc.push({ ...subject, totalHeld: jsonData[subject.code].total, attended: jsonData[subject.code].present }); } else { missedSubjects.push(subject); } }); const unmatchedOcrCodes = Object.keys(jsonData).filter(code => !classSubjectCodes.has(code)); if (unmatchedOcrCodes.length > 0) { showToast(`?? Unrecognized codes: ${unmatchedOcrCodes.join(', ')}`, 'warning'); console.warn('OCR extracted codes not in class:', unmatchedOcrCodes); } if (missedSubjects.length > 0 && attendanceDataForCalc.length > 0) { ocrResultsCache = jsonData; openPartialEntryModal(missedSubjects); return; } if (Object.keys(jsonData).length === 0) { alert('Could not extract any attendance data. Please try manual entry.'); return; } calculateAttendance(attendanceDataForCalc); }
+            function processJsonAndCalculate(jsonData) { jsonData = validateAndCorrectData(jsonData); const attendanceDataForCalc = [], missedSubjects = []; const classSubjectCodes = new Set(selectedClass.subjects.map(s => s.code)); selectedClass.subjects.forEach(subject => { if (jsonData[subject.code]) { attendanceDataForCalc.push({ ...subject, totalHeld: jsonData[subject.code].total, attended: jsonData[subject.code].present }); } else { missedSubjects.push(subject); } }); const unmatchedOcrCodes = Object.keys(jsonData).filter(code => !classSubjectCodes.has(code)); if (unmatchedOcrCodes.length > 0) { showToast(`⚠ Unrecognized codes: ${unmatchedOcrCodes.join(', ')}`, 'warning'); console.warn('OCR extracted codes not in class:', unmatchedOcrCodes); } if (missedSubjects.length > 0 && attendanceDataForCalc.length > 0) { ocrResultsCache = jsonData; openPartialEntryModal(missedSubjects); return; } if (Object.keys(jsonData).length === 0) { alert('Could not extract any attendance data. Please try manual entry.'); return; } calculateAttendance(attendanceDataForCalc); }
 
             function calculateAttendance(attendanceData) {
                 const resultsSection = document.getElementById('resultsSection');
@@ -7691,7 +7690,7 @@ CRITICAL RULES:
 
                 // Initialize the structure with Header and View Containers
                 resultsSection.innerHTML = `
-                <h2>?? Attendance Analysis & Projections</h2>
+                <h2>🕜 Attendance Analysis & Projections</h2>
                 <div id="analysisResults" class="results-grid"></div>
                 <div id="tabularAnalysisSection" style="display: none; margin-top: 20px;"></div>
                 <div id="graphAnalysisSection" style="display: none; margin-top: 20px;"></div>
@@ -7841,7 +7840,7 @@ CRITICAL RULES:
 
                 let html = `
                 <div class="card" style="padding: 5px;">
-                    <h3 style="margin-bottom: 10px; font-size: 1.2rem;">?? Detailed Attendance Table</h3>
+                    <h3 style="margin-bottom: 10px; font-size: 1.2rem;">🕜 Detailed Attendance Table</h3>
                     <div style="overflow-x: hidden;"> <!-- Disable scroll to force fit -->
                     <table class="analysis-table">
                         <thead>
@@ -7913,7 +7912,7 @@ CRITICAL RULES:
                 // Add legend
                 html += `</tbody></table></div>
                     <div style="margin-top: 15px; padding: 10px; background: var(--light-bg); border-radius: 8px; font-size: 0.85rem;">
-                        <h4 style="margin: 0 0 8px 0; font-size: 0.95rem;">?? Legend</h4>
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.95rem;">🕜 Legend</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
                             <div><strong>Sub:</strong> Subject</div>
                             <div><strong>Att/Tot:</strong> Attended / Total</div>
@@ -7925,7 +7924,7 @@ CRITICAL RULES:
                             <div><strong>Need:</strong> Need to Attend</div>
                             <div><strong>Skip:</strong> Can Skip</div>
                         </div>
-                        <h4 style="margin: 12px 0 8px 0; font-size: 0.95rem;">?? Subjects</h4>
+                        <h4 style="margin: 12px 0 8px 0; font-size: 0.95rem;">🕜 Subjects</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">`;
 
                 currentAnalysisData.forEach(subject => {
@@ -7963,7 +7962,7 @@ CRITICAL RULES:
 
                     container.innerHTML = `
                     <div class="card">
-                        <h3 style="margin-bottom: 15px;">?? Overall Attendance Progress</h3>
+                        <h3 style="margin-bottom: 15px;">🕜 Overall Attendance Progress</h3>
                         <div style="height: 400px; position: relative;">
                             <canvas id="attendanceChartCanvas"></canvas>
                         </div>
@@ -8036,7 +8035,7 @@ CRITICAL RULES:
                     // Per-Subject Mode Graph
                     container.innerHTML = `
                     <div class="card">
-                        <h3 style="margin-bottom: 15px;">?? Per-Subject Attendance Overview</h3>
+                        <h3 style="margin-bottom: 15px;">🕜 Per-Subject Attendance Overview</h3>
                         <div style="height: 400px; position: relative;">
                             <canvas id="attendanceChartCanvas"></canvas>
                         </div>
@@ -8118,7 +8117,7 @@ CRITICAL RULES:
 
                 container.innerHTML += `
                 <div class="subject-card" style="border-left-color: var(--primary-grad-start);">
-                    <div class="subject-title">?? Overall Attendance Summary</div>
+                    <div class="subject-title">🕜 Overall Attendance Summary</div>
                     <div class="stats-grid">
                         ${generateStatItemHTML('overall_currentPercent', 'Current %', stats.currentPercent.toFixed(1) + '%', 'The overall attendance percentage based on all classes held so far.')}
                         ${generateStatItemHTML('overall_maxPercent', 'Attend All Classes %', stats.projectedMaxPercent.toFixed(1) + '%', 'Your final overall percentage if you attend ALL remaining classes.')}
@@ -8156,9 +8155,9 @@ CRITICAL RULES:
                     const classesNeeded = minRequired - (attended + remaining);
                     alertMessage = `<strong>Cannot Reach ${minCriteria * 100}%!</strong> Your max possible attendance is ${projectedMaxPercent.toFixed(1)}%.`;
                     if (projectedMaxPercent >= 65) {
-                        alertMessage += `<br>?? You may need to condone <strong>${classesNeeded}</strong> class(es) with a medical certificate.`;
+                        alertMessage += `<br>🕜 You may need to condone <strong>${classesNeeded}</strong> class(es) with a medical certificate.`;
                     } else {
-                        alertMessage += `<br>?? **Detainment Likely:** Max attendance is below 65%.`;
+                        alertMessage += `<br>🚨 **Detainment Likely:** Max attendance is below 65%.`;
                     }
                 } else if (currentPercent < (minCriteria * 100)) {
                     alertClass = 'warning';
@@ -8431,7 +8430,7 @@ CRITICAL INSTRUCTIONS:
 
                 const timezoneInfoEl = document.getElementById('timezoneInfo');
                 if (timezoneInfoEl) {
-                    timezoneInfoEl.textContent = `Your timezone: ${timezoneLabel}${!isIST ? ' ?? Not IST' : ''}`;
+                    timezoneInfoEl.textContent = `Your timezone: ${timezoneLabel}${!isIST ? ' ⚠ Not IST' : ''}`;
                 }
 
                 // Store which class we're configuring
@@ -8463,7 +8462,7 @@ CRITICAL INSTRUCTIONS:
 
                             // Only check if today is after last working date
                             if (today > semesterEnd) {
-                                alert(`?? Cannot enable notifications.\n\nCurrent date is after the semester end date (${classData.lastDate}).\nPlease update your class's last working date.`);
+                                alert(`❌ Cannot enable notifications.\n\nCurrent date is after the semester end date (${classData.lastDate}).\nPlease update your class's last working date.`);
                                 document.getElementById('notificationEnabled').checked = false;
                                 document.getElementById('notificationTimeGroup').style.display = 'none';
                                 return;
@@ -8535,7 +8534,7 @@ CRITICAL INSTRUCTIONS:
                 startNotificationChecker();
 
                 // Notify user
-                alert(`?? Daily Notifications Enabled!\n\nYou'll receive daily reminders at ${defaultTime} to log your attendance.\n\nYou can change this time in Notification Settings from the menu.`);
+                alert(`✅ Daily Notifications Enabled!\n\nYou'll receive daily reminders at ${defaultTime} to log your attendance.\n\nYou can change this time in Notification Settings from the menu.`);
 
                 console.log('Notifications auto-enabled for Portal Mode.');
             }
@@ -8704,7 +8703,7 @@ CRITICAL INSTRUCTIONS:
                         <div class="modal-content">
                             <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                             <div class="modal-header">
-                                <h2>⚙ API Settings</h2>
+                                <h2>🔑 API Settings</h2>
                                 <p>Configure your Gemini API key for OCR and AI Assistant features</p>
                             </div>
                             <div class="form-group">
@@ -8715,8 +8714,7 @@ CRITICAL INSTRUCTIONS:
                                 </p>
                             </div>
                             <div id="personalQuotaStatus" style="display: none; margin-top: 10px; padding: 10px; background: var(--light-bg); border-radius: 8px;">
-                                <p style="font-size: 0.9rem; margin: 0;">
-                                    ?? Personal Quota Used Today: <strong id="personalQuotaCount">0/10000</strong>
+                                <p style="font-size: 0.9rem; margin: 0;">🕜 Personal Quota Used Today: <strong id="personalQuotaCount">0/10000</strong>
                                 </p>
                             </div>
                             <div style="text-align: center; margin-top: 20px;">
@@ -8774,7 +8772,7 @@ CRITICAL INSTRUCTIONS:
                 const toast = document.createElement('div');
                 toast.className = 'toast';
 
-                const icon = options.icon || '??';
+                const icon = options.icon || '🔔';
                 const actionText = options.actionText || 'Log Now';
                 const onAction = options.onAction || (() => { });
                 const duration = options.duration || 8000;
@@ -8812,7 +8810,7 @@ CRITICAL INSTRUCTIONS:
                 setTimeout(() => toast.remove(), 300);
             }
 
-            // ?? Celebration Confetti Animation
+            // 🎉 Celebration Confetti Animation
             function celebrateAchievement(type = 'default') {
                 if (typeof confetti !== 'function') {
                     console.log('Confetti not loaded');
@@ -8866,7 +8864,7 @@ CRITICAL INSTRUCTIONS:
                 }
             }
 
-            // ?? Share Attendance Summary on WhatsApp
+            // 📱 Share Attendance Summary on WhatsApp
             function shareOnWhatsApp() {
                 // Calculate overall and subject-wise attendance
                 let totalPresent = 0;
@@ -8884,7 +8882,7 @@ CRITICAL INSTRUCTIONS:
                         totalClasses += total;
 
                         // Add class summary
-                        const emoji = percentage >= 75 ? '?' : percentage >= 65 ? '??' : '?';
+                        const emoji = percentage >= 75 ? '🟢' : percentage >= 65 ? '🟡' : '🔴';
                         summaryLines.push(`${emoji} ${className}: ${percentage}%`);
                     }
                 }
@@ -8894,15 +8892,15 @@ CRITICAL INSTRUCTIONS:
                     : 0;
 
                 // Create WhatsApp message
-                const message = `?? *My Attendance Summary* - Bunk it
+                const message = `📊 *My Attendance Summary* - Bunk it
 
-?? *Overall: ${overallPercentage}%*
+📈 *Overall: ${overallPercentage}%*
 
 ${summaryLines.join('\n')}
 
-?? Updated: ${new Date().toLocaleDateString('en-IN')}
+📅 Updated: ${new Date().toLocaleDateString('en-IN')}
 
-?? Track your attendance: https://bunkitapp.in`;
+🔗 Track your attendance: https://bunkitapp.in`;
 
                 // Open WhatsApp with pre-filled message
                 const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -8926,7 +8924,7 @@ ${summaryLines.join('\n')}
 
                     if (total > 0) {
                         const percentage = ((present / total) * 100).toFixed(1);
-                        const emoji = percentage >= 75 ? '?' : percentage >= 65 ? '??' : '?';
+                        const emoji = percentage >= 75 ? '🟢' : percentage >= 65 ? '🟡' : '🔴';
                         subjectLines.push(`${emoji} ${subject.name}: ${percentage}% (${present}/${total})`);
                     }
                 });
@@ -8937,11 +8935,11 @@ ${summaryLines.join('\n')}
 
                 const message = `?? *${className} - Attendance*
 
-?? *Overall: ${overallPercentage}%*
+📈 *Overall: ${overallPercentage}%*
 
 ${subjectLines.join('\n')}
 
-?? Updated: ${new Date().toLocaleDateString('en-IN')}
+📅 Updated: ${new Date().toLocaleDateString('en-IN')}
 
 ?? Track attendance: https://bunkitapp.in`;
 
@@ -9257,10 +9255,10 @@ ${subjectLines.join('\n')}
                             Your support helps me:
                         </p>
                         <ul style="text-align: left; font-size: 0.9rem; color: var(--dark-text); padding-left: 25px; margin-bottom: 10px; line-height: 1.8;">
-                            <li>?? Cover API costs (AI, OCR, cloud services)</li>
-                            <li>?? Keep the app <strong>100% ad-free</strong></li>
-                            <li>?? Add cloud sync & user accounts</li>
-                            <li>?? Implement secure data backup</li>
+                            <li>🕜 Cover API costs (AI, OCR, cloud services)</li>
+                            <li>🕜 Keep the app <strong>100% ad-free</strong></li>
+                            <li>🕜 Add cloud sync & user accounts</li>
+                            <li>🕜 Implement secure data backup</li>
                             <li>? Build more useful features!</li>
                         </ul>
                     </div>
@@ -9275,17 +9273,14 @@ ${subjectLines.join('\n')}
                         </p>
                         
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn info-btn" onclick="downloadDonateQR()" style="padding: 10px 20px; font-size: 0.9rem;">
-                                ?? Download QR
+                            <button class="btn info-btn" onclick="downloadDonateQR()" style="padding: 10px 20px; font-size: 0.9rem;">🕜 Download QR
                             </button>
-                            <button class="btn primary-btn" onclick="shareDonateQR()" style="padding: 10px 20px; font-size: 0.9rem;">
-                                ?? Share QR
+                            <button class="btn primary-btn" onclick="shareDonateQR()" style="padding: 10px 20px; font-size: 0.9rem;">🕜 Share QR
                             </button>
                         </div>
                     </div>
                     
-                    <p style="font-size: 0.9rem; color: var(--medium-text); margin-top: 20px; font-style: italic;">
-                        ?? Every contribution, big or small, means the world to me!
+                    <p style="font-size: 0.9rem; color: var(--medium-text); margin-top: 20px; font-style: italic;">🕜 Every contribution, big or small, means the world to me!
                     </p>
                     
                     <!-- Buy Me a Coffee Button -->
@@ -9352,13 +9347,13 @@ ${subjectLines.join('\n')}
                 <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
                     <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>❓ How to Use Bunk it</h2>
+                        <h2>💡 How to Use Bunk it</h2>
                         <p>Complete guide to all features</p>
                     </div>
                     
                     <div style="text-align: left; padding: 10px;">
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 1. Setting Up Your Class</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📚 1. Setting Up Your Class</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Add Class:</strong> Click "+ Add Class" button to create a new class</li>
                             <li><strong>Class Name:</strong> Enter your class/section name (e.g., "CSE-A 3rd Sem")</li>
@@ -9369,23 +9364,23 @@ ${subjectLines.join('\n')}
                             <li><strong>QR Import:</strong> Scan a classmate's QR code to copy their class setup</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 2. Entering Attendance</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">✍ 2. Entering Attendance</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Image Upload (OCR):</strong> Upload attendance portal screenshot - AI extracts the numbers</li>
                             <li><strong>Manual Entry:</strong> Enter total and attended classes for each subject</li>
                             <li><strong>JSON Paste:</strong> Paste attendance data in JSON format from AI chat</li>
-                            <li><strong>?? Pro Tip:</strong> OCR is ~95% accurate - always verify extracted numbers</li>
+                            <li><strong>🕜 Pro Tip:</strong> OCR is ~95% accurate - always verify extracted numbers</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 3. Portal Mode (Daily Tracking)</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🏫 3. Portal Mode (Daily Tracking)</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Enable:</strong> Go to "Student Portal" button ? Set baseline date & semester start</li>
                             <li><strong>Daily Logs:</strong> Mark attended/skipped/cancelled classes each day</li>
-                            <li><strong>Dashboard:</strong> See color-coded status (?? Danger, ?? Warning, ?? Safe)</li>
+                            <li><strong>Dashboard:</strong> See color-coded status (?? Danger, ⚠ Warning, ?? Safe)</li>
                             <li><strong>History:</strong> View/edit past logs using the calendar icon</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 4. View Options</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">👁 4. View Options</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Card View:</strong> Detailed cards with all stats per subject</li>
                             <li><strong>Table View:</strong> Compact spreadsheet-style view</li>
@@ -9393,7 +9388,7 @@ ${subjectLines.join('\n')}
                             <li><strong>Edit:</strong> Click attendance numbers in any view to update</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 5. Weekly Timetable</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">📅 5. Weekly Timetable</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>View:</strong> Auto-generated from your subject schedules</li>
                             <li><strong>Drag & Drop:</strong> Rearrange subjects by dragging</li>
@@ -9401,7 +9396,7 @@ ${subjectLines.join('\n')}
                             <li><strong>Colors:</strong> Subjects color-coded by attendance status</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">??? 6. Leave Planner</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🏖 6. Leave Planner</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Plan Leaves:</strong> Add dates you plan to skip</li>
                             <li><strong>See Impact:</strong> View how leaves affect your attendance</li>
@@ -9410,21 +9405,21 @@ ${subjectLines.join('\n')}
                             <li><strong>Long Weekend Finder:</strong> Discover best leave strategy for extended breaks</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 7. Quick Tools</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">⚡ 7. Quick Tools</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Can I Skip Today?:</strong> Quick check if skipping today is safe</li>
                             <li><strong>Per-Subject / Overall Mode:</strong> Toggle calculation mode in settings</li>
                             <li><strong>Min Attendance %:</strong> Set your required percentage (default 75%)</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 8. Notifications</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🔔 8. Notifications</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Daily Reminders:</strong> Get notified to log attendance</li>
                             <li><strong>Custom Time:</strong> Set your preferred reminder time</li>
                             <li><strong>Per-Class Settings:</strong> Configure separately for each class</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 9. Backup & Sync</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">☁ 9. Backup & Sync</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Google Sign-in:</strong> Sync data across devices via Google Drive</li>
                             <li><strong>Backup:</strong> Download complete backup as JSON file</li>
@@ -9433,7 +9428,7 @@ ${subjectLines.join('\n')}
                             <li><strong>QR Code:</strong> Share class via scannable QR</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? 10. AI Assistant</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🤖 10. AI Assistant</h3>
                         <ul style="line-height: 1.8; padding-left: 20px;">
                             <li><strong>Ask Questions:</strong> Click the ?? button for AI help</li>
                             <li><strong>Smart Advice:</strong> Get personalized leave recommendations</li>
@@ -9463,13 +9458,13 @@ ${subjectLines.join('\n')}
                     
                     <div style="text-align: left; padding: 10px; line-height: 1.8;">
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Data Storage</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Data Storage</h3>
                         <p>Bunk it stores all your data <strong>locally on your device</strong>. Your attendance data, class information, and preferences are saved in your browser's local storage.</p>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Google Drive Sync (Optional)</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Google Drive Sync (Optional)</h3>
                         <p>If you choose to sign in with Google, your data is synced to <strong>your personal Google Drive</strong> in a private app folder. We never access or store your data on our servers.</p>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Image Processing</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Image Processing</h3>
                         <p>When you upload attendance screenshots for OCR:</p>
                         <ul style="padding-left: 20px;">
                             <li>Images are processed by Google's Gemini AI API</li>
@@ -9477,27 +9472,27 @@ ${subjectLines.join('\n')}
                             <li>Processing happens in real-time and data is immediately discarded</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? API Keys</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 API Keys</h3>
                         <p>Your personal Gemini API key (if provided) is stored locally on your device only. It is never sent to our servers.</p>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Third-Party Services</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Third-Party Services</h3>
                         <ul style="padding-left: 20px;">
                             <li><strong>Google Sign-in:</strong> For optional cloud sync</li>
                             <li><strong>Google Gemini AI:</strong> For OCR and AI assistant</li>
                             <li><strong>Google Fonts:</strong> For typography</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Analytics & Tracking</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Analytics & Tracking</h3>
                         <p>Bunk it does <strong>NOT</strong> use any analytics, tracking, or advertising services. We don't collect usage data, personal information, or browsing behavior.</p>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Data Security</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Data Security</h3>
                         <ul style="padding-left: 20px;">
                             <li>All data transmission uses HTTPS encryption</li>
                             <li>Local data is protected by your device security</li>
                             <li>Google Drive sync uses OAuth 2.0 authentication</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">??? Data Deletion</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🗑 Data Deletion</h3>
                         <p>You can delete all your data at any time by:</p>
                         <ul style="padding-left: 20px;">
                             <li>Clearing browser data/cache</li>
@@ -9505,10 +9500,10 @@ ${subjectLines.join('\n')}
                             <li>Deleting the app folder from Google Drive (if synced)</li>
                         </ul>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Children's Privacy</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Children's Privacy</h3>
                         <p>This app is designed for college/university students. We do not knowingly collect information from children under 13.</p>
                         
-                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">?? Contact</h3>
+                        <h3 style="color: var(--primary-grad-start); margin: 20px 0 10px;">🕜 Contact</h3>
                         <p>For privacy concerns or questions, contact the developer via WhatsApp: +91 6386854875</p>
                         
                         <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; margin-top: 20px;">
@@ -10084,20 +10079,20 @@ CRITICAL RULES:
                 if (!container) return;
                 container.innerHTML = `
                 <div class="subject-card" style="border-left-color: var(--warning-color);">
-                    <div class="subject-title">??? Leave & Event Planner</div>
+                    <div class="subject-title">🏖 Leave & Event Planner</div>
                     <p>Add planned leaves and compulsory events to get an accurate calculation of your maximum safe leave days.</p>
                     
-                    <h4 style="margin-top: 20px;">??? Planned Leaves</h4>
+                    <h4 style="margin-top: 20px;">📅 Planned Leaves</h4>
                     <div id="leavePeriodsContainer" style="margin-top: 10px;"></div>
                     <button class="add-leave-period-btn" onclick="addLeavePeriod()">+ Add Leave Period</button>
 
-                    <h4 style="margin-top: 20px;">?? Compulsory Events</h4>
+                    <h4 style="margin-top: 20px;">🕜 Compulsory Events</h4>
                      <p style="font-size:0.9rem; color: var(--medium-text);">Add specific dates you absolutely must attend.</p>
                     <div id="compulsoryPeriodsContainer" style="margin-top: 10px;"></div>
                     <button class="add-compulsory-period-btn" onclick="addCompulsoryPeriod()">+ Add Compulsory Period</button>
 
                     <button class="btn warning-btn" onclick="calculateMaxSafeLeave()" style="margin-top: 25px; display: block; margin-left: auto; margin-right: auto;">Recalculate Max Safe Leave</button>
-                    <button class="btn danger-btn" onclick="calculateMaxPossibleBunk()" style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">?? Max Possible Bunk (Avoid Detention)</button>
+                    <button class="btn danger-btn" onclick="calculateMaxPossibleBunk()" style="margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">🕜 Max Possible Bunk (Avoid Detention)</button>
                     
                     <div id="leaveImpactResults" style="margin-top: 20px;"></div>
                 </div>`;
@@ -10295,14 +10290,14 @@ CRITICAL RULES:
                 if (!selectedClass || !selectedClass.portalSetup || !selectedClass.portalSetup.active) {
                     container.innerHTML = `
                     <div class="subject-card" style="border-left-color: var(--info-color);">
-                        <div class="subject-title">?? Medical Certificate Opportunity</div>
+                        <div class="subject-title">🕜 Medical Certificate Opportunity</div>
                         <div style="background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 8px; border-left: 4px solid var(--info-color); text-align: center;">
                             <p style="color: var(--info-color); font-weight: bold; margin-bottom: 10px;"> Portal Mode Recommended</p>
                             <p style="margin-bottom: 15px;">For accurate Medical Certificate recommendations, switch to <strong>Portal Mode</strong> where you can track daily attendance logs.</p>
                             <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--medium-text);">Standard calculation mode provides instant analysis, but Portal Mode gives you ML recommendations based on your actual attendance history.</p>
                             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                                <button class="btn primary-btn" onclick="openPortalSetup()" style="margin-top: 10px;">?? Setup Portal Mode</button>
-                                ${document.getElementById('standardModeToggle') ? '<button class="btn secondary-btn" onclick="switchBackToPortal()" style="margin-top: 10px;">?? Return to Portal</button>' : ''}
+                                <button class="btn primary-btn" onclick="openPortalSetup()" style="margin-top: 10px;">🕜 Setup Portal Mode</button>
+                                ${document.getElementById('standardModeToggle') ? '<button class="btn secondary-btn" onclick="switchBackToPortal()" style="margin-top: 10px;">🕜 Return to Portal</button>' : ''}
                             </div>
                         </div>
                     </div>`;
@@ -10313,11 +10308,11 @@ CRITICAL RULES:
                 if (!semesterStartDate) {
                     container.innerHTML = `
                     <div class="subject-card" style="border-left-color: var(--warning-color);">
-                        <div class="subject-title">?? Medical Certificate Opportunity</div>
+                        <div class="subject-title">🕜 Medical Certificate Opportunity</div>
                         <div style="background: rgba(255, 193, 7, 0.1); padding: 20px; border-radius: 8px; border-left: 4px solid var(--warning-color); text-align: center;">
-                            <p style="color: var(--warning-color); font-weight: bold; margin-bottom: 10px;">?? Semester Start Date Required</p>
+                            <p style="color: var(--warning-color); font-weight: bold; margin-bottom: 10px;">🕜 Semester Start Date Required</p>
                             <p style="margin-bottom: 15px;">Please set your <strong>Semester Start Date</strong> in Portal Settings to get Medical Certificate recommendations.</p>
-                            <button class="btn warning-btn" onclick="openPortalSetup()" style="margin-top: 10px;">?? Open Portal Settings</button>
+                            <button class="btn warning-btn" onclick="openPortalSetup()" style="margin-top: 10px;">🕜 Open Portal Settings</button>
                         </div>
                     </div>`;
                     return;
@@ -10376,7 +10371,7 @@ CRITICAL RULES:
 
                 container.style.display = 'block';
                 let html = `<div class="subject-card" style="border-left-color: var(--secondary-grad-end);">
-                <div class="subject-title">?? Medical Certificate Opportunity</div>`;
+                <div class="subject-title">🕜 Medical Certificate Opportunity</div>`;
 
                 const minCriteria = getMinAttendanceCriteria() * 100;
                 const condonationThreshold = 65;
@@ -10386,13 +10381,13 @@ CRITICAL RULES:
                     html += `<p>You don't need a medical certificate. You can meet the requirements by attending regular classes. Your max possible attendance (after planned leaves) is <strong style="color: var(--success-grad-start);">${activeStats.maxPossiblePercent.toFixed(1)}%</strong>.</p>`;
                 } else if (activeStats.maxPossiblePercent < condonationThreshold) {
                     // CONDITION C: CRITICAL
-                    html += `<p style="color: var(--danger-color);"><strong>?? Critical:</strong> Even with Medical Leave condonation, your projected max attendance (after planned leaves) is <strong>${activeStats.maxPossiblePercent.toFixed(1)}%</strong>, which is too low to be saved.</p>`;
+                    html += `<p style="color: var(--danger-color);"><strong>🕜 Critical:</strong> Even with Medical Leave condonation, your projected max attendance (after planned leaves) is <strong>${activeStats.maxPossiblePercent.toFixed(1)}%</strong>, which is too low to be saved.</p>`;
                 } else {
                     // CONDITION B: CONDONATION NEEDED
                     const targetAttended = Math.ceil((minCriteria / 100) * activeStats.finalTotal);
                     const deficitClasses = targetAttended - activeStats.projectedAttended;
 
-                    html += `<p style="margin-bottom: 15px;">?? <strong>Warning:</strong> After accounting for your <strong>Planned Leaves</strong>, your max possible attendance drops to <strong>${activeStats.maxPossiblePercent.toFixed(1)}%</strong>. You need to apply for Medical Leave (ML) to cross <strong>${minCriteria}%</strong>.</p>`;
+                    html += `<p style="margin-bottom: 15px;">⚠ <strong>Warning:</strong> After accounting for your <strong>Planned Leaves</strong>, your max possible attendance drops to <strong>${activeStats.maxPossiblePercent.toFixed(1)}%</strong>. You need to apply for Medical Leave (ML) to cross <strong>${minCriteria}%</strong>.</p>`;
                     html += `<p style="margin-bottom: 15px;">You need to cover a deficit of <strong>${deficitClasses} class(es)</strong>.</p>`;
 
                     // Date Suggestion Algorithm
@@ -10602,9 +10597,9 @@ CRITICAL RULES:
                             if (!logsComplete) {
                                 // Incomplete logs
                                 html += `<div style="background: rgba(255, 193, 7, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid var(--warning-color);">
-                                <p style="color: var(--warning-color); font-weight: bold; margin-bottom: 5px;">?? Incomplete Daily Logs Detected</p>
+                                <p style="color: var(--warning-color); font-weight: bold; margin-bottom: 5px;">🕜 Incomplete Daily Logs Detected</p>
                                 <p><strong>Issue:</strong> You need ${deficitClasses} classes for ML, but only found ${accumulatedClasses} classes from available dates.</p>
-                                <p style="margin-top: 10px;"><strong>?? Log Status:</strong> ${loggedDays} out of ${totalWorkingDays} working days logged (${((loggedDays / totalWorkingDays) * 100).toFixed(0)}%)</p>
+                                <p style="margin-top: 10px;"><strong>🕜 Log Status:</strong> ${loggedDays} out of ${totalWorkingDays} working days logged (${((loggedDays / totalWorkingDays) * 100).toFixed(0)}%)</p>
                                 <p style="margin-top: 10px; font-size: 0.9rem;"><strong>? Action Required:</strong></p>
                                 <ul style="margin-left: 20px; margin-top: 5px; font-size: 0.9rem;">
                                     <li>Complete your <strong>Daily Logs</strong> from <strong>${semesterStartDate}</strong> to today</li>
@@ -10623,13 +10618,13 @@ CRITICAL RULES:
                                 html += `<div style="background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid var(--danger-color);">
                                 <p style="color: var(--danger-color); font-weight: bold; margin-bottom: 5px;">? Insufficient Full-Day Absents</p>
                                 <p><strong>Issue:</strong> You need ${deficitClasses} classes for ML, but only have ${accumulatedClasses} classes available.</p>
-                                <p style="margin-top: 10px;"><strong>?? Available Dates:</strong></p>
+                                <p style="margin-top: 10px;"><strong>🕜 Available Dates:</strong></p>
                                 <ul style="margin-left: 20px; margin-top: 5px;">
                                     <li><strong>${skippedCount}</strong> past absence dates (${validDates.filter(d => !d.isPlannedLeave).reduce((sum, d) => sum + d.count, 0)} classes)</li>
                                     <li><strong>${plannedLeaveCount}</strong> planned leave dates (${validDates.filter(d => d.isPlannedLeave).reduce((sum, d) => sum + d.count, 0)} classes)</li>
                                     <li><strong>Total: ${accumulatedClasses}</strong> classes (need ${deficitClasses})</li>
                                 </ul>
-                                <p style="margin-top: 15px; font-size: 0.9rem;"><strong>?? Possible Solutions:</strong></p>
+                                <p style="margin-top: 15px; font-size: 0.9rem;"><strong>🕜 Possible Solutions:</strong></p>
                                 <ul style="margin-left: 20px; margin-top: 5px; font-size: 0.9rem;">
                                     <li><strong>Option 1:</strong> Reduce your planned leaves to lower the attendance requirement</li>
                                     <li><strong>Option 2:</strong> The deficit is too large to be covered by medical certificates alone</li>
@@ -10676,11 +10671,9 @@ CRITICAL RULES:
                                 Focus on attending all classes for these subjects. Consider applying for medical certificates if eligible.
                             </p>
                             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                                <p style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 10px;">
-                                    ?? Want to see leave days where you <strong>won't miss</strong> these critical subjects?
+                                <p style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 10px;">🕜 Want to see leave days where you <strong>won't miss</strong> these critical subjects?
                                 </p>
-                                <button class="btn info-btn" onclick="calculateMaxSafeLeaveExcluding('${excludeCodes}')" style="padding: 10px 20px;">
-                                    ?? Show Safe Leave (Excluding ${unrecoverableSubjects.length > 1 ? 'These Subjects' : 'This Subject'})
+                                <button class="btn info-btn" onclick="calculateMaxSafeLeaveExcluding('${excludeCodes}')" style="padding: 10px 20px;">🕜 Show Safe Leave (Excluding ${unrecoverableSubjects.length > 1 ? 'These Subjects' : 'This Subject'})
                                 </button>
                             </div>
                         </div>`;
@@ -10899,9 +10892,9 @@ CRITICAL RULES:
                 });
 
                 let resultHTML = `<div class="subject-card" style="border-left-color: var(--info-color);">
-                    <div class="subject-title">?? Safe Leave (Excluding Critical Subjects)</div>
+                    <div class="subject-title">🕜 Safe Leave (Excluding Critical Subjects)</div>
                     <p style="margin-bottom: 15px; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: 8px;">
-                        <strong>?? Important:</strong> These are days where <strong>${excludedSubjectNames.join(', ')}</strong> have NO classes, so taking leave won't affect their attendance.
+                        <strong>🕜 Important:</strong> These are days where <strong>${excludedSubjectNames.join(', ')}</strong> have NO classes, so taking leave won't affect their attendance.
                     </p>`;
 
                 safeDays.sort((a, b) => a.totalClasses - b.totalClasses);
@@ -10939,8 +10932,7 @@ CRITICAL RULES:
                 }
 
                 resultHTML += `<div style="margin-top: 15px;">
-                    <button class="btn secondary-btn" onclick="calculateMaxSafeLeave()" style="padding: 8px 16px;">
-                        ?? Back to Regular Calculation
+                    <button class="btn secondary-btn" onclick="calculateMaxSafeLeave()" style="padding: 8px 16px;">🕜 Back to Regular Calculation
                     </button>
                 </div></div>`;
 
@@ -10981,7 +10973,7 @@ CRITICAL RULES:
                     const subjectNames = unreachable65.map(s => s.name).join(', ');
                     container.innerHTML = `
                         <div class="subject-card" style="border-left-color: var(--danger-color);">
-                            <div class="subject-title">?? Detention Risk!</div>
+                            <div class="subject-title">🕜 Detention Risk!</div>
                             <p style="color: var(--danger-color);">
                                 <strong>Critical Warning:</strong> The following subject(s) cannot reach 65% even if you attend all remaining classes:<br>
                                 <strong>${subjectNames}</strong><br><br>
@@ -11148,14 +11140,14 @@ CRITICAL RULES:
                 container.style.display = 'block';
                 let resultHTML = `
                     <div class="subject-card" style="border-left-color: var(--danger-color);">
-                        <div class="subject-title">?? Max Possible Bunk (Avoid Detention at 65%)</div>
+                        <div class="subject-title">🕜 Max Possible Bunk (Avoid Detention at 65%)</div>
                         <p style="margin-bottom: 15px; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: 8px;">
-                            <strong>?? Important:</strong> These are dates you can skip without falling below <strong>65%</strong> (detention threshold). Bottleneck: <strong>${bottleneckSubject65.name}</strong>
+                            <strong>🕜 Important:</strong> These are dates you can skip without falling below <strong>65%</strong> (detention threshold). Bottleneck: <strong>${bottleneckSubject65.name}</strong>
                         </p>`;
 
                 if (bunkableDates.length > 0) {
                     resultHTML += `
-                        <h4 style="margin-top: 15px;">?? Bunkable Days (${bunkableDates.length} days)</h4>
+                        <h4 style="margin-top: 15px;">🕜 Bunkable Days (${bunkableDates.length} days)</h4>
                         <ul style="list-style-position: inside; padding: 10px 0;">
                             ${bunkableDates.map(d => `<li>${d.date.toDateString()}</li>`).join('')}
                         </ul>`;
@@ -11167,7 +11159,7 @@ CRITICAL RULES:
                 if (mlDatesNeeded.length > 0) {
                     resultHTML += `
                         <div style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; border-left: 4px solid var(--info-color);">
-                            <h4 style="margin-bottom: 10px;">?? Medical Certificate Needed to Reach ${(minCriteria * 100).toFixed(0)}%</h4>
+                            <h4 style="margin-bottom: 10px;">🕜 Medical Certificate Needed to Reach ${(minCriteria * 100).toFixed(0)}%</h4>
                             <p>After bunking all possible days, you'll need ML for these subjects:</p>
                             <ul style="list-style-position: inside; padding: 10px 0;">
                                 ${mlDatesNeeded.map(m => `<li><strong>${m.subject}</strong>: ${m.classesNeeded} class(es) needed</li>`).join('')}
@@ -11176,14 +11168,13 @@ CRITICAL RULES:
 
                     if (selectedMLDates.length > 0 && coveredClasses >= totalMLClassesNeeded) {
                         resultHTML += `
-                            <h4 style="margin-top: 15px;">?? Recommended ML Dates (${selectedMLDates.length} days, ${coveredClasses} classes)</h4>
+                            <h4 style="margin-top: 15px;">🕜 Recommended ML Dates (${selectedMLDates.length} days, ${coveredClasses} classes)</h4>
                             <ul style="list-style-position: inside; padding: 10px 0;">
                                 ${selectedMLDates.map(d => `<li>${d.date.toDateString()} (${d.classes} classes) - <em>${d.source === 'bunk' ? 'From Bunk List' : 'From Planned Leave'}</em></li>`).join('')}
                             </ul>`;
                     } else if (selectedMLDates.length > 0) {
                         resultHTML += `
-                            <p style="color: var(--warning-color); margin-top: 10px;">
-                                ?? Available dates only cover ${coveredClasses} classes. You need ${totalMLClassesNeeded - coveredClasses} more.
+                            <p style="color: var(--warning-color); margin-top: 10px;">🕜 Available dates only cover ${coveredClasses} classes. You need ${totalMLClassesNeeded - coveredClasses} more.
                             </p>`;
                     } else {
                         resultHTML += `<p style="margin-top: 10px;">No suitable ML dates available from bunks or planned leaves.</p>`;
@@ -11344,7 +11335,7 @@ CRITICAL RULES:
                 modalHTML += `
                         </div>
                         <div class="form-actions">
-                            <button class="btn primary-btn" onclick="savePeriodConfig()">?? Save Times</button>
+                            <button class="btn primary-btn" onclick="savePeriodConfig()">💾 Save Times</button>
                             <button class="btn secondary-btn" onclick="closeModal('periodConfigModal')">Cancel</button>
                         </div>
                     </div>
@@ -11440,7 +11431,7 @@ CRITICAL RULES:
                 const section = document.getElementById('timetableSection');
 
                 if (!selectedClass || !selectedClass.subjects || selectedClass.subjects.length === 0) {
-                    grid.innerHTML = '<div class="timetable-empty"><p>?? No subjects configured for this class.</p><p>Add subjects in the class settings.</p></div>';
+                    grid.innerHTML = '<div class="timetable-empty"><p>🕜 No subjects configured for this class.</p><p>Add subjects in the class settings.</p></div>';
                     return;
                 }
 
@@ -11462,7 +11453,7 @@ CRITICAL RULES:
                 });
 
                 if (daysWithClasses.length === 0) {
-                    grid.innerHTML = '<div class="timetable-empty"><p>?? No classes scheduled for any day.</p><p>Update subject schedules in the class settings.</p></div>';
+                    grid.innerHTML = '<div class="timetable-empty"><p>🕜 No classes scheduled for any day.</p><p>Update subject schedules in the class settings.</p></div>';
                     return;
                 }
 
@@ -12569,7 +12560,7 @@ CRITICAL RULES:
                 let html = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('portalSetupModal')">&times;</button>
-                    <div class="modal-header"><h2>?? Student Portal Setup</h2><p>Set your current attendance baseline to start tracking daily.</p></div>
+                    <div class="modal-header"><h2>🕜 Student Portal Setup</h2><p>Set your current attendance baseline to start tracking daily.</p></div>
                     
                     <div class="form-group">
                         <label>Portal Start Date (Baseline Date):</label>
@@ -12619,7 +12610,7 @@ CRITICAL RULES:
 
                 html += `
                     <div class="form-actions">
-                        <button class="btn primary-btn" onclick="savePortalSetup()">?? Start Portal Mode</button>
+                        <button class="btn primary-btn" onclick="savePortalSetup()">🕜 Start Portal Mode</button>
                         ${selectedClass.portalSetup ? '<button class="btn danger-btn" onclick="disablePortalMode()">? Disable Portal</button>' : ''}
                     </div>
                 </div>`;
@@ -13053,12 +13044,12 @@ CRITICAL RULES:
                     <div style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid var(--warning-color); padding: 15px; margin-bottom: 15px; border-radius: 8px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                             <div>
-                                <p style="margin: 0; font-weight: bold; color: var(--warning-color);">?? Incomplete Logs Detected</p>
+                                <p style="margin: 0; font-weight: bold; color: var(--warning-color);">🕜 Incomplete Logs Detected</p>
                                 <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Last log: <strong>${lastLogFormatted}</strong> - ${daysCount} day(s) behind</p>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn secondary-btn" onclick="openHistoryEditor()" style="font-size: 0.85rem; padding: 6px 12px;">?? Complete Logs</button>
-                                <button class="btn primary-btn" onclick="openStandardCalculation()" style="font-size: 0.85rem; padding: 6px 12px;">?? Update Attendance</button>
+                                <button class="btn secondary-btn" onclick="openHistoryEditor()" style="font-size: 0.85rem; padding: 6px 12px;">🕜 Complete Logs</button>
+                                <button class="btn primary-btn" onclick="openStandardCalculation()" style="font-size: 0.85rem; padding: 6px 12px;">🕜 Update Attendance</button>
                             </div>
                         </div>
                     </div>
@@ -13082,8 +13073,7 @@ CRITICAL RULES:
                             <button class="btn primary-btn" onclick="initPortal()" style="font-size: 0.9rem; opacity: 1; pointer-events: none;">
                                  Portal Mode
                             </button>
-                            <button class="btn secondary-btn" onclick="switchToStandardMode()" style="font-size: 0.9rem;">
-                                ?? Standard Calculation
+                            <button class="btn secondary-btn" onclick="switchToStandardMode()" style="font-size: 0.9rem;">🕜 Standard Calculation
                             </button>
                         </div>
                     </div>
@@ -13092,12 +13082,12 @@ CRITICAL RULES:
                 <div class="settings-section" style="border-left: 5px solid var(--primary-grad-start);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
                         <div>
-                            <h3>?? Student Portal Active</h3>
+                            <h3>🕜 Student Portal Active</h3>
                             <p>Tracking since: <strong>${selectedClass.portalSetup.baselineDate}</strong></p>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                            <button class="btn primary-btn" onclick="openDailyLog()">?? Mark Today's Attendance</button>
-                            <button class="btn secondary-btn" onclick="openHistoryEditor()">?? Edit History</button>
+                            <button class="btn primary-btn" onclick="openDailyLog()">🕜 Mark Today's Attendance</button>
+                            <button class="btn secondary-btn" onclick="openHistoryEditor()">✏ Edit History</button>
                         </div>
                     </div>
                 </div>
@@ -13169,8 +13159,7 @@ CRITICAL RULES:
                             <p style="margin: 0; font-size: 0.85rem; color: var(--medium-text);">Use OCR, Manual Entry, or JSON to update today's attendance</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn secondary-btn" onclick="switchBackToPortal()" style="font-size: 0.9rem;">
-                                ?? Back to Portal
+                            <button class="btn secondary-btn" onclick="switchBackToPortal()" style="font-size: 0.9rem;">🕜 Back to Portal
                             </button>
                         </div>
                     </div>
@@ -13379,7 +13368,7 @@ CRITICAL RULES:
                 if (check.isHoliday) {
                     subjectList.innerHTML = `
                     <div style="text-align: center; padding: 30px; color: var(--medium-text);">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">???</div>
+                        <div style="font-size: 3rem; margin-bottom: 10px;">$(U32 0x2705)</div>
                         <h3>No Classes Today</h3>
                         <p>You cannot mark attendance for <strong>${dateStr}</strong> because it is a <strong>${check.reason}</strong>.</p>
                     </div>`;
@@ -13402,7 +13391,7 @@ CRITICAL RULES:
                 <button class="btn secondary-btn" onclick="applyBulkAction('Skipped')" style="padding: 5px 10px; font-size: 0.8rem;">All Absent</button>
                 <button class="btn secondary-btn" onclick="applyBulkAction('Medical Leave (ML)')" style="padding: 5px 10px; font-size: 0.8rem;">All ML</button>
                 <button class="btn secondary-btn" onclick="applyBulkAction('Duty Leave (OD)')" style="padding: 5px 10px; font-size: 0.8rem;">All OD</button>
-                <button class="btn info-btn" onclick="openCustomScheduleModal('${dateStr}')" style="padding: 5px 10px; font-size: 0.8rem; margin-left: auto;" title="Set a different schedule for this date if timetable was different in the past">?? Custom Schedule</button>
+                <button class="btn info-btn" onclick="openCustomScheduleModal('${dateStr}')" style="padding: 5px 10px; font-size: 0.8rem; margin-left: auto;" title="Set a different schedule for this date if timetable was different in the past">🕜 Custom Schedule</button>
             `;
                 subjectList.appendChild(bulkDiv);
 
@@ -13513,7 +13502,7 @@ CRITICAL RULES:
                     <div class="modal-content" style="max-width: 500px;">
                         <button class="modal-close" onclick="closeModal('customScheduleModal')">&times;</button>
                         <div class="modal-header">
-                            <h2>?? Custom Schedule</h2>
+                            <h2>🕜 Custom Schedule</h2>
                             <p>Set how many classes each subject had on <strong>${dateStr}</strong></p>
                         </div>
                         <div class="modal-body" style="max-height: 350px; overflow-y: auto;">
@@ -13522,8 +13511,7 @@ CRITICAL RULES:
                                     <span style="font-size: 0.9rem; color: var(--medium-text);">Total Periods:</span>
                                     <span id="customScheduleTotal" style="font-size: 1.2rem; font-weight: 600;">0 / ${maxPeriods}</span>
                                 </div>
-                                <div id="customScheduleWarning" style="color: var(--danger-color); font-size: 0.85rem; margin-top: 5px; display: none;">
-                                    ?? Total exceeds max periods (${maxPeriods})!
+                                <div id="customScheduleWarning" style="color: var(--danger-color); font-size: 0.85rem; margin-top: 5px; display: none;">🕜 Total exceeds max periods (${maxPeriods})!
                                 </div>
                             </div>
                             <p style="font-size: 0.85rem; color: var(--medium-text); margin-bottom: 15px;">
@@ -13537,8 +13525,7 @@ CRITICAL RULES:
                             <button class="btn secondary-btn" onclick="clearCustomSchedule('${dateStr}')" style="flex: 1;">
                                 ??? Use Default
                             </button>
-                            <button class="btn primary-btn" onclick="saveCustomSchedule('${dateStr}')" style="flex: 1;">
-                                ?? Save Schedule
+                            <button class="btn primary-btn" onclick="saveCustomSchedule('${dateStr}')" style="flex: 1;">🕜 Save Schedule
                             </button>
                         </div>
                     </div>`;
@@ -13666,9 +13653,9 @@ CRITICAL RULES:
                     <tr>
                         <td colspan="3" style="padding: 30px; text-align: center;">
                             <div style="color: var(--medium-text);">
-                                <p style="font-size: 1.1rem; margin-bottom: 10px;">?? No log found for <strong>${dateStr}</strong></p>
+                                <p style="font-size: 1.1rem; margin-bottom: 10px;">🕜 No log found for <strong>${dateStr}</strong></p>
                                 <p style="margin-bottom: 20px;">Would you like to add a log for this date?</p>
-                                <button class="btn primary-btn" onclick="addLogForDate('${dateStr}')" style="padding: 10px 20px;">?? Add Log for ${dateStr}</button>
+                                <button class="btn primary-btn" onclick="addLogForDate('${dateStr}')" style="padding: 10px 20px;">🕜 Add Log for ${dateStr}</button>
                             </div>
                         </td>
                     </tr>`;
@@ -14345,9 +14332,9 @@ CRITICAL RULES:
                     // Check if data is too large for QR (limit ~2.5KB for reliable scanning)
                     if (jsonString.length > 2500) {
                         qrContainer.innerHTML = `<div style="color:var(--warning-color); padding:20px; text-align:center;">
-                            <p>?? Class data is too large for QR Code (${jsonString.length} chars).</p>
+                            <p>🕜 Class data is too large for QR Code (${jsonString.length} chars).</p>
                             <p style="font-size:0.8rem">Use "Copy JSON" to share via text instead.</p>
-                            <button class="btn primary-btn" onclick="copyMinifiedQRData()">?? Copy JSON</button>
+                            <button class="btn primary-btn" onclick="copyMinifiedQRData()">🕜 Copy JSON</button>
                         </div>`;
                         return;
                     }
@@ -14369,7 +14356,7 @@ CRITICAL RULES:
                 } catch (error) {
                     console.error("QR Gen Error:", error);
                     qrContainer.innerHTML = `<div style="color:var(--danger-color); padding:20px; text-align:center;">
-                        <p>?? Failed to generate QR Code.</p>
+                        <p>🕜 Failed to generate QR Code.</p>
                         <p style="font-size:0.8rem">Data might be too large or invalid.</p>
                     </div>`;
                     alert("Error generating QR code. The class data might be too large.");
@@ -14630,7 +14617,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                     <div class="modal-content" style="max-width: 95vw; width: 900px;">
                         <button class="modal-close" onclick="closeModal('periodAttendanceModal')">&times;</button>
                         <div class="modal-header">
-                            <h2>?? Period-wise Attendance</h2>
+                            <h2>🕜 Period-wise Attendance</h2>
                             <p>View and edit your attendance by period. Click on any cell to change status.</p>
                         </div>
                         
@@ -14918,8 +14905,8 @@ OR download Bunkit app and scan the QR code I'm sharing!
                     <button style="background: #4CAF50; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Attended')">? Attended</button>
                     <button style="background: #f44336; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Skipped')">? Skipped</button>
                     <button style="background: #9e9e9e; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Cancelled')">? Cancelled</button>
-                    <button style="background: #2196F3; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Duty Leave (OD)')">?? Duty Leave</button>
-                    <button style="background: #FF9800; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Medical Leave (ML)')">?? Medical Leave</button>
+                    <button style="background: #2196F3; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Duty Leave (OD)')">🕜 Duty Leave</button>
+                    <button style="background: #FF9800; color: white;" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Medical Leave (ML)')">🕜 Medical Leave</button>
                     <button style="background: var(--light-bg); color: var(--dark-text);" onclick="updatePeriodStatus('${dateStr}', '${code}', 'Default')">? Default</button>
                 `;
 
@@ -15089,12 +15076,12 @@ OR download Bunkit app and scan the QR code I'm sharing!
                 let html = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('historyLogModal')">&times;</button>
-                    <div class="modal-header"><h2>?? Attendance History</h2><p>View and edit your past daily logs.</p></div>`;
+                    <div class="modal-header"><h2>🕜 Attendance History</h2><p>View and edit your past daily logs.</p></div>`;
 
                 // Portal Status Section (only show if portal is active)
                 if (selectedClass?.portalSetup?.active && selectedClass?.portalSetup?.semesterStartDate) {
                     const statusColor = missingDates.length === 0 ? 'var(--success-grad-start)' : 'var(--warning-color)';
-                    const statusIcon = missingDates.length === 0 ? '?' : '??';
+                    const statusIcon = missingDates.length === 0 ? '?' : '👤';
 
                     html += `
                 <div class="settings-section" style="border-left: 5px solid ${statusColor}; margin-bottom: 20px;">
@@ -15128,7 +15115,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                                 </div>
                             </div>`;
                     } else {
-                        html += `<p style="color: var(--success-grad-start); font-weight: bold;">?? All dates are logged! Great job!</p>`;
+                        html += `<p style="color: var(--success-grad-start); font-weight: bold;">🕜 All dates are logged! Great job!</p>`;
                     }
 
                     html += `</div>`;
@@ -15206,7 +15193,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
             <div class="modal-content" style="text-align: center;">
                 <button class="modal-close" onclick="closeModal('shareClassModal')">&times;</button>
                 <div class="modal-header">
-                    <h2>?? Share Class</h2>
+                    <h2>🕜 Share Class</h2>
                     <p>Scan this QR code to import this class setup on another device.</p>
                 </div>
                 <div id="qrcode" style="display: inline-block; padding: 20px; background: white; margin: 20px 0;">
@@ -15215,8 +15202,8 @@ OR download Bunkit app and scan the QR code I'm sharing!
                     holidays. Does not include your personal attendance logs.</p>
 
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn success-btn" onclick="shareQRImage()">?? Share via App</button>
-                    <button class="btn secondary-btn" onclick="downloadQRImage()">?? Download QR</button>
+                    <button class="btn success-btn" onclick="shareQRImage()">🕜 Share via App</button>
+                    <button class="btn secondary-btn" onclick="downloadQRImage()">🕜 Download QR</button>
                 </div>
             </div>
         </div>
@@ -15226,7 +15213,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
             <div class="modal-content">
                 <button class="modal-close" onclick="closeScanModal()">&times;</button>
                 <div class="modal-header">
-                    <h2>?? Scan Class QR</h2>
+                    <h2>🕜 Scan Class QR</h2>
                     <p>Point your camera at a class QR code OR upload a QR image.</p>
                 </div>
 
@@ -15234,8 +15221,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                 <div style="margin-bottom: 20px; text-align: center;">
                     <input type="file" id="qrInputFile" accept="image/*" style="display: none;"
                         onchange="handleQRFileUploadInTab(this)">
-                    <button class="btn secondary-btn" onclick="document.getElementById('qrInputFile').click()">??
-                        Upload
+                    <button class="btn secondary-btn" onclick="document.getElementById('qrInputFile').click()">🕜 Upload
                         QR
                         Image</button>
                 </div>
@@ -16435,20 +16421,19 @@ Answer helpfully using this context.`;
                     <div class="modal-content">
                         <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                         <div class="modal-header">
-                            <h2>⚙ API Settings</h2>
+                            <h2>🔑 API Settings</h2>
                             <p>Configure your Gemini API key for OCR and AI Assistant features</p>
                         </div>
                         <div class="form-group">
                             <label for="personalGeminiKey">Personal Gemini API Key:</label>
                             <input type="text" id="personalGeminiKey" placeholder="AIzaSy...">
-                            <p style="font-size: 0.85rem; color: var(--medium-text); margin-top: 8px;">
-                                ?? Your API key enables OCR scanning and AI chatbot features.
+                            <p style="font-size: 0.85rem; color: var(--medium-text); margin-top: 8px;">🕜 Your API key enables OCR scanning and AI chatbot features.
                             </p>
                         </div>
 
                         <div
                             style="background: var(--light-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="margin-bottom: 10px; font-size: 1rem;">?? How to Get Free API Key:</h4>
+                            <h4 style="margin-bottom: 10px; font-size: 1rem;">🕜 How to Get Free API Key:</h4>
                             <ol style="margin: 0; padding-left: 20px; color: var(--dark-text);">
                                 <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank"
                                         rel="noopener noreferrer" style="color: var(--primary-grad-start);">Google AI
@@ -16460,8 +16445,8 @@ Answer helpfully using this context.`;
                         </div>
 
                         <div class="form-actions">
-                            <button class="btn primary-btn" onclick="saveAPISettings()">?? Save Settings</button>
-                            <button class="btn secondary-btn" onclick="testAPIKey()">?? Test My Key</button>
+                            <button class="btn primary-btn" onclick="saveAPISettings()">💾 Save Settings</button>
+                            <button class="btn secondary-btn" onclick="testAPIKey()">🕜 Test My Key</button>
                         </div>
                     </div>
                     `;
