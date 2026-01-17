@@ -15474,7 +15474,8 @@ CRITICAL RULES:
                     2. "lastDate": If not found, estimate end of current semester (e.g., Dec 20 or May 20).
                     3. "holidays": Extract any specific dates mentioned.
                     4. "subjects": Extract all subjects found in timetable or attendance list.
-                    5. Return ONLY JSON.
+                    5. **IMPORTANT**: Only include subjects that are VISIBLE in the attendance detail screenshot. Do NOT add subjects that are not present in the image.
+                    6. Return ONLY JSON.
                     `;
 
                             // 3. Call Gemini API
