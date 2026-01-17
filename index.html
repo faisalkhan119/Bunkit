@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -4756,7 +4756,7 @@
                     <span style="font-weight: 600; font-size: 1.1rem;">AI Assistant</span>
                 </div>
                 <button onclick="closeAIChatbot()"
-                    style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">×</button>
+                    style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">ï¿½</button>
             </div>
 
             <!-- FAQ Section -->
@@ -6400,8 +6400,8 @@
                                     `?? Cloud backup: ${cloudClasses} class(es)\n` +
                                     `?? This device: ${localClasses} class(es)\n\n` +
                                     `Choose wisely:\n` +
-                                    `• OK = Restore YOUR backup from Google Drive\n` +
-                                    `• Cancel = Keep this device's data (will overwrite cloud!)`
+                                    `ï¿½ OK = Restore YOUR backup from Google Drive\n` +
+                                    `ï¿½ Cancel = Keep this device's data (will overwrite cloud!)`
                                 );
 
                                 if (userChoice) {
@@ -6592,13 +6592,14 @@
             }
 
             // Import class from URL encoded data
+            // Import class from URL encoded data
             function importClassFromURL(encodedData) {
                 try {
                     // Decode base64 class data
                     const classData = JSON.parse(atob(encodedData));
                     const className = classData.name || 'Imported Class';
                     
-                    console.log('?? Importing class:', className);
+                    console.log('Importing class:', className);
                     
                     // Check if class already exists
                     let finalClassName = className;
@@ -6625,6 +6626,17 @@
                     // Save to storage
                     saveToStorage();
                     
+                    // Save timetable arrangement if provided
+                    if (classData.timetableArrangement && Object.keys(classData.timetableArrangement).length > 0) {
+                        localStorage.setItem(`timetable_arrangement_${finalClassName}`, JSON.stringify(classData.timetableArrangement));
+                        console.log('Timetable arrangement saved for', finalClassName);
+                    }
+                    
+                    // Save period times if provided
+                    if (classData.periodTimes && Object.keys(classData.periodTimes).length > 0) {
+                        localStorage.setItem(`periodTimes_${finalClassName}`, JSON.stringify(classData.periodTimes));
+                    }
+                    
                     // Mark onboarding complete
                     localStorage.setItem('hasCompletedOnboarding', 'true');
                     
@@ -6635,12 +6647,12 @@
                     localStorage.setItem('lastOpenedClass', finalClassName);
                     
                     // Show success and reload
-                    showToast('?? Welcome! "' + finalClassName + '" has been added!', 'success');
+                    showToast('\u{1F389} Welcome! "' + finalClassName + '" has been added!', 'success');
                     setTimeout(function() { location.reload(); }, 1500);
                     
                 } catch (error) {
                     console.error('Failed to import class:', error);
-                    showToast('? Failed to import class. Please try again.', 'error');
+                    showToast('\u{274C} Failed to import class. Please try again.', 'error');
                     sessionStorage.removeItem('pendingClassImport');
                     
                     // Fallback to normal onboarding
@@ -6660,31 +6672,36 @@
             }
 
             // Copy class share link to clipboard
+            // Copy class share link to clipboard
             function copyClassLink() {
                 const selector = document.getElementById('classSelector');
                 const currentClassName = selector ? selector.value : null;
                 
                 if (!currentClassName || !classes[currentClassName]) {
-                    showToast('? Please select a class first', 'error');
+                    showToast('\u{274C} Please select a class first', 'error');
                     return;
                 }
                 
                 const currentClass = classes[currentClassName];
+                const timetableArrangement = getTimetableArrangement(currentClassName);
+                
                 const classData = {
                     name: currentClassName,
                     subjects: currentClass.subjects || [],
                     holidays: currentClass.holidays || [],
                     timetable: currentClass.timetable || {},
-                    periodTimes: currentClass.periodTimes || {}
+                    periodTimes: currentClass.periodTimes || {},
+                    timetableArrangement: timetableArrangement || {},
+                    lastDate: currentClass.lastDate || ''
                 };
                 
                 const encodedData = btoa(JSON.stringify(classData));
                 const shareUrl = 'https://bunkitapp.in/?class=' + encodedData;
                 
                 navigator.clipboard.writeText(shareUrl).then(function() {
-                    showToast('?? Link copied! Share it with your friends.', 'success');
+                    showToast('\u{1F517} Link copied! Share it with your friends.', 'success');
                 }).catch(function() {
-                    showToast('? Failed to copy link', 'error');
+                    showToast('\u{274C} Failed to copy link', 'error');
                 });
             }
             // ==================== END DEEP LINK ====================
@@ -10101,7 +10118,7 @@ CRITICAL RULES:
                 const minDate = selectedClass?.portalSetup?.semesterStartDate || document.getElementById('currentDate').value;
                 const maxDate = document.getElementById('lastDate').value;
 
-                newPeriod.innerHTML = `<label>From:</label><input type="date" class="leave-start-date" min="${minDate}" max="${maxDate}" onchange="syncLeaveEndDate(this); checkForConflicts();"><label>To:</label><input type="date" class="leave-end-date" min="${minDate}" max="${maxDate}" onchange="checkForConflicts();"><button class="remove-leave-period-btn" onclick="this.parentElement.remove(); checkForConflicts();">×</button>`;
+                newPeriod.innerHTML = `<label>From:</label><input type="date" class="leave-start-date" min="${minDate}" max="${maxDate}" onchange="syncLeaveEndDate(this); checkForConflicts();"><label>To:</label><input type="date" class="leave-end-date" min="${minDate}" max="${maxDate}" onchange="checkForConflicts();"><button class="remove-leave-period-btn" onclick="this.parentElement.remove(); checkForConflicts();">ï¿½</button>`;
                 container.appendChild(newPeriod);
             }
 
@@ -10114,7 +10131,7 @@ CRITICAL RULES:
                 const minDate = selectedClass?.portalSetup?.semesterStartDate || document.getElementById('currentDate').value;
                 const maxDate = document.getElementById('lastDate').value;
 
-                newPeriod.innerHTML = `<label>From:</label><input type="date" class="compulsory-start-date" min="${minDate}" max="${maxDate}" onchange="syncLeaveEndDate(this); checkForConflicts();"><label>To:</label><input type="date" class="compulsory-end-date" min="${minDate}" max="${maxDate}" onchange="checkForConflicts();"><button class="remove-compulsory-period-btn" onclick="this.parentElement.remove(); checkForConflicts();">×</button>`;
+                newPeriod.innerHTML = `<label>From:</label><input type="date" class="compulsory-start-date" min="${minDate}" max="${maxDate}" onchange="syncLeaveEndDate(this); checkForConflicts();"><label>To:</label><input type="date" class="compulsory-end-date" min="${minDate}" max="${maxDate}" onchange="checkForConflicts();"><button class="remove-compulsory-period-btn" onclick="this.parentElement.remove(); checkForConflicts();">ï¿½</button>`;
                 container.appendChild(newPeriod);
             }
 
@@ -11941,7 +11958,7 @@ CRITICAL RULES:
 
                     closeModal('backupOptionsModal');
                     // Success notification
-                    alert(`? Complete backup created successfully!\n\nFile: ${filename}\n\nIncludes:\n• ${backupData.stats.totalClasses} class(es)\n• ${backupData.stats.totalLogs} attendance log(s)\n• ${backupData.stats.notificationSettingsCount} notification setting(s)\n• ${backupData.stats.timetableArrangementsCount} timetable arrangement(s)\n• Theme preferences`);
+                    alert(`? Complete backup created successfully!\n\nFile: ${filename}\n\nIncludes:\nï¿½ ${backupData.stats.totalClasses} class(es)\nï¿½ ${backupData.stats.totalLogs} attendance log(s)\nï¿½ ${backupData.stats.notificationSettingsCount} notification setting(s)\nï¿½ ${backupData.stats.timetableArrangementsCount} timetable arrangement(s)\nï¿½ Theme preferences`);
 
                 } catch (error) {
                     console.error('Backup failed:', error);
@@ -12059,7 +12076,7 @@ CRITICAL RULES:
 
                 if (isCompleteBackup) {
                     // New comprehensive backup format
-                    if (!confirm(`?? RESTORE COMPLETE BACKUP?\\n\\nThis will replace ALL current data:\\n\\n• Classes: ${backupData.stats?.totalClasses || 0}\\n• Logs: ${backupData.stats?.totalLogs || 0}\\n• Notification Settings: ${backupData.stats?.notificationSettingsCount || 0}\\n• Timetable Arrangements: ${backupData.stats?.timetableArrangementsCount || 0}\\n• Theme preferences\\n\\nBackup created: ${new Date(backupData.metadata.timestamp).toLocaleString()}\\n\\nContinue?`)) {
+                    if (!confirm(`?? RESTORE COMPLETE BACKUP?\\n\\nThis will replace ALL current data:\\n\\nï¿½ Classes: ${backupData.stats?.totalClasses || 0}\\nï¿½ Logs: ${backupData.stats?.totalLogs || 0}\\nï¿½ Notification Settings: ${backupData.stats?.notificationSettingsCount || 0}\\nï¿½ Timetable Arrangements: ${backupData.stats?.timetableArrangementsCount || 0}\\nï¿½ Theme preferences\\n\\nBackup created: ${new Date(backupData.metadata.timestamp).toLocaleString()}\\n\\nContinue?`)) {
                         return;
                     }
 
@@ -12874,7 +12891,7 @@ CRITICAL RULES:
                         `? Incomplete Attendance Data\n\n` +
                         `All subjects must be included to update portal.\n\n` +
                         `Missing Subjects (${missingSubjects.length}):\n` +
-                        missingNames.map(name => `• ${name}`).join('\n') +
+                        missingNames.map(name => `ï¿½ ${name}`).join('\n') +
                         `\n\nPlease input attendance for all ${expectedSubjects.length} subjects.`
                     );
                     return; // Don't proceed with update
@@ -12888,7 +12905,7 @@ CRITICAL RULES:
                     const percentage = subject.totalHeld > 0
                         ? ((subject.attended / subject.totalHeld) * 100).toFixed(1)
                         : 100;
-                    summary += `• ${subject.name}: ${subject.attended}/${subject.totalHeld} (${percentage}%)\n`;
+                    summary += `ï¿½ ${subject.name}: ${subject.attended}/${subject.totalHeld} (${percentage}%)\n`;
                 });
                 summary += '\n? Update portal baseline to today\n';
                 summary += '? Create log entry for today\n';
@@ -14402,47 +14419,45 @@ CRITICAL RULES:
                     return;
                 }
                 
+                // Get timetable arrangement for this class
+                const timetableArrangement = getTimetableArrangement(editingClassName);
+                
                 const classData = {
                     name: editingClassName,
                     subjects: currentClass.subjects || [],
                     holidays: currentClass.holidays || [],
                     timetable: currentClass.timetable || {},
-                    periodTimes: currentClass.periodTimes || {}
+                    periodTimes: currentClass.periodTimes || {},
+                    timetableArrangement: timetableArrangement || {},
+                    lastDate: currentClass.lastDate || ''
                 };
                 
                 const encodedData = btoa(JSON.stringify(classData));
                 const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
                 
-                const shareText = `?? Hey friends! Check out this amazing app!
-
-?? Click to join my class: ${shareUrl}
-
-OR download Bunkit app and scan the QR code I'm sharing!
-
-?? ${editingClassName} class setup:
-1. Click the link above
-2. Enter your name
-3. Class will be auto-imported! ??
-
-? Track attendance together — super smooth and super fun!`;
+                const shareText = '\u{1F44B} Hey friends! Check out this amazing app!\n\n' +
+                    '\u{1F4F1} Click to join my class: ' + shareUrl + '\n\n' +
+                    'OR download Bunkit app and scan the QR code I\'m sharing!\n\n' +
+                    '\u{1F4DD} ' + editingClassName + ' class setup:\n' +
+                    '1. Click the link above\n' +
+                    '2. Enter your name\n' +
+                    '3. Class will be auto-imported! \u{1F389}\n\n' +
+                    '\u{2728} Track attendance together â€” super smooth and super fun!';
                 
                 if (navigator.share) {
-                    // Share text (URL-based, works everywhere!)
                     navigator.share({
                         title: `Join ${editingClassName} on Bunkit!`,
                         text: shareText
                     }).catch(err => {
                         if (err.name !== 'AbortError') {
-                            // Fallback to clipboard
                             navigator.clipboard.writeText(shareText).then(() => {
-                                showToast('? Message copied to clipboard!', 'success');
+                                showToast('\u{2705} Message copied to clipboard!', 'success');
                             });
                         }
                     });
                 } else {
-                    // Fallback: Copy to clipboard
                     navigator.clipboard.writeText(shareText).then(() => {
-                        showToast('? Message copied to clipboard! Share it with friends.', 'success');
+                        showToast('\u{2705} Message copied to clipboard! Share it with friends.', 'success');
                     }).catch(() => {
                         alert(shareText);
                     });
@@ -15707,7 +15722,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                             data.holidays.forEach(date => {
                                 const li = document.createElement('li');
                                 li.innerHTML = `${formatDate(date)} <span class="remove-holiday"
-                        onclick="this.parentElement.remove()">×</span>`;
+                        onclick="this.parentElement.remove()">ï¿½</span>`;
                                 li.dataset.date = date;
                                 holidayList.appendChild(li);
                             });
@@ -16166,95 +16181,95 @@ OR download Bunkit app and scan the QR code I'm sharing!
    - If user types in Hinglish (mix of Hindi & English just like indian genz people type on whatsapp) ? Reply in Hinglish (same style use karo)
 
 ?? USER'S CURRENT DATA:
-• Today: ${appContext.currentDate} (${appContext.currentDayName})
-• Class: ${appContext.selectedClassName}
-• Min Required: ${appContext.minPercentage}%
-• Last Date: ${appContext.lastWorkingDate}
-• Holiday Today: ${appContext.isHolidayToday ? 'YES!' : 'No'}
-• Portal Mode: ${appContext.portalMode.active ? 'Active' : 'Inactive'}
-• Today's Classes: ${appContext.isHolidayToday ? 'None (holiday)' : (appContext.todaysClasses.length > 0 ? JSON.stringify(appContext.todaysClasses) : 'None today')}
-• Total Periods Today: ${appContext.totalTodayPeriods}
-• Subjects: ${JSON.stringify(appContext.subjects.map(s => ({ name: s.name, code: s.code })))}
-• Attendance: ${appContext.currentAttendance.length > 0 ? JSON.stringify(appContext.currentAttendance) : 'Not calculated yet'}
-• Overall Attendance: ${appContext.overallAttendance.percent}% (${appContext.overallAttendance.attended}/${appContext.overallAttendance.total})
-• Subjects in DANGER (below ${appContext.minPercentage}%): ${appContext.subjectsInDanger.length > 0 ? appContext.subjectsInDanger.join(', ') : 'None - all safe!'}
-• Subjects SAFE to Skip: ${appContext.subjectsSafeToSkip.length > 0 ? JSON.stringify(appContext.subjectsSafeToSkip) : 'None - attend all!'}
-• Total Holidays: ${appContext.holidays.length}
-• Days Logged: ${appContext.logs.totalDays}
-• Today Logged: ${appContext.logs.todayLogged ? 'Yes' : 'No'}
-• Notifications: ${appContext.notifications.enabled ? 'On at ' + appContext.notifications.time : 'Off'}
+ï¿½ Today: ${appContext.currentDate} (${appContext.currentDayName})
+ï¿½ Class: ${appContext.selectedClassName}
+ï¿½ Min Required: ${appContext.minPercentage}%
+ï¿½ Last Date: ${appContext.lastWorkingDate}
+ï¿½ Holiday Today: ${appContext.isHolidayToday ? 'YES!' : 'No'}
+ï¿½ Portal Mode: ${appContext.portalMode.active ? 'Active' : 'Inactive'}
+ï¿½ Today's Classes: ${appContext.isHolidayToday ? 'None (holiday)' : (appContext.todaysClasses.length > 0 ? JSON.stringify(appContext.todaysClasses) : 'None today')}
+ï¿½ Total Periods Today: ${appContext.totalTodayPeriods}
+ï¿½ Subjects: ${JSON.stringify(appContext.subjects.map(s => ({ name: s.name, code: s.code })))}
+ï¿½ Attendance: ${appContext.currentAttendance.length > 0 ? JSON.stringify(appContext.currentAttendance) : 'Not calculated yet'}
+ï¿½ Overall Attendance: ${appContext.overallAttendance.percent}% (${appContext.overallAttendance.attended}/${appContext.overallAttendance.total})
+ï¿½ Subjects in DANGER (below ${appContext.minPercentage}%): ${appContext.subjectsInDanger.length > 0 ? appContext.subjectsInDanger.join(', ') : 'None - all safe!'}
+ï¿½ Subjects SAFE to Skip: ${appContext.subjectsSafeToSkip.length > 0 ? JSON.stringify(appContext.subjectsSafeToSkip) : 'None - attend all!'}
+ï¿½ Total Holidays: ${appContext.holidays.length}
+ï¿½ Days Logged: ${appContext.logs.totalDays}
+ï¿½ Today Logged: ${appContext.logs.todayLogged ? 'Yes' : 'No'}
+ï¿½ Notifications: ${appContext.notifications.enabled ? 'On at ' + appContext.notifications.time : 'Off'}
 
 ?? ALL APP FEATURES (explain when asked):
 
 1?? CLASS SETUP (4 methods):
-• Form: Manual entry - Add Class ? fill name, last date, subjects with schedules
-• JSON: Paste JSON structure {"ClassName":{lastDate,holidays[],subjects[]}}
-• AI Import: Upload timetable/attendance images ? AI fills form automatically
-• QR Scan: Scan classmate's QR to import their class setup
+ï¿½ Form: Manual entry - Add Class ? fill name, last date, subjects with schedules
+ï¿½ JSON: Paste JSON structure {"ClassName":{lastDate,holidays[],subjects[]}}
+ï¿½ AI Import: Upload timetable/attendance images ? AI fills form automatically
+ï¿½ QR Scan: Scan classmate's QR to import their class setup
 
 2?? ATTENDANCE INPUT (3 methods):
-• Image Upload: OCR extracts attendance from screenshots
-• Manual Input: Enter total/attended per subject
-• JSON Paste: {"CODE":{total,present}}
+ï¿½ Image Upload: OCR extracts attendance from screenshots
+ï¿½ Manual Input: Enter total/attended per subject
+ï¿½ JSON Paste: {"CODE":{total,present}}
 
 3?? MODES:
-• Portal Mode: Daily logging, ML recommendations, semester tracking (Settings ? Portal Setup)
-• Standard Mode: Quick one-time calculation without daily logs
+ï¿½ Portal Mode: Daily logging, ML recommendations, semester tracking (Settings ? Portal Setup)
+ï¿½ Standard Mode: Quick one-time calculation without daily logs
 
 4?? LEAVE PLANNER:
-• Add planned leave dates ? see impact on attendance
-• Compulsory events marking ? warns about conflicts
-• Medical Certificate recommendations ? suggests optimal ML dates
-• Max Safe Leave ? shows days you can skip safely
-• Long Weekend Finder ? finds best leave strategy
+ï¿½ Add planned leave dates ? see impact on attendance
+ï¿½ Compulsory events marking ? warns about conflicts
+ï¿½ Medical Certificate recommendations ? suggests optimal ML dates
+ï¿½ Max Safe Leave ? shows days you can skip safely
+ï¿½ Long Weekend Finder ? finds best leave strategy
 
 5?? TIMETABLE:
-• Visual weekly schedule with drag-drop
-• Period time configuration
-• Current day highlighting with attendance status colors (green=safe, yellow=warning, red=danger)
+ï¿½ Visual weekly schedule with drag-drop
+ï¿½ Period time configuration
+ï¿½ Current day highlighting with attendance status colors (green=safe, yellow=warning, red=danger)
 
 6?? NOTIFICATIONS:
-• Daily reminders at custom time
-• Only during semester period
-• Enable in Settings ? Notification Settings
+ï¿½ Daily reminders at custom time
+ï¿½ Only during semester period
+ï¿½ Enable in Settings ? Notification Settings
 
 7?? ANALYSIS:
-• Current %, Max possible %, Min possible %
-• Still Need (must attend), Can Skip (safe to miss)
-• Overall vs Per-Subject mode toggle
+ï¿½ Current %, Max possible %, Min possible %
+ï¿½ Still Need (must attend), Can Skip (safe to miss)
+ï¿½ Overall vs Per-Subject mode toggle
 
 8?? SETTINGS:
-• Minimum attendance % (default 75%)
-• Dark mode toggle
-• API Settings for personal Gemini key
-• Export/Backup class as JSON or QR
+ï¿½ Minimum attendance % (default 75%)
+ï¿½ Dark mode toggle
+ï¿½ API Settings for personal Gemini key
+ï¿½ Export/Backup class as JSON or QR
 
 ?? MAX SAFE LEAVE FEATURE:
-• Calculates exact dates you can skip entirely
-• Considers your planned leaves + compulsory events
-• Shows which subject is the bottleneck limiting safe leaves
+ï¿½ Calculates exact dates you can skip entirely
+ï¿½ Considers your planned leaves + compulsory events
+ï¿½ Shows which subject is the bottleneck limiting safe leaves
 
 ?? MAX POSSIBLE BUNK (Avoid Detention):
-• Calculates maximum skippable days at 65% DETENTION threshold (not 75%)
-• Shows all dates you can bunk without getting detained
-• MEDICAL CERTIFICATE SUGGESTIONS after bunking
+ï¿½ Calculates maximum skippable days at 65% DETENTION threshold (not 75%)
+ï¿½ Shows all dates you can bunk without getting detained
+ï¿½ MEDICAL CERTIFICATE SUGGESTIONS after bunking
 
 ?? CAN I SKIP TODAY? FEATURE:
-• Quick check for today's impact
-• Shows what happens if you skip all today's classes
-• Per-subject impact analysis
+ï¿½ Quick check for today's impact
+ï¿½ Shows what happens if you skip all today's classes
+ï¿½ Per-subject impact analysis
 
 ?? ABOUT THE DEVELOPER:
-• Name: Faisal Khan
-• Role: Solo Developer & Creator of Bunk it
-• Buy Me a Coffee: https://buymeacoffee.com/Faisalkhan119
-• The app is 100% free, ad-free, and open for donations
+ï¿½ Name: Faisal Khan
+ï¿½ Role: Solo Developer & Creator of Bunk it
+ï¿½ Buy Me a Coffee: https://buymeacoffee.com/Faisalkhan119
+ï¿½ The app is 100% free, ad-free, and open for donations
 
 ?? RESPONSE FORMAT:
-• Use numbered steps (1, 2, 3...) enter next line after every steps for how-to questions
-• Use emojis for visual clarity
-• Keep responses concise but helpful
-• End with a helpful tip when relevant
+ï¿½ Use numbered steps (1, 2, 3...) enter next line after every steps for how-to questions
+ï¿½ Use emojis for visual clarity
+ï¿½ Keep responses concise but helpful
+ï¿½ End with a helpful tip when relevant
 
 ?? SMART RESPONSES: When asked about skipping/leave, check their attendance data and give specific advice based on maxSkippable values and subject buffers.
 
