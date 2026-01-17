@@ -5614,6 +5614,143 @@
                 }
             }
 
+            // --- Deep Link Import Logic ---
+
+            function checkForClassImport() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const classData = urlParams.get('class');
+
+                if (classData) {
+                    // Store for import after onboarding completes
+                    sessionStorage.setItem('pendingClassImport', classData);
+
+                    // Clean URL without reload to avoid messy URL
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+
+                    console.log("🔗 Class import link detected and stored.");
+                }
+            }
+
+            // Run immediately
+            checkForClassImport();
+
+            function importClassFromURL(encodedData) {
+                try {
+                    // Decode base64 class data
+                    const jsonString = atob(encodedData);
+                    const classData = JSON.parse(jsonString);
+
+                    // Validate essential data
+                    if (!classData.name || !classData.subjects) {
+                        throw new Error("Invalid class data structure");
+                    }
+
+                    const inputName = classData.name;
+                    let finalName = inputName;
+                    let shouldImport = true;
+
+                    // STRICT DUPLICATE CHECK
+                    if (classes[inputName]) {
+                        const existingClass = classes[inputName];
+
+                        // Compare timetables to see if it's the EXACT same class
+                        // We use the existing timetable arrangement or fallback to generated schedule
+                        const existingArrangement = getTimetableArrangement(inputName) || {};
+                        const newArrangement = classData.timetable || {}; // Assuming timetable is passed in data
+
+                        // Simple stringify comparison of critical data for equality check
+                        const existingSignature = JSON.stringify({
+                            subjects: existingClass.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
+                            timetable: existingArrangement
+                        });
+
+                        // Reconstruct new signature from import data
+                        // If imported data doesn't have explicit timetable, we might need to rely on subjects/schedule
+                        let newSignature;
+                        if (classData.timetable) {
+                            newSignature = JSON.stringify({
+                                subjects: classData.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
+                                timetable: classData.timetable
+                            });
+                        } else {
+                            // Fallback signature if explicit timetable missing from import (depend on schedule)
+                            newSignature = JSON.stringify({
+                                subjects: classData.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
+                                timetable: {} // We can't compare arrangements if missing, so this might fail strict equality which is good (safer)
+                            });
+                        }
+
+                        // Just checking subjects and schedule is usually enough for "Same Class" detection
+                        const simpleExisting = JSON.stringify(existingClass.subjects.map(s => ({ c: s.code, sc: s.schedule })));
+                        const simpleNew = JSON.stringify(classData.subjects.map(s => ({ c: s.code, sc: s.schedule })));
+
+                        if (simpleExisting === simpleNew) {
+                            alert(`⚠️ Class "${inputName}" already exists on this device with the same schedule!`);
+                            // Stop import - user already has this class
+                            shouldImport = false;
+
+                            // If they are just finishing onboarding, we should still let them proceed to dashboard
+                            // So we just reload to show the existing class
+                            localStorage.setItem('hasCompletedOnboarding', 'true');
+                            localStorage.setItem('selectedClass', inputName);
+                            location.reload();
+                            return;
+                        } else {
+                            // Same name but DIFFERENT schedule -> Create Copy
+                            let counter = 1;
+                            while (classes[finalName]) {
+                                finalName = `${inputName} (${counter++})`;
+                            }
+                            // Proceed with valid unique name
+                        }
+                    }
+
+                    if (!shouldImport) return;
+
+                    // Import class to IndexedDB/LocalStorage
+                    // We simply add it to the 'classes' object and saveToStorage
+                    // Ensure we preserve all fields
+                    classes[finalName] = {
+                        lastDate: classData.lastDate || new Date().toISOString().split('T')[0],
+                        subjects: classData.subjects,
+                        holidays: classData.holidays || [],
+                        periodTimes: classData.periodTimes || {}, // Import period times if available
+                        portalSetup: classData.portalSetup || {}  // Import portal setup if available
+                    };
+
+                    // Save timetable arrangement if present
+                    if (classData.timetable) {
+                        localStorage.setItem(`timetable_arrangement_${finalName}`, JSON.stringify(classData.timetable));
+                    }
+
+                    saveToStorage();
+
+                    // Mark onboarding complete
+                    localStorage.setItem('hasCompletedOnboarding', 'true');
+
+                    // Clear pending import
+                    sessionStorage.removeItem('pendingClassImport');
+
+                    // Show success message
+                    showToast(`🎉 Welcome! "${finalName}" has been added!`, 'success');
+
+                    // Set as current class and reload
+                    localStorage.setItem('selectedClass', finalName);
+
+                    setTimeout(() => location.reload(), 1000);
+
+                } catch (error) {
+                    console.error('Failed to import class:', error);
+                    alert('❌ Failed to import class link. The link might be broken or invalid.');
+
+                    // Fallback to normal onboarding if this was part of first login
+                    if (!localStorage.getItem('hasCompletedOnboarding')) {
+                        openOnboardingClassModal();
+                    }
+                }
+            }
+
             function saveFirstLoginName() {
                 const nameInput = document.getElementById('firstLoginNameInput');
                 const name = nameInput ? nameInput.value.trim() : '';
@@ -5622,10 +5759,27 @@
                     updateSidebarAccountUI();
                     // Close modal with iOS animation
                     closeModal('firstLoginPromptModal');
-                    // Show class setup modal after close animation completes
-                    setTimeout(() => openOnboardingClassModal(), 350);
+
+                    // Check if we have a pending class import from a deep link
+                    const pendingClass = sessionStorage.getItem('pendingClassImport');
+                    if (pendingClass) {
+                        // Skip class choice modal and import directly
+                        setTimeout(() => importClassFromURL(pendingClass), 350);
+                    } else {
+                        // Normal flow
+                        setTimeout(() => openOnboardingClassModal(), 350);
+                    }
                 } else {
                     showToast('Please enter your name to continue', 'warning');
+                }
+            }
+
+            // Handle Existing Users who click the link
+            if (localStorage.getItem('hasCompletedOnboarding') === 'true') {
+                const pendingClass = sessionStorage.getItem('pendingClassImport');
+                if (pendingClass) {
+                    // small delay to ensure DB is ready
+                    setTimeout(() => importClassFromURL(pendingClass), 500);
                 }
             }
 
@@ -6932,9 +7086,9 @@
                         </div>
                         <div id="qrcodeTab" style="display: inline-block; padding: 20px; background: white; margin: 20px auto; display: flex; justify-content: center;"></div>
                         <p style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 20px; text-align: center;">Includes subjects and holidays. Does not include your personal attendance logs.</p>
-                        <div style="display: flex; gap: 10px; justify-content: center;">
-                            <button class="btn success-btn" onclick="shareQRImageTab()">📱 Share via App</button>
-                            <button class="btn secondary-btn" onclick="downloadQRImageTab()">⬇️ Download QR</button>
+                        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                            <button class="btn success-btn" onclick="shareClassLinkNative()" style="width: 100%; max-width: 250px; padding: 12px;">📤 Share via App (Link)</button>
+                            <button class="btn info-btn" onclick="copyClassLink()" style="width: 100%; max-width: 250px; padding: 12px;">🔗 Copy Link</button>
                         </div>
                     </div>
 
@@ -14260,66 +14414,82 @@ CRITICAL RULES:
                     .then(() => alert('Minified JSON copied!'));
             }
 
-            function shareQRImageTab() {
-                const qrContainer = document.getElementById('qrcodeTab');
-                const canvas = qrContainer.querySelector('canvas');
-                const img = qrContainer.querySelector('img');
-                const source = canvas || img;
+            function shareClassLinkNative() {
+                // Prepare Deep Link Data
+                if (!editingClassName || !classes[editingClassName]) return;
 
-                if (!source) {
-                    alert("QR Code not generated yet.");
-                    return;
+                const currentClass = classes[editingClassName];
+                // We must include EVERYTHING needed for a full import
+                const fullClassData = {
+                    name: editingClassName,
+                    subjects: currentClass.subjects,
+                    holidays: currentClass.holidays || [],
+                    timetable: getTimetableArrangement(editingClassName) || {}, // Get full timetable
+                    periodTimes: currentClass.periodTimes || {},
+                    portalSetup: currentClass.portalSetup || {},
+                    lastDate: currentClass.lastDate
+                };
+
+                const jsonString = JSON.stringify(fullClassData);
+                const encodedData = btoa(jsonString);
+                const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
+
+                const shareText = `👋 Join my class "${editingClassName}" on Bunkit!
+
+🔗 **Click to add class instantly:**
+${shareUrl}
+
+👇 **Instructions:**
+1. Click the link above
+2. Enter your name
+3. Class is added automatically! 🎉
+
+✨ Track attendance together — super smooth and super fun!`;
+
+                if (navigator.share) {
+                    navigator.share({
+                        title: `Join ${editingClassName}`,
+                        text: shareText
+                    }).catch(console.error);
+                } else {
+                    // Fallback to clipboard
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(shareText).then(() => {
+                            alert('✅ Link & Instructions copied to clipboard!\n\nPaste it in WhatsApp to share.');
+                        }).catch(() => prompt("Copy this message:", shareText));
+                    } else {
+                        prompt("Copy this message:", shareText);
+                    }
                 }
+            }
 
-                let dataUrl = source.src || source.toDataURL();
+            function copyClassLink() {
+                if (!editingClassName || !classes[editingClassName]) return;
 
-                fetch(dataUrl)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const file = new File([blob], `${editingClassName}_QR.png`, { type: "image/png" });
-                        const shareText = `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`;
+                const currentClass = classes[editingClassName];
+                const fullClassData = {
+                    name: editingClassName,
+                    subjects: currentClass.subjects,
+                    holidays: currentClass.holidays || [],
+                    timetable: getTimetableArrangement(editingClassName) || {},
+                    periodTimes: currentClass.periodTimes || {},
+                    portalSetup: currentClass.portalSetup || {},
+                    lastDate: currentClass.lastDate
+                };
 
-                        if (navigator.share) {
-                            // Step 1: Copy text to clipboard first
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(shareText).then(() => {
-                                    // Step 2: Show clear instructions
-                                    alert('✅ Message copied to clipboard!\n\n📋 Next steps:\n1. Share the QR code\n2. In WhatsApp, long-press the message box\n3. Tap "Paste" to add the message\n4. Send! 🚀');
+                const jsonString = JSON.stringify(fullClassData);
+                const encodedData = btoa(jsonString);
+                const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
 
-                                    // Step 3: Share the QR image
-                                    setTimeout(() => {
-                                        navigator.share({
-                                            files: [file]
-                                        }).catch(err => {
-                                            if (err.name !== 'AbortError') {
-                                                console.error('Share failed:', err);
-                                            }
-                                        });
-                                    }, 500);
-                                }).catch(() => {
-                                    // Clipboard failed, just share the file
-                                    navigator.share({
-                                        files: [file]
-                                    }).catch(err => {
-                                        if (err.name !== 'AbortError') {
-                                            console.error('Share failed:', err);
-                                        }
-                                    });
-                                });
-                            } else {
-                                // No clipboard support, just share file
-                                navigator.share({
-                                    files: [file]
-                                }).catch(err => {
-                                    if (err.name !== 'AbortError') {
-                                        console.error('Share failed:', err);
-                                    }
-                                });
-                            }
-                        } else {
-                            alert("Sharing not supported on this browser. Please use Download.");
-                        }
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showToast('🔗 Class link copied! Share it with friends.', 'success');
+                    }).catch(() => {
+                        prompt("Copy this link:", shareUrl);
                     });
+                } else {
+                    prompt("Copy this link:", shareUrl);
+                }
             }
 
             function downloadQRImageTab() {
@@ -14343,7 +14513,10 @@ CRITICAL RULES:
             window.handleQRFileUploadInTab = handleQRFileUploadInTab;
             window.generateShareQRInTab = generateShareQRTab;
             window.generateShareQRTab = generateShareQRTab;
-            window.shareQRImageTab = shareQRImageTab;
+            // Point the old function name to the new Native Link Share function
+            window.shareQRImageTab = shareClassLinkNative;
+            window.shareClassLinkNative = shareClassLinkNative;
+            window.downloadQRImageTab = downloadQRImageTab;
             window.downloadQRImageTab = downloadQRImageTab;
 
 
