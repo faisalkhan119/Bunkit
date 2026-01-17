@@ -7086,9 +7086,9 @@
                         </div>
                         <div id="qrcodeTab" style="display: inline-block; padding: 20px; background: white; margin: 20px auto; display: flex; justify-content: center;"></div>
                         <p style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 20px; text-align: center;">Includes subjects and holidays. Does not include your personal attendance logs.</p>
-                        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                            <button class="btn success-btn" onclick="shareClassLinkNative()" style="width: 100%; max-width: 250px; padding: 12px;">📤 Share via App (Link)</button>
-                            <button class="btn info-btn" onclick="copyClassLink()" style="width: 100%; max-width: 250px; padding: 12px;">🔗 Copy Link</button>
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button class="btn success-btn" onclick="shareClassLinkFromTab()">🔗 Share via App Link</button>
+                            <button class="btn secondary-btn" onclick="downloadQRImageTab()">⬇️ Download QR</button>
                         </div>
                     </div>
 
@@ -14414,81 +14414,42 @@ CRITICAL RULES:
                     .then(() => alert('Minified JSON copied!'));
             }
 
-            function shareClassLinkNative() {
-                // Prepare Deep Link Data
-                if (!editingClassName || !classes[editingClassName]) return;
-
-                const currentClass = classes[editingClassName];
-                // We must include EVERYTHING needed for a full import
-                const fullClassData = {
-                    name: editingClassName,
-                    subjects: currentClass.subjects,
-                    holidays: currentClass.holidays || [],
-                    timetable: getTimetableArrangement(editingClassName) || {}, // Get full timetable
-                    periodTimes: currentClass.periodTimes || {},
-                    portalSetup: currentClass.portalSetup || {},
-                    lastDate: currentClass.lastDate
-                };
-
-                const jsonString = JSON.stringify(fullClassData);
-                const encodedData = btoa(jsonString);
-                const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
-
-                const shareText = `👋 Join my class "${editingClassName}" on Bunkit!
-
-🔗 **Click to add class instantly:**
-${shareUrl}
-
-👇 **Instructions:**
-1. Click the link above
-2. Enter your name
-3. Class is added automatically! 🎉
-
-✨ Track attendance together — super smooth and super fun!`;
-
-                if (navigator.share) {
-                    navigator.share({
-                        title: `Join ${editingClassName}`,
-                        text: shareText
-                    }).catch(console.error);
-                } else {
-                    // Fallback to clipboard
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(shareText).then(() => {
-                            alert('✅ Link & Instructions copied to clipboard!\n\nPaste it in WhatsApp to share.');
-                        }).catch(() => prompt("Copy this message:", shareText));
-                    } else {
-                        prompt("Copy this message:", shareText);
-                    }
+            async function shareClassLinkFromTab() {
+                if (!editingClassName || !classes[editingClassName]) {
+                    showToast('❌ Error: No class selected', 'error');
+                    return;
                 }
-            }
-
-            function copyClassLink() {
-                if (!editingClassName || !classes[editingClassName]) return;
 
                 const currentClass = classes[editingClassName];
-                const fullClassData = {
+                const cleanClassData = {
                     name: editingClassName,
-                    subjects: currentClass.subjects,
+                    subjects: currentClass.subjects || [],
                     holidays: currentClass.holidays || [],
                     timetable: getTimetableArrangement(editingClassName) || {},
-                    periodTimes: currentClass.periodTimes || {},
-                    portalSetup: currentClass.portalSetup || {},
-                    lastDate: currentClass.lastDate
+                    periodTimes: currentClass.periodTimes || {}
                 };
 
-                const jsonString = JSON.stringify(fullClassData);
-                const encodedData = btoa(jsonString);
-                const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
+                const encodedData = btoa(JSON.stringify(cleanClassData));
+                const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
 
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        showToast('🔗 Class link copied! Share it with friends.', 'success');
-                    }).catch(() => {
-                        prompt("Copy this link:", shareUrl);
-                    });
+                const shareData = {
+                    title: 'Join my Class on Bunkit',
+                    text: `Hey! I'm using Bunkit to track attendance. Here's our class setup for ${cleanClassData.name}. Click to import subjects and timetable:\n\n`,
+                    url: shareUrl
+                };
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share(shareData);
+                        showToast('✅ Link shared successfully!', 'success');
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('Share failed:', err);
+                            copyShareLinkToClipboard(shareUrl);
+                        }
+                    }
                 } else {
-                    prompt("Copy this link:", shareUrl);
+                    copyShareLinkToClipboard(shareUrl);
                 }
             }
 
@@ -14513,10 +14474,7 @@ ${shareUrl}
             window.handleQRFileUploadInTab = handleQRFileUploadInTab;
             window.generateShareQRInTab = generateShareQRTab;
             window.generateShareQRTab = generateShareQRTab;
-            // Point the old function name to the new Native Link Share function
-            window.shareQRImageTab = shareClassLinkNative;
-            window.shareClassLinkNative = shareClassLinkNative;
-            window.downloadQRImageTab = downloadQRImageTab;
+            window.shareClassLinkFromTab = shareClassLinkFromTab;
             window.downloadQRImageTab = downloadQRImageTab;
 
 
@@ -15243,7 +15201,7 @@ ${shareUrl}
                     holidays. Does not include your personal attendance logs.</p>
 
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn success-btn" onclick="shareQRImage()">📱 Share via App</button>
+                    <button class="btn success-btn" onclick="shareClassLink()">🔗 Share via App Link</button>
                     <button class="btn secondary-btn" onclick="downloadQRImage()">⬇️ Download QR</button>
                 </div>
             </div>
@@ -15269,6 +15227,75 @@ ${shareUrl}
                 </div>
 
                 <script>
+                    // ========== SHARE FUNCTIONALITY ==========
+                    async function shareClassLink() {
+                        if (!selectedClass) {
+                            showToast('❌ Please select a class first', 'error');
+                            return;
+                        }
+
+                        // Prepare class data (clean structure)
+                        const classData = {
+                            name: selectedClass.name,
+                            subjects: selectedClass.subjects || [],
+                            holidays: selectedClass.holidays || [],
+                            timetable: selectedClass.timetable || {},
+                            periodTimes: selectedClass.periodTimes || {}
+                        };
+
+                        // Encode data
+                        const encodedData = btoa(JSON.stringify(classData));
+                        const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
+
+                        const shareData = {
+                            title: 'Join my Class on Bunkit',
+                            text: `Hey! I'm using Bunkit to track attendance. Here's our class setup for ${classData.name}. Click to import subjects and timetable:\n\n`,
+                            url: shareUrl
+                        };
+
+                        // Use Web Share API if available
+                        if (navigator.share) {
+                            try {
+                                await navigator.share(shareData);
+                                showToast('✅ Link shared successfully!', 'success');
+                            } catch (err) {
+                                if (err.name !== 'AbortError') {
+                                    console.error('Share failed:', err);
+                                    // Fallback to clipboard
+                                    copyShareLinkToClipboard(shareUrl);
+                                }
+                            }
+                        } else {
+                            // Fallback to clipboard
+                            copyShareLinkToClipboard(shareUrl);
+                        }
+                    }
+
+                    function copyShareLinkToClipboard(text) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            alert('🔗 Link copied to clipboard!\n\nYou can now paste and share it.');
+                        }).catch(() => {
+                            alert('❌ Failed to copy link.');
+                        });
+                    }
+
+                    function downloadQRImage() {
+                        const qrContainer = document.getElementById('qrcode');
+                        const canvas = qrContainer.querySelector('canvas');
+                        const img = qrContainer.querySelector('img');
+                        const source = canvas || img;
+
+                        if (!source) {
+                            showToast('❌ No QR code generated', 'error');
+                            return;
+                        }
+
+                        const link = document.createElement('a');
+                        link.download = `Bunkit_Class_${selectedClass ? selectedClass.name : 'Share'}.png`;
+                        link.href = source.src || source.toDataURL();
+                        link.click();
+                    }
+
                     // ========== HYBRID OCR SYSTEM ==========
 
                     // Gemini API Key - Uses personal key or backend proxy
