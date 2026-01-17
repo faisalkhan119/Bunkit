@@ -112,7 +112,7 @@
             // Disable right-click context menu
             document.addEventListener('contextmenu', function (e) {
                 e.preventDefault();
-                console.log('?? Right-click disabled');
+                console.log('\u{1F440} Right-click disabled');
             });
 
             // Block common DevTools keyboard shortcuts
@@ -120,37 +120,37 @@
                 // F12
                 if (e.key === 'F12') {
                     e.preventDefault();
-                    console.log('?? F12 blocked');
+                    console.log('\u{1F440} F12 blocked');
                     return false;
                 }
                 // Ctrl+Shift+I (DevTools)
                 if (e.ctrlKey && e.shiftKey && e.key === 'I') {
                     e.preventDefault();
-                    console.log('?? Ctrl+Shift+I blocked');
+                    console.log('\u{1F440} Ctrl+Shift+I blocked');
                     return false;
                 }
                 // Ctrl+Shift+J (Console)
                 if (e.ctrlKey && e.shiftKey && e.key === 'J') {
                     e.preventDefault();
-                    console.log('?? Ctrl+Shift+J blocked');
+                    console.log('\u{1F440} Ctrl+Shift+J blocked');
                     return false;
                 }
                 // Ctrl+Shift+C (Element inspector)
                 if (e.ctrlKey && e.shiftKey && e.key === 'C') {
                     e.preventDefault();
-                    console.log('?? Ctrl+Shift+C blocked');
+                    console.log('\u{1F440} Ctrl+Shift+C blocked');
                     return false;
                 }
                 // Ctrl+U (View source)
                 if (e.ctrlKey && e.key === 'u') {
                     e.preventDefault();
-                    console.log('?? Ctrl+U blocked');
+                    console.log('\u{1F440} Ctrl+U blocked');
                     return false;
                 }
                 // Ctrl+S (Save page)
                 if (e.ctrlKey && e.key === 's') {
                     e.preventDefault();
-                    console.log('?? Ctrl+S blocked');
+                    console.log('\u{1F440} Ctrl+S blocked');
                     return false;
                 }
             });
@@ -4331,7 +4331,7 @@
     <!-- Login Screen -->
     <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="login-container">
-            <div class="login-logo">??</div>
+            <div class="login-logo">&#127891;</div>
             <h1 class="login-title">Welcome to Bunkit</h1>
             <p class="login-subtitle">Smart Attendance Manager</p>
 
@@ -4339,14 +4339,14 @@
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
                 Continue with Google
             </button>
-            <p class="login-feature">?? Sync across all devices</p>
+            <p class="login-feature">&#128260; Sync across all devices</p>
 
             <div class="login-divider"><span>or</span></div>
 
             <button class="login-btn login-btn-guest" onclick="continueAsGuest()">
-                ?? Continue as Guest
+                &#128100; Continue as Guest
             </button>
-            <p class="login-feature">?? Data stays on this device</p>
+            <p class="login-feature">&#128241; Data stays on this device</p>
         </div>
     </div>
 
@@ -4375,8 +4375,7 @@
             style="padding: 15px; background: var(--light-bg); border-bottom: 1px solid var(--border-color); margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div id="sidebarUserAvatar"
-                    style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; font-weight: 600;">
-                    ??</div>
+                    style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; font-weight: 600;">&#128100;</div>
                 <div style="flex: 1;">
                     <div id="sidebarUserName" style="font-weight: 600; color: var(--main-text); font-size: 1rem;">Guest
                         User</div>
@@ -4387,16 +4386,16 @@
         </div>
 
         <!-- Account Options -->
-        <a href="#" onclick="openProfileNameModal(); closeNav();">?? Edit Profile Name</a>
-        <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">?? Sign in with Google</a>
-        <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">?? Sync with
+        <a href="#" onclick="openProfileNameModal(); closeNav();">&#9999;&#65039; Edit Profile Name</a>
+        <a href="#" id="sidebarSignInBtn" onclick="signInWithGoogle(); closeNav();">&#128273; Sign in with Google</a>
+        <a href="#" id="sidebarSyncBtn" onclick="syncWithDrive(); closeNav();" style="display: none;">&#9729;&#65039; Sync with
             Google Drive</a>
         <div id="sidebarLastSynced"
             style="display: none; padding: 5px 22px; font-size: 0.75rem; color: var(--medium-text);">
-            ?? Last synced: Never
+            &#128260; Last synced: Never
         </div>
         <a href="#" id="sidebarSignOutBtn" onclick="signOutGoogle(); closeNav();"
-            style="display: none; color: #dc3545;">?? Sign Out</a>
+            style="display: none; color: #dc3545;">&#128682; Sign Out</a>
 
         <div style="height: 1px; background: var(--border-color); margin: 10px 15px;"></div>
 
@@ -5023,8 +5022,8 @@
                     return;
                 }
 
-                console.log('?? Exchanging authorization code for tokens...');
-                showToast('?? Completing sign-in...', 'Please wait', { duration: 3000 });
+                console.log('\u{1F440} Exchanging authorization code for tokens...');
+                showToast('\u{2705} Completing sign-in...', 'Please wait', { duration: 3000 });
 
                 try {
                     // Exchange code for tokens (PKCE allows this without client_secret)
@@ -5048,8 +5047,8 @@
                         // Check if it's the client_secret issue
                         if (tokenData.error === 'invalid_request' &&
                             tokenData.error_description?.includes('client_secret')) {
-                            console.log('?? PKCE requires Desktop app client type. Falling back to GIS Token Flow...');
-                            showToast('?? Using alternative login...', 'Please wait', { duration: 2000 });
+                            console.log('\u{1F440} PKCE requires Desktop app client type. Falling back to GIS Token Flow...');
+                            showToast('\u{2705} Using alternative login...', 'Please wait', { duration: 2000 });
                             cleanupOAuthParams();
 
                             // Fall back to GIS Token Flow (works with Web Application client)
@@ -5081,7 +5080,7 @@
                     // Fetch user info
                     await fetchUserInfo(tokenData.access_token);
 
-                    showToast('? Signed in successfully!', 'Sync enabled', { duration: 3000 });
+                    showToast('\u{274C} Signed in successfully!', 'Sync enabled', { duration: 3000 });
 
                 } catch (error) {
                     console.error('Token exchange failed:', error);
@@ -5127,7 +5126,7 @@
                 authUrl.searchParams.set('access_type', 'offline'); // Request refresh token
                 authUrl.searchParams.set('prompt', 'consent'); // Force consent to get refresh token
 
-                console.log('?? Starting PKCE OAuth flow...');
+                console.log('\u{1F440} Starting PKCE OAuth flow...');
 
                 // Redirect to Google login
                 window.location.href = authUrl.toString();
@@ -5142,7 +5141,7 @@
                 }
 
                 try {
-                    console.log('?? Refreshing token silently...');
+                    console.log('\u{1F440} Refreshing token silently...');
 
                     const response = await fetch(OAUTH_TOKEN_URL, {
                         method: 'POST',
@@ -5202,7 +5201,7 @@
                 if (error.type === 'popup_closed') {
                     console.log('User closed the popup');
                 } else if (error.type === 'popup_failed_to_open') {
-                    alert('?? Popup blocked! Please allow popups for this site and try again.');
+                    alert('\u{26A0} Popup blocked! Please allow popups for this site and try again.');
                 }
             }
 
@@ -5297,7 +5296,7 @@
             // Main sign-in function
             // TEMPORARILY DISABLED - Database work in progress
             async function signInWithGoogle() {
-                alert('?? Google Sign-In is temporarily unavailable.\n\nWe are currently working on the database.\n\nPlease click "Continue as Guest" for now. Your data will be saved locally on this device.');
+                alert('\u{26A0} Google Sign-In is temporarily unavailable.\n\nWe are currently working on the database.\n\nPlease click "Continue as Guest" for now. Your data will be saved locally on this device.');
                 return;
             }
 
@@ -5310,7 +5309,7 @@
                 updateSidebarAccountUI();
                 // Check if first-time user - show onboarding
                 checkFirstLoginPrompt();
-                console.log('?? Continuing as guest');
+                console.log('\u{1F440} Continuing as guest');
             }
 
             async function signOutGoogle() {
@@ -5319,7 +5318,7 @@
                     try {
                         // Sync data before signing out
                         if (googleUser?.accessToken) {
-                            showToast('?? Syncing before logout...', 'Please wait', { duration: 3000 });
+                            showToast('\u{2705} Syncing before logout...', 'Please wait', { duration: 3000 });
                             syncSuccess = await syncWithDrive();
                         }
                     } catch (error) {
@@ -5399,7 +5398,7 @@
                 const savedUser = localStorage.getItem('googleUser');
 
                 // Debug logging
-                console.log('?? checkLoginStatus called');
+                console.log('\u{1F440} checkLoginStatus called');
                 console.log('   isGuest:', isGuest);
                 console.log('   savedUser:', savedUser ? 'exists' : 'null');
 
@@ -5424,21 +5423,21 @@
 
                 // PRIORITY 2: Guest user (explicitly set)
                 if (isGuest === 'true') {
-                    console.log('?? Guest user mode');
+                    console.log('\u{1F440} Guest user mode');
                     updateAccountUI();
                     updateSidebarAccountUI();
                     return;
                 }
 
                 // PRIORITY 3: First time user - show login screen
-                console.log('?? First time user, showing login screen');
+                console.log('\u{1F440} First time user, showing login screen');
                 showLoginScreen();
             }
 
             // Silent token refresh - uses stored refresh token for seamless sync
             async function silentTokenRefresh() {
                 if (!googleUser) {
-                    console.log('?? Cannot refresh - no user');
+                    console.log('\u{1F440} Cannot refresh - no user');
                     return;
                 }
 
@@ -5458,7 +5457,7 @@
                     return;
                 }
 
-                console.log('?? Token expired/expiring, attempting silent refresh...');
+                console.log('\u{1F440} Token expired/expiring, attempting silent refresh...');
 
                 // PRIORITY 1: Try PKCE refresh token (seamless like WhatsApp!)
                 const newToken = await refreshWithToken();
@@ -5471,14 +5470,14 @@
                 // PRIORITY 2: Try GIS silent refresh as fallback
                 if (gisInited && tokenClient) {
                     try {
-                        console.log('?? Trying GIS silent refresh...');
+                        console.log('\u{1F440} Trying GIS silent refresh...');
                         requestToken({ prompt: '' });
                     } catch (error) {
                         console.log('Silent refresh failed:', error);
-                        showToast('?? Session expired', 'Click Sync to reconnect', { duration: 4000 });
+                        showToast('\u{2705} Session expired', 'Click Sync to reconnect', { duration: 4000 });
                     }
                 } else {
-                    showToast('?? Session expired', 'Click Sync to reconnect', { duration: 4000 });
+                    showToast('\u{2705} Session expired', 'Click Sync to reconnect', { duration: 4000 });
                 }
             }
 
@@ -5493,7 +5492,7 @@
                     const now = Date.now();
 
                     if (now - lastSyncTime > twelveHoursMs) {
-                        console.log('?? Auto-sync: Last sync was more than 12 hours ago, syncing now...');
+                        console.log('\u{1F440} Auto-sync: Last sync was more than 12 hours ago, syncing now...');
                         setTimeout(() => {
                             syncWithDrive();
                         }, 2000); // Wait 2 seconds after app load
@@ -5531,7 +5530,7 @@
                     const lastSync = localStorage.getItem('lastDriveSync');
                     if (lastSync) {
                         document.getElementById('syncStatus').textContent =
-                            `?? Last synced: ${new Date(lastSync).toLocaleString()}`;
+                            `&#128260; Last synced: ${new Date(lastSync).toLocaleString()}`;
                     }
                 } else {
                     // Guest user
@@ -5610,7 +5609,7 @@
                     closeModal('profileNameModal');
                     showToast('Profile name updated successfully', 'success');
                 } else {
-                    alert('?? Please enter a name');
+                    alert('\u{26A0} Please enter a name');
                 }
             }
 
@@ -5622,7 +5621,7 @@
                     updateSidebarAccountUI();
                     // Close modal with iOS animation
                     closeModal('firstLoginPromptModal');
-                    
+
                     // Check if user came from shared link
                     const pendingClass = sessionStorage.getItem('pendingClassImport');
                     if (pendingClass) {
@@ -6107,9 +6106,9 @@
                             const syncDate = new Date(parseInt(lastSyncTime));
                             const formattedDate = syncDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                             const formattedTime = syncDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                            lastSyncedDiv.textContent = `?? Last synced: ${formattedDate}, ${formattedTime}`;
+                            lastSyncedDiv.textContent = `&#128260; Last synced: ${formattedDate}, ${formattedTime}`;
                         } else {
-                            lastSyncedDiv.textContent = '?? Last synced: Never';
+                            lastSyncedDiv.textContent = '&#128260; Last synced: Never';
                         }
                     }
 
@@ -6199,7 +6198,7 @@
 
                     // Handle 403 Forbidden - need fresh consent
                     if (response.status === 403 || response.status === 401) {
-                        console.log('?? Drive download access denied, user needs to grant permission');
+                        console.log('\u{1F440} Drive download access denied, user needs to grant permission');
                         googleUser.accessToken = null;
                         // Don't auto-request - popup blocked. Next sync click will trigger proper consent
                         return null;
@@ -6227,11 +6226,11 @@
 
                     // Handle 403 Forbidden - need to request consent again
                     if (response.status === 403 || response.status === 401) {
-                        console.log('?? Drive access denied, user needs to grant permission...');
+                        console.log('\u{1F440} Drive access denied, user needs to grant permission...');
                         googleUser.accessToken = null; // Clear invalid token
                         // DON'T auto-request consent - popup will be blocked
                         // User needs to click Sync button which triggers user-action popup
-                        alert('?? Google Drive permission needed!\n\nPlease click "Sync" button again to grant Drive access.');
+                        alert('\u{26A0} Google Drive permission needed!\n\nPlease click "Sync" button again to grant Drive access.');
                         return null;
                     }
 
@@ -6306,29 +6305,29 @@
                     } else {
                         // No token and can't refresh - request via GIS
                         if (gisInited && tokenClient) {
-                            showToast('?? Session expired', 'Please grant access', { duration: 3000 });
+                            showToast('\u{2705} Session expired', 'Please grant access', { duration: 3000 });
                             requestToken({ prompt: 'consent' });
                         } else {
-                            alert('?? Please sign in with Google first.');
+                            alert('\u{26A0} Please sign in with Google first.');
                         }
                         return;
                     }
                 }
 
                 if (!googleUser?.accessToken) {
-                    alert('?? Please sign in with Google first.');
+                    alert('\u{26A0} Please sign in with Google first.');
                     return;
                 }
 
                 try {
-                    showToast('?? Syncing...', 'Connecting to Google Drive', { duration: 2000 });
+                    showToast('\u{2705} Syncing...', 'Connecting to Google Drive', { duration: 2000 });
 
                     const cloudBackup = await downloadBackupFromDrive();
 
                     // Check if token was invalidated during download (403 error)
                     if (!googleUser?.accessToken) {
                         console.log('Token was cleared during download, consent requested. User needs to retry.');
-                        showToast('?? Permission needed', 'Please click Sync again after granting access', { duration: 4000 });
+                        showToast('\u{2705} Permission needed', 'Please click Sync again after granting access', { duration: 4000 });
                         return;
                     }
 
@@ -6354,17 +6353,17 @@
                         // No cloud backup - upload local (even if empty, user is starting fresh)
                         if (localHasData) {
                             await uploadBackupToDrive();
-                            showToast('?? Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
+                            showToast('\u{2705} Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
                         } else {
-                            showToast('?? Synced', 'No data to backup yet', { duration: 3000 });
+                            showToast('\u{2705} Synced', 'No data to backup yet', { duration: 3000 });
                         }
                     } else {
                         // CRITICAL: Protect against data loss
                         // If local is empty but cloud has data, ALWAYS restore from cloud
                         if (!localHasData && cloudHasData) {
-                            console.log('?? Local data is empty but cloud has data - restoring from cloud');
+                            console.log('\u{1F440} Local data is empty but cloud has data - restoring from cloud');
                             restoreFromBackupData(cloudBackup);
-                            showToast('?? Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                            showToast('\u{2705} Restored', 'Your data was restored from Google Drive', { duration: 4000 });
                             celebrateAchievement('goal-reached');
                             // Mark this account as synced on this device
                             if (currentEmail && !syncedAccounts.includes(currentEmail)) {
@@ -6389,9 +6388,9 @@
 
                             // If local is NOT newer than cloud, auto-restore from cloud (safe default)
                             if (localTime <= cloudTime) {
-                                console.log('?? First sync: Local not newer than cloud, auto-restoring from cloud');
+                                console.log('\u{1F440} First sync: Local not newer than cloud, auto-restoring from cloud');
                                 restoreFromBackupData(cloudBackup);
-                                showToast('?? Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                                showToast('\u{2705} Restored', 'Your data was restored from Google Drive', { duration: 4000 });
                             } else {
                                 // Local is NEWER - this is unusual, ask user (might be on friend's device)
                                 const userChoice = confirm(
@@ -6406,9 +6405,9 @@
 
                                 if (userChoice) {
                                     // User wants their cloud backup
-                                    console.log('?? User chose to restore from cloud (first sync protection)');
+                                    console.log('\u{1F440} User chose to restore from cloud (first sync protection)');
                                     restoreFromBackupData(cloudBackup);
-                                    showToast('?? Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                                    showToast('\u{2705} Restored', 'Your data was restored from Google Drive', { duration: 4000 });
                                 } else {
                                     // User chose device data - double confirm for safety
                                     const doubleConfirm = confirm(
@@ -6419,13 +6418,13 @@
                                     );
 
                                     if (doubleConfirm) {
-                                        console.log('?? User confirmed to upload local data (first sync protection)');
+                                        console.log('\u{1F440} User confirmed to upload local data (first sync protection)');
                                         await uploadBackupToDrive();
-                                        showToast('?? Synced', 'Cloud backup replaced with this device data', { duration: 3000 });
+                                        showToast('\u{2705} Synced', 'Cloud backup replaced with this device data', { duration: 3000 });
                                     } else {
                                         // User cancelled - restore from cloud instead
                                         restoreFromBackupData(cloudBackup);
-                                        showToast('?? Restored', 'Your data was restored from Google Drive', { duration: 4000 });
+                                        showToast('\u{2705} Restored', 'Your data was restored from Google Drive', { duration: 4000 });
                                     }
                                 }
                             }
@@ -6450,16 +6449,16 @@
 
                         if (cloudTime > localTime) {
                             // Cloud is newer - restore from cloud
-                            console.log('?? Cloud backup is newer - restoring');
+                            console.log('\u{1F440} Cloud backup is newer - restoring');
                             restoreFromBackupData(cloudBackup);
-                            showToast('?? Synced', 'Data restored from Google Drive', { duration: 3000 });
+                            showToast('\u{2705} Synced', 'Data restored from Google Drive', { duration: 3000 });
                         } else if (localTime > cloudTime) {
                             // Local is newer - upload to cloud
-                            console.log('?? Local data is newer - uploading');
+                            console.log('\u{1F440} Local data is newer - uploading');
                             await uploadBackupToDrive();
-                            showToast('?? Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
+                            showToast('\u{2705} Synced', 'Backup uploaded to Google Drive', { duration: 3000 });
                         } else {
-                            showToast('?? Synced', 'Everything is up to date', { duration: 3000 });
+                            showToast('\u{2705} Synced', 'Everything is up to date', { duration: 3000 });
                         }
                     }
 
@@ -6475,7 +6474,7 @@
                     updateSidebarAccountUI();
                 } catch (error) {
                     console.error('Sync failed:', error);
-                    showToast('? Sync Failed', error.message, { duration: 5000 });
+                    showToast('\u{274C} Sync Failed', error.message, { duration: 5000 });
                 }
             }
 
@@ -6578,16 +6577,16 @@
             function checkForClassImport() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const classData = urlParams.get('class');
-                
+
                 if (classData) {
                     // Store for import after onboarding completes
                     sessionStorage.setItem('pendingClassImport', classData);
-                    
+
                     // Clean URL without reload
                     const cleanUrl = window.location.origin + window.location.pathname;
                     history.replaceState({}, '', cleanUrl);
-                    
-                    console.log('?? Class import pending from shared link');
+
+                    console.log('\u{1F440} Class import pending from shared link');
                 }
             }
 
@@ -6598,9 +6597,9 @@
                     // Decode base64 class data
                     const classData = JSON.parse(atob(encodedData));
                     const className = classData.name || 'Imported Class';
-                    
+
                     console.log('Importing class:', className);
-                    
+
                     // Check if class already exists
                     let finalClassName = className;
                     if (classes[className]) {
@@ -6610,7 +6609,7 @@
                             counter++;
                         }
                     }
-                    
+
                     // Prepare class object
                     const newClass = {
                         subjects: classData.subjects || [],
@@ -6619,44 +6618,44 @@
                         periodTimes: classData.periodTimes || {},
                         lastDate: classData.lastDate || new Date().toISOString().split('T')[0]
                     };
-                    
+
                     // Add to classes object
                     classes[finalClassName] = newClass;
-                    
+
                     // Save to storage
                     saveToStorage();
-                    
+
                     // Save timetable arrangement if provided
                     if (classData.timetableArrangement && Object.keys(classData.timetableArrangement).length > 0) {
                         localStorage.setItem(`timetable_arrangement_${finalClassName}`, JSON.stringify(classData.timetableArrangement));
                         console.log('Timetable arrangement saved for', finalClassName);
                     }
-                    
+
                     // Save period times if provided
                     if (classData.periodTimes && Object.keys(classData.periodTimes).length > 0) {
                         localStorage.setItem(`periodTimes_${finalClassName}`, JSON.stringify(classData.periodTimes));
                     }
-                    
+
                     // Mark onboarding complete
                     localStorage.setItem('hasCompletedOnboarding', 'true');
-                    
+
                     // Clear pending import
                     sessionStorage.removeItem('pendingClassImport');
-                    
+
                     // Set as current class
                     localStorage.setItem('lastOpenedClass', finalClassName);
-                    
+
                     // Show success and reload
                     showToast('\u{1F389} Welcome! "' + finalClassName + '" has been added!', 'success');
-                    setTimeout(function() { location.reload(); }, 1500);
-                    
+                    setTimeout(function () { location.reload(); }, 1500);
+
                 } catch (error) {
                     console.error('Failed to import class:', error);
                     showToast('\u{274C} Failed to import class. Please try again.', 'error');
                     sessionStorage.removeItem('pendingClassImport');
-                    
+
                     // Fallback to normal onboarding
-                    setTimeout(function() { openOnboardingClassModal(); }, 500);
+                    setTimeout(function () { openOnboardingClassModal(); }, 500);
                 }
             }
 
@@ -6664,7 +6663,7 @@
             function handlePendingImportForExistingUser() {
                 const pendingClass = sessionStorage.getItem('pendingClassImport');
                 const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding');
-                
+
                 if (pendingClass && hasCompletedOnboarding) {
                     // Existing user clicked shared link - import directly
                     importClassFromURL(pendingClass);
@@ -6676,15 +6675,15 @@
             function copyClassLink() {
                 const selector = document.getElementById('classSelector');
                 const currentClassName = selector ? selector.value : null;
-                
+
                 if (!currentClassName || !classes[currentClassName]) {
                     showToast('\u{274C} Please select a class first', 'error');
                     return;
                 }
-                
+
                 const currentClass = classes[currentClassName];
                 const timetableArrangement = getTimetableArrangement(currentClassName);
-                
+
                 const classData = {
                     name: currentClassName,
                     subjects: currentClass.subjects || [],
@@ -6694,13 +6693,13 @@
                     timetableArrangement: timetableArrangement || {},
                     lastDate: currentClass.lastDate || ''
                 };
-                
+
                 const encodedData = btoa(JSON.stringify(classData));
                 const shareUrl = 'https://bunkitapp.in/?class=' + encodedData;
-                
-                navigator.clipboard.writeText(shareUrl).then(function() {
+
+                navigator.clipboard.writeText(shareUrl).then(function () {
                     showToast('\u{1F517} Link copied! Share it with your friends.', 'success');
-                }).catch(function() {
+                }).catch(function () {
                     showToast('\u{274C} Failed to copy link', 'error');
                 });
             }
@@ -6709,11 +6708,11 @@
             document.addEventListener('DOMContentLoaded', function () {
                 // Check for class import URL first (before init)
                 checkForClassImport();
-                
+
                 initializeApp();
                 // Clear any recovery attempt flag after successful init
                 localStorage.removeItem('initRecoveryAttempt');
-                
+
                 // Handle pending import for existing users (after init)
                 setTimeout(() => handlePendingImportForExistingUser(), 1000);
             });
@@ -6747,7 +6746,7 @@
                     // Small delay to let things settle
                     setTimeout(() => {
                         if (isStateBroken()) {
-                            console.log('?? PWA state broken, reloading page...');
+                            console.log('\u{1F440} PWA state broken, reloading page...');
                             location.reload();
                         }
                     }, 100);
@@ -6759,7 +6758,7 @@
                 if (event.persisted || isStateBroken()) {
                     setTimeout(() => {
                         if (isStateBroken()) {
-                            console.log('?? Page from bfcache with broken state, reloading...');
+                            console.log('\u{1F440} Page from bfcache with broken state, reloading...');
                             location.reload();
                         }
                     }, 100);
@@ -6770,7 +6769,7 @@
             window.addEventListener('focus', function () {
                 setTimeout(() => {
                     if (isStateBroken()) {
-                        console.log('?? Focus with broken state, reloading...');
+                        console.log('\u{1F440} Focus with broken state, reloading...');
                         location.reload();
                     }
                 }, 100);
@@ -6781,12 +6780,12 @@
                 try {
                     // 1. Restore classes from localStorage FIRST
                     const storedClasses = localStorage.getItem('attendanceClasses_v2');
-                    console.log('?? Stored classes found:', !!storedClasses);
+                    console.log('\u{1F440} Stored classes found:', !!storedClasses);
 
                     if (storedClasses) {
                         const parsedClasses = JSON.parse(storedClasses);
                         const classCount = Object.keys(parsedClasses).length;
-                        console.log('?? Parsed classes count:', classCount);
+                        console.log('\u{1F440} Parsed classes count:', classCount);
 
                         if (classCount > 0) {
                             classes = parsedClasses;
@@ -6796,7 +6795,7 @@
                     // 2. ALWAYS repopulate class selector if classes exist
                     const selector = document.getElementById('classSelector');
                     if (selector && Object.keys(classes).length > 0) {
-                        console.log('?? Repopulating class selector with', Object.keys(classes).length, 'classes');
+                        console.log('\u{1F440} Repopulating class selector with', Object.keys(classes).length, 'classes');
 
                         // Force clear and repopulate
                         selector.innerHTML = '<option value="">-- Select a Class --</option>';
@@ -6814,17 +6813,17 @@
                         const lastClass = localStorage.getItem('lastOpenedClass');
                         if (lastClass && classes[lastClass]) {
                             selector.value = lastClass;
-                            console.log('?? Selected last class:', lastClass);
+                            console.log('\u{1F440} Selected last class:', lastClass);
                             onClassChange();
                         } else {
                             // Select first class
                             const firstClass = Object.keys(classes)[0];
                             selector.value = firstClass;
-                            console.log('?? Selected first class:', firstClass);
+                            console.log('\u{1F440} Selected first class:', firstClass);
                             onClassChange();
                         }
                     } else {
-                        console.log('?? No classes to restore or selector not found');
+                        console.log('\u{1F440} No classes to restore or selector not found');
                     }
 
                     // 3. Restore theme
@@ -6834,7 +6833,7 @@
                         if (!document.body.classList.contains('dark-mode')) {
                             document.body.classList.add('dark-mode');
                             if (themeToggle) themeToggle.checked = true;
-                            console.log('?? Dark mode restored');
+                            console.log('\u{1F440} Dark mode restored');
                         }
                     } else {
                         document.body.classList.remove('dark-mode');
@@ -6861,7 +6860,7 @@
                     // 6. Check if modals are initialized (PWA frozen state fix)
                     const addClassModal = document.getElementById('addClassModal');
                     if (addClassModal && addClassModal.innerHTML.trim() === '') {
-                        console.log('?? Modals not initialized, running full init...');
+                        console.log('\u{1F440} Modals not initialized, running full init...');
                         initializeApp();
                         return; // Exit after full init
                     }
@@ -6879,12 +6878,12 @@
                 try {
                     // Check for deep link class import first
                     checkForClassImport();
-                    
+
                     loadFromStorage();
 
                     // Verify classes loaded
                     if (Object.keys(classes).length === 0) {
-                        console.log('?? No classes found, loading defaults...');
+                        console.log('\u{1F440} No classes found, loading defaults...');
                         classes = JSON.parse(JSON.stringify(defaultExampleClass));
                     }
 
@@ -6939,7 +6938,7 @@
 
                     // Define switchModalTab function BEFORE modal HTML
                     window.switchModalTab = function (tab) {
-                        console.log('?? Tab switch requested:', tab);
+                        console.log('\u{1F440} Tab switch requested:', tab);
 
                         const tabs = {
                             aiContent: document.getElementById('aiImportTab')
@@ -8684,7 +8683,7 @@ CRITICAL INSTRUCTIONS:
                     } else {
                         stopNotificationChecker();
                         showToast('Daily notifications disabled.', 'info');
-                        alert('?? Notifications disabled.');
+                        alert('\u{26A0} Notifications disabled.');
                     }
 
                     closeModal('notificationSettingsModal');
@@ -8750,11 +8749,11 @@ CRITICAL INSTRUCTIONS:
             function startNotificationChecker() {
                 stopNotificationChecker(); // Clear any existing interval
 
-                console.log('?? Starting notification checker...');
+                console.log('\u{1F440} Starting notification checker...');
 
                 // Check every minute
                 notificationInterval = setInterval(checkAndShowNotification, 60000);
-                console.log('?? Interval set for every 60 seconds');
+                console.log('\u{1F440} Interval set for every 60 seconds');
 
                 // Check immediately
                 checkAndShowNotification();
@@ -8953,8 +8952,8 @@ ${subjectLines.join('\n')}
             function checkAndShowNotification() {
                 const checkTime = new Date().toLocaleString();
                 localStorage.setItem('lastNotificationCheck', checkTime);
-                console.log('?? ========== NOTIFICATION CHECK START ==========');
-                console.log('?? Check Time:', checkTime);
+                console.log('\u{1F440} ========== NOTIFICATION CHECK START ==========');
+                console.log('\u{1F440} Check Time:', checkTime);
 
                 const now = new Date();
                 const today = formatLocalDate(now);
@@ -9039,15 +9038,15 @@ ${subjectLines.join('\n')}
                 }
 
                 if (!notificationShown) {
-                    console.log('?? No notifications triggered this check');
+                    console.log('\u{1F440} No notifications triggered this check');
                 }
-                console.log('?? ========== NOTIFICATION CHECK END ==========');
+                console.log('\u{1F440} ========== NOTIFICATION CHECK END ==========');
             }
 
 
             // Diagnostic test function
             async function testNotificationNow() {
-                console.log('?? === NOTIFICATION DIAGNOSTIC TEST ===');
+                console.log('\u{1F440} === NOTIFICATION DIAGNOSTIC TEST ===');
 
                 // Test 1: Browser Support
                 if (!('Notification' in window)) {
@@ -9066,7 +9065,7 @@ ${subjectLines.join('\n')}
                 }
 
                 if (Notification.permission === 'default') {
-                    console.log('?? Requesting permission...');
+                    console.log('\u{1F440} Requesting permission...');
                     const permission = await Notification.requestPermission();
                     console.log(`?? Permission after request: ${permission}`);
 
@@ -9081,9 +9080,9 @@ ${subjectLines.join('\n')}
                 // Test 3: Show test notification
                 // Test 3: Show test notification
                 try {
-                    console.log('?? Creating test notification...');
+                    console.log('\u{1F440} Creating test notification...');
                     if ('serviceWorker' in navigator) {
-                        console.log('?? Checking Service Worker registration...');
+                        console.log('\u{1F440} Checking Service Worker registration...');
                         const registration = await navigator.serviceWorker.getRegistration();
 
                         if (!registration) {
@@ -9125,12 +9124,12 @@ ${subjectLines.join('\n')}
 
                 // Test 4: Check if notification checker is running
                 const settings = JSON.parse(localStorage.getItem('notificationSettings') || '{"enabled":true}');
-                console.log('?? Notification settings:', settings);
+                console.log('\u{1F440} Notification settings:', settings);
                 console.log(`?? Notification interval active: ${notificationInterval !== null}`);
             }
 
             async function showDailyLogNotification() {
-                console.log('?? ========== showDailyLogNotification CALLED ==========');
+                console.log('\u{1F440} ========== showDailyLogNotification CALLED ==========');
                 const lastClass = localStorage.getItem('lastOpenedClass');
                 const className = lastClass || 'your class';
 
@@ -9139,12 +9138,12 @@ ${subjectLines.join('\n')}
                     const classData = classes[lastClass];
                     const today = formatLocalDate(new Date());
                     if (classData.lastDate && today > classData.lastDate) {
-                        console.log('?? BLOCKED: Class has ended (today:', today, '> lastDate:', classData.lastDate, ')');
+                        console.log('\u{1F440} BLOCKED: Class has ended (today:', today, '> lastDate:', classData.lastDate, ')');
                         return; // Don't show notification for ended class
                     }
                 }
 
-                console.log('?? Permission status:', Notification.permission);
+                console.log('\u{1F440} Permission status:', Notification.permission);
 
                 if (Notification.permission !== 'granted') {
                     console.error('? FAILED: Notification permission not granted!');
@@ -9154,14 +9153,14 @@ ${subjectLines.join('\n')}
 
                 try {
                     if ('serviceWorker' in navigator) {
-                        console.log('?? Using Service Worker for notification...');
+                        console.log('\u{1F440} Using Service Worker for notification...');
                         const registration = await navigator.serviceWorker.ready;
 
                         if (!registration) {
                             throw new Error('Service Worker not ready');
                         }
 
-                        console.log('?? SW Ready, showing notification...');
+                        console.log('\u{1F440} SW Ready, showing notification...');
                         await registration.showNotification('?? Attendance Log Reminder', {
                             body: `Time to log today's attendance for ${className}!`,
                             icon: '/icon-192x192.png',
@@ -9172,7 +9171,7 @@ ${subjectLines.join('\n')}
                         });
                         console.log('? Notification shown successfully via SW!');
                     } else {
-                        console.log('?? Using legacy Notification API...');
+                        console.log('\u{1F440} Using legacy Notification API...');
                         const notification = new Notification('?? Attendance Log Reminder', {
                             body: `Time to log today's attendance for ${className}!`,
                             icon: '/icon-192x192.png',
@@ -9194,7 +9193,7 @@ ${subjectLines.join('\n')}
                     console.error('? ERROR showing notification:', error);
                     alert(`Failed to show notification: ${error.message}\n\nPlease check:\n1. Windows notification settings\n2. Browser notification permissions\n3. Do Not Disturb / Focus Assist mode`);
                 }
-                console.log('?? ========== showDailyLogNotification END ==========');
+                console.log('\u{1F440} ========== showDailyLogNotification END ==========');
             }
 
 
@@ -14418,10 +14417,10 @@ CRITICAL RULES:
                     alert("Please select a class first.");
                     return;
                 }
-                
+
                 // Get timetable arrangement for this class
                 const timetableArrangement = getTimetableArrangement(editingClassName);
-                
+
                 const classData = {
                     name: editingClassName,
                     subjects: currentClass.subjects || [],
@@ -14431,19 +14430,23 @@ CRITICAL RULES:
                     timetableArrangement: timetableArrangement || {},
                     lastDate: currentClass.lastDate || ''
                 };
-                
+
                 const encodedData = btoa(JSON.stringify(classData));
                 const shareUrl = `https://bunkitapp.in/?class=${encodedData}`;
-                
-                const shareText = '\u{1F44B} Hey friends! Check out this amazing app!\n\n' +
-                    '\u{1F4F1} Click to join my class: ' + shareUrl + '\n\n' +
-                    'OR download Bunkit app and scan the QR code I\'m sharing!\n\n' +
-                    '\u{1F4DD} ' + editingClassName + ' class setup:\n' +
-                    '1. Click the link above\n' +
-                    '2. Enter your name\n' +
-                    '3. Class will be auto-imported! \u{1F389}\n\n' +
-                    '\u{2728} Track attendance together — super smooth and super fun!';
-                
+
+                const shareText = `\u{1F44B} Hey friends! Check out this amazing app!
+
+\u{1F4F1} Click to join my class: ${shareUrl}
+
+OR download Bunkit app and scan the QR code I'm sharing!
+
+\u{1F4DD} ${editingClassName} class setup:
+1. Click the link above
+2. Enter your name
+3. Class will be auto-imported! \u{1F389}
+
+\u{2728} Track attendance together — super smooth and super fun!`;
+
                 if (navigator.share) {
                     navigator.share({
                         title: `Join ${editingClassName} on Bunkit!`,
@@ -15248,12 +15251,12 @@ CRITICAL RULES:
 
                     // Test shared API key (for debugging)
                     async function testSharedAPIKey() {
-                        console.log('?? Testing Shared Gemini API Key...');
-                        console.log('?? Key:', GEMINI_API_KEY);
+                        console.log('\u{1F440} Testing Shared Gemini API Key...');
+                        console.log('\u{1F440} Key:', GEMINI_API_KEY);
 
                         try {
                             // First, list available models to see what's valid
-                            console.log('?? Listing available models...');
+                            console.log('\u{1F440} Listing available models...');
                             const listResponse = await
                                 fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
 
@@ -15281,7 +15284,7 @@ CRITICAL RULES:
                                         })
                                     });
 
-                            console.log('?? Generate Response Status:', response.status);
+                            console.log('\u{1F440} Generate Response Status:', response.status);
 
                             if (response.ok) {
                                 const data = await response.json();
@@ -15336,7 +15339,7 @@ CRITICAL RULES:
 
                     // === GEMINI API PROCESSOR ===
                     async function processImageWithGemini(imageFile, apiKey) {
-                        console.log('?? Processing with Gemini API...');
+                        console.log('\u{1F440} Processing with Gemini API...');
 
                         // Convert image to base64
                         const base64 = await new Promise((resolve) => {
@@ -15394,7 +15397,7 @@ CRITICAL RULES:
                                     })
                                 });
 
-                        console.log('?? Gemini API Response Status:', response.status);
+                        console.log('\u{1F440} Gemini API Response Status:', response.status);
 
                         if (!response.ok) {
                             const errorText = await response.text();
@@ -15414,7 +15417,7 @@ CRITICAL RULES:
                         }
 
                         const data = await response.json();
-                        console.log('?? Gemini API Raw Response:', data);
+                        console.log('\u{1F440} Gemini API Raw Response:', data);
 
                         // Check if response has expected structure
                         if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
@@ -15423,7 +15426,7 @@ CRITICAL RULES:
                         }
 
                         const textResponse = data.candidates[0].content.parts[0].text;
-                        console.log('?? Gemini Text Response:', textResponse);
+                        console.log('\u{1F440} Gemini Text Response:', textResponse);
 
                         // Extract JSON from response (in case it's wrapped in markdown)
                         const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
@@ -15440,7 +15443,7 @@ CRITICAL RULES:
 
                     // === TESSERACT FALLBACK ===
                     async function processImageWithTesseract(imageFile) {
-                        console.log('?? Processing with Tesseract (offline)...');
+                        console.log('\u{1F440} Processing with Tesseract (offline)...');
 
                         const { data: { text } } = await Tesseract.recognize(imageFile, 'eng', {
                             logger: m => console.log(m)
@@ -15523,7 +15526,7 @@ CRITICAL RULES:
 
                             // TIER 3: Use Tesseract Fallback
                             if (showProgress) {
-                                console.log('?? Using offline OCR (Tesseract)...');
+                                console.log('\u{1F440} Using offline OCR (Tesseract)...');
                             }
 
                             const result = await processImageWithTesseract(imageFile);
@@ -16282,11 +16285,11 @@ Answer helpfully using this context.`;
                             if (personalKey) {
                                 // Priority 1: Personal Key (User entered in Settings)
                                 keysToUse.push(...personalKey.split(',').map(k => k.trim()).filter(k => k));
-                                console.log('?? Chatbot: Using Personal Key(s)');
+                                console.log('\u{1F440} Chatbot: Using Personal Key(s)');
                             } else if (window.SHARED_CHATBOT_KEY && window.SHARED_CHATBOT_KEY.length > 5) {
                                 // Priority 2: Injected Shared Keys (From Build/Env)
                                 keysToUse.push(...window.SHARED_CHATBOT_KEY.split(',').map(k => k.trim()).filter(k => k));
-                                console.log('?? Chatbot: Using Injected Shared Keys');
+                                console.log('\u{1F440} Chatbot: Using Injected Shared Keys');
                             } else {
                                 // Priority 3: Fallback Shared Keys (Obfuscated)
                                 // Decode base64 obfuscated keys
@@ -16296,7 +16299,7 @@ Answer helpfully using this context.`;
                                 ];
                                 try {
                                     keysToUse.push(...obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza')));
-                                    console.log('?? Chatbot: Using Fallback Shared Keys');
+                                    console.log('\u{1F440} Chatbot: Using Fallback Shared Keys');
                                 } catch (e) {
                                     console.error('Failed to decode fallback keys:', e);
                                 }
@@ -16328,7 +16331,7 @@ Answer helpfully using this context.`;
                                         );
 
                                         if (response.ok) {
-                                            console.log('?? Chatbot: Success!');
+                                            console.log('\u{1F440} Chatbot: Success!');
                                             const result = await response.json();
                                             return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
                                         }
@@ -16357,7 +16360,7 @@ Answer helpfully using this context.`;
                             } else {
                                 // === FALLBACK: BACKEND PROXY ===
                                 // Priority 3: Vercel Proxy (if no keys found in frontend)
-                                console.log('?? Chatbot: Using backend proxy');
+                                console.log('\u{1F440} Chatbot: Using backend proxy');
                                 response = await fetch('/api/gemini', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -16801,43 +16804,45 @@ Answer helpfully using this context.`;
                         }, 1000); // Delay to ensure DOM is fully ready
                     });
                 </script>
-<!-- Onboarding Modal -->
-<div id="onboardingModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h2 style="margin: 0 0 10px 0; font-size: 2rem;">👋 Welcome to Bunkit!</h2>
-            <p style="color: var(--medium-text); margin: 0;">Track attendance together with your classmates</p>
-        </div>
+                <!-- Onboarding Modal -->
+                <div id="onboardingModal" class="modal">
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h2 style="margin: 0 0 10px 0; font-size: 2rem;">👋 Welcome to Bunkit!</h2>
+                            <p style="color: var(--medium-text); margin: 0;">Track attendance together with your
+                                classmates</p>
+                        </div>
 
-        <div style="margin: 30px 0;">
-            <div class="form-group">
-                <label for="guestNameInput">What's your name?</label>
-                <input type="text" id="guestNameInput" placeholder="Enter your name"
-                    style="width: 100%; padding: 15px; font-size: 1.1rem; border: 2px solid var(--border-color); border-radius: 12px; background: var(--light-bg);"
-                    onkeypress="if(event.key==='Enter') guestLogin()">
-            </div>
+                        <div style="margin: 30px 0;">
+                            <div class="form-group">
+                                <label for="guestNameInput">What's your name?</label>
+                                <input type="text" id="guestNameInput" placeholder="Enter your name"
+                                    style="width: 100%; padding: 15px; font-size: 1.1rem; border: 2px solid var(--border-color); border-radius: 12px; background: var(--light-bg);"
+                                    onkeypress="if(event.key==='Enter') guestLogin()">
+                            </div>
 
-            <button onclick="guestLogin()"
-                style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 600; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 15px; transition: transform 0.2s;">
-                Continue as Guest
-            </button>
+                            <button onclick="guestLogin()"
+                                style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 600; background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end)); color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 15px; transition: transform 0.2s;">
+                                Continue as Guest
+                            </button>
 
-            <div style="text-align: center; margin: 20px 0; color: var(--medium-text);">or</div>
+                            <div style="text-align: center; margin: 20px 0; color: var(--medium-text);">or</div>
 
-            <button disabled
-                style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 600; background: #e0e0e0; color: #999; border: none; border-radius: 12px; cursor: not-allowed; position: relative;">
-                <span>🔐 Sign up with Google</span>
-                <span
-                    style="position: absolute; top: -8px; right: -8px; background: var(--secondary-grad-start); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.7rem;">Coming
-                    Soon</span>
-            </button>
-        </div>
+                            <button disabled
+                                style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 600; background: #e0e0e0; color: #999; border: none; border-radius: 12px; cursor: not-allowed; position: relative;">
+                                <span>🔐 Sign up with Google</span>
+                                <span
+                                    style="position: absolute; top: -8px; right: -8px; background: var(--secondary-grad-start); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.7rem;">Coming
+                                    Soon</span>
+                            </button>
+                        </div>
 
-        <p style="text-align: center; font-size: 0.9rem; color: var(--medium-text); margin: 20px 0 0 0;">
-            By continuing, you agree to our Terms & Privacy Policy
-        </p>
-    </div>
-</div>
+                        <p
+                            style="text-align: center; font-size: 0.9rem; color: var(--medium-text); margin: 20px 0 0 0;">
+                            By continuing, you agree to our Terms & Privacy Policy
+                        </p>
+                    </div>
+                </div>
 
 </body>
 
