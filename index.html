@@ -14276,52 +14276,48 @@ CRITICAL RULES:
                 fetch(dataUrl)
                     .then(res => res.blob())
                     .then(blob => {
-                        const file = new File([blob], "class_qr.png", { type: "image/png" });
+                        const file = new File([blob], `${editingClassName}_QR.png`, { type: "image/png" });
                         const shareText = `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`;
 
-                        // WhatsApp-first approach (90% users share via WhatsApp)
-                        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                        if (navigator.share) {
+                            // Try sharing with both text and file
+                            const shareData = {
+                                title: `Join ${editingClassName} on Bunkit!`,
+                                text: shareText,
+                                files: [file]
+                            };
 
-                        if (isMobile) {
-                            // Mobile: Use WhatsApp deep link
-                            // First download the QR image
-                            const link = document.createElement('a');
-                            link.href = dataUrl;
-                            link.download = `${editingClassName}_QR.png`;
-                            link.click();
-
-                            // Then open WhatsApp with pre-filled message
-                            setTimeout(() => {
-                                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-                                window.open(whatsappUrl, '_blank');
-
-                                // Show instruction
-                                setTimeout(() => {
-                                    alert('📱 Instructions:\n\n1. WhatsApp opened with message\n2. QR image downloaded to your device\n3. In WhatsApp, tap 📎 (attach) → Gallery\n4. Select the downloaded QR image\n5. Send! 🚀');
-                                }, 1000);
-                            }, 500);
-                        } else {
-                            // Desktop: Use Web Share API fallback
-                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                                navigator.share({
-                                    title: `Join ${editingClassName} on Bunkit!`,
-                                    text: shareText,
-                                    files: [file]
-                                }).catch(console.error);
+                            // Check if browser supports this combination
+                            if (navigator.canShare && navigator.canShare(shareData)) {
+                                // Browser supports text + file together
+                                navigator.share(shareData).catch(err => {
+                                    if (err.name !== 'AbortError') {
+                                        console.error('Share failed:', err);
+                                        alert('Share failed. Please try Download instead.');
+                                    }
+                                });
                             } else {
-                                // Desktop WhatsApp Web approach
-                                const link = document.createElement('a');
-                                link.href = dataUrl;
-                                link.download = `${editingClassName}_QR.png`;
-                                link.click();
-
-                                setTimeout(() => {
-                                    const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-                                    window.open(whatsappUrl, '_blank');
-
-                                    alert('💻 Instructions:\n\n1. WhatsApp Web opened with message\n2. QR image downloaded\n3. In WhatsApp, click 📎 (attach) → Photos & Videos\n4. Select the downloaded QR image\n5. Send! 🚀');
-                                }, 500);
+                                // Browser doesn't support text+file together
+                                // Share file only (most apps will still work)
+                                navigator.share({
+                                    files: [file]
+                                }).then(() => {
+                                    // After sharing, copy text to clipboard for easy paste
+                                    if (navigator.clipboard) {
+                                        navigator.clipboard.writeText(shareText).then(() => {
+                                            alert('✅ QR shared!\n\n💡 Tip: Message copied to clipboard. Paste it as caption in your chat!');
+                                        }).catch(() => {
+                                            alert('✅ QR shared! Don\'t forget to add the setup message.');
+                                        });
+                                    }
+                                }).catch(err => {
+                                    if (err.name !== 'AbortError') {
+                                        console.error('Share failed:', err);
+                                    }
+                                });
                             }
+                        } else {
+                            alert("Sharing not supported on this browser. Please use Download.");
                         }
                     });
             }
