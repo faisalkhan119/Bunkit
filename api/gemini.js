@@ -69,10 +69,9 @@ module.exports = async function handler(req, res) {
             case 'chat':
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
+                    system_instruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
                     contents: [{
-                        parts: systemPrompt
-                            ? [{ text: systemPrompt }, { text: prompt }]
-                            : [{ text: prompt }]
+                        parts: [{ text: prompt }]
                     }],
                     generationConfig: {
                         temperature: 0.7,
