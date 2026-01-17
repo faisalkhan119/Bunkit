@@ -25,7 +25,8 @@ module.exports = async function handler(req, res) {
     try {
         // Get API keys from environment (comma-separated)
         const keysString = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
-        const API_KEYS = keysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
+        // Sanitize keys: remove quotes, whitespace, and split
+        const API_KEYS = keysString.replace(/['"]/g, '').split(',').map(k => k.trim()).filter(k => k.length > 0);
 
         if (API_KEYS.length === 0) {
             console.error('No GEMINI_API_KEYS configured');
@@ -69,9 +70,10 @@ module.exports = async function handler(req, res) {
             case 'chat':
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
-                    system_instruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
                     contents: [{
-                        parts: [{ text: prompt }]
+                        parts: systemPrompt
+                            ? [{ text: systemPrompt }, { text: prompt }]
+                            : [{ text: prompt }]
                     }],
                     generationConfig: {
                         temperature: 0.7,

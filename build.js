@@ -82,7 +82,7 @@ if (!fs.existsSync(jsDistDir)) {
     fs.mkdirSync(jsDistDir, { recursive: true });
 }
 
-const envKeys = process.env.GEMINI_API_KEYS || '';
+const envKeys = (process.env.GEMINI_API_KEYS || '').replace(/['"]/g, ''); // Remove quotes to prevent JS syntax error
 const configContent = `window.SHARED_CHATBOT_KEY = '${envKeys}';
 console.log('✅ Config Loaded: ' + (window.SHARED_CHATBOT_KEY ? 'Keys Present' : 'No Keys'));`;
 
