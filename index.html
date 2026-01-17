@@ -16119,7 +16119,7 @@ Answer helpfully using this context.`;
                                     'QWx6YVN5Q1F6ck9yVG5NUjFlbGFlZUNNcmxubUttSzdnaGtxZXRv'
                                 ];
                                 try {
-                                    keysToUse.push(...obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza')));
+                                    keysToUse.push(...obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza') || k.startsWith('Alza')));
                                     console.log('🤖 Chatbot: Using Fallback Shared Keys');
                                 } catch (e) {
                                     console.error('Failed to decode fallback keys:', e);
