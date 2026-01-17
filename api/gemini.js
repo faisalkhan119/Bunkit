@@ -119,7 +119,9 @@ module.exports = async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error(`Gemini API error (Key #${keyIndex + 1}):`, data);
+            console.error(`Gemini API error (Key #${keyIndex + 1}):`, JSON.stringify(data, null, 2));
+            console.error(`Request payload:`, JSON.stringify(payload, null, 2));
+            console.error(`API URL:`, apiUrl.replace(/key=.*/, 'key=REDACTED'));
 
             // If quota exceeded, mark key as exhausted and rotate
             if (response.status === 429) {
@@ -130,7 +132,13 @@ module.exports = async function handler(req, res) {
 
             return res.status(response.status).json({
                 error: data.error?.message || 'Gemini API error',
-                details: data
+                details: data,
+                debugInfo: {
+                    model: 'gemini-2.5-flash',
+                    action: action,
+                    hasSystemPrompt: !!systemPrompt,
+                    promptLength: prompt?.length || 0
+                }
             });
         }
 
