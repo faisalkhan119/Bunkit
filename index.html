@@ -14277,33 +14277,57 @@ CRITICAL RULES:
                     .then(res => res.blob())
                     .then(blob => {
                         const file = new File([blob], "class_qr.png", { type: "image/png" });
-                        const shareText = `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`;
+
+                        // App-specific messages
+                        const messages = {
+                            whatsapp: `👋 *Hey friends!* Check out this amazing app!\n\n📱 *Download Bunkit:* https://bunkitapp.in\n\n📝 *How to set up our ${editingClassName} class:*\n\n1️⃣ Open the Bunkit app\n2️⃣ Enter your name\n3️⃣ Tap _Add New Class_\n4️⃣ Hit _Scan QR_\n5️⃣ Scan the class QR code\n6️⃣ And boom! Class setup done 🎉\n\n✨ _Now we can track attendance together — super smooth and super fun!_`,
+
+                            telegram: `👋 *Hey friends!* Check out this amazing app!\n\n📱 *Download Bunkit:* https://bunkitapp.in\n\n📝 *How to set up our ${editingClassName} class:*\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`,
+
+                            generic: `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`
+                        };
+
+                        // Show app selection dialog
+                        const appChoice = prompt(
+                            "📤 Choose sharing app:\n\n" +
+                            "1 - WhatsApp (with bold/italic)\n" +
+                            "2 - Telegram (with markdown)\n" +
+                            "3 - Other apps\n\n" +
+                            "Enter 1, 2, or 3:",
+                            "1"
+                        );
+
+                        let shareText;
+                        if (appChoice === "1") {
+                            shareText = messages.whatsapp;
+                        } else if (appChoice === "2") {
+                            shareText = messages.telegram;
+                        } else {
+                            shareText = messages.generic;
+                        }
 
                         if (navigator.share) {
-                            // Strategy 1: Try sharing with text, title, and files together
+                            // Try sharing with text and file together
                             const shareData = {
                                 title: `Join ${editingClassName} on Bunkit!`,
                                 text: shareText,
                                 files: [file]
                             };
 
-                            // Check if browser supports sharing this combination
                             if (navigator.canShare && navigator.canShare(shareData)) {
                                 navigator.share(shareData).catch(console.error);
                             } else {
-                                // Strategy 2: Share text first, then prompt to share QR
+                                // Fallback: Share text first, then QR
                                 navigator.share({
                                     title: `Join ${editingClassName} on Bunkit!`,
                                     text: shareText
                                 }).then(() => {
-                                    // After text is shared, ask to share QR
                                     setTimeout(() => {
                                         if (confirm('✅ Message sent! Now share the QR code?')) {
                                             navigator.share({ files: [file] }).catch(console.error);
                                         }
                                     }, 500);
                                 }).catch(() => {
-                                    // Fallback: Just share the file
                                     navigator.share({ files: [file] }).catch(console.error);
                                 });
                             }
