@@ -14271,70 +14271,87 @@ CRITICAL RULES:
                     return;
                 }
 
-                let dataUrl = source.src || source.toDataURL();
+                // Create a new canvas to combine QR + Text
+                const combinedCanvas = document.createElement('canvas');
+                const ctx = combinedCanvas.getContext('2d');
 
-                fetch(dataUrl)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const file = new File([blob], "class_qr.png", { type: "image/png" });
+                // Set canvas size (QR width + text area)
+                const qrSize = source.width || 512;
+                const padding = 40;
+                const textAreaHeight = 600;
+                combinedCanvas.width = qrSize + (padding * 2);
+                combinedCanvas.height = qrSize + textAreaHeight + (padding * 3);
 
-                        // App-specific messages
-                        const messages = {
-                            whatsapp: `👋 *Hey friends!* Check out this amazing app!\n\n📱 *Download Bunkit:* https://bunkitapp.in\n\n📝 *How to set up our ${editingClassName} class:*\n\n1️⃣ Open the Bunkit app\n2️⃣ Enter your name\n3️⃣ Tap _Add New Class_\n4️⃣ Hit _Scan QR_\n5️⃣ Scan the class QR code\n6️⃣ And boom! Class setup done 🎉\n\n✨ _Now we can track attendance together — super smooth and super fun!_`,
+                // Background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
 
-                            telegram: `👋 *Hey friends!* Check out this amazing app!\n\n📱 *Download Bunkit:* https://bunkitapp.in\n\n📝 *How to set up our ${editingClassName} class:*\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`,
+                // Draw QR code at top
+                const qrImage = new Image();
+                qrImage.onload = function () {
+                    ctx.drawImage(qrImage, padding, padding, qrSize, qrSize);
 
-                            generic: `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`
-                        };
+                    // Add text below QR
+                    const textStartY = qrSize + (padding * 2);
+                    ctx.fillStyle = '#000000';
+                    ctx.textAlign = 'left';
 
-                        // Show app selection dialog
-                        const appChoice = prompt(
-                            "📤 Choose sharing app:\n\n" +
-                            "1 - WhatsApp (with bold/italic)\n" +
-                            "2 - Telegram (with markdown)\n" +
-                            "3 - Other apps\n\n" +
-                            "Enter 1, 2, or 3:",
-                            "1"
-                        );
+                    // Title
+                    ctx.font = 'bold 28px Arial';
+                    ctx.fillText('👋 Hey friends!', padding, textStartY);
 
-                        let shareText;
-                        if (appChoice === "1") {
-                            shareText = messages.whatsapp;
-                        } else if (appChoice === "2") {
-                            shareText = messages.telegram;
-                        } else {
-                            shareText = messages.generic;
-                        }
+                    // Subtitle
+                    ctx.font = '22px Arial';
+                    ctx.fillText('Check out this amazing app!', padding, textStartY + 40);
+
+                    // App link
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillStyle = '#0066cc';
+                    ctx.fillText('📱 Download Bunkit:', padding, textStartY + 90);
+                    ctx.fillText('https://bunkitapp.in', padding, textStartY + 120);
+
+                    // Instructions
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 22px Arial';
+                    ctx.fillText(`📝 How to set up ${editingClassName}:`, padding, textStartY + 170);
+
+                    ctx.font = '18px Arial';
+                    const steps = [
+                        '1. Open the Bunkit app',
+                        '2. Enter your name',
+                        '3. Tap Add New Class',
+                        '4. Hit Scan QR',
+                        '5. Scan the QR code above',
+                        '6. And boom! Class setup done 🎉'
+                    ];
+
+                    steps.forEach((step, index) => {
+                        ctx.fillText(step, padding + 10, textStartY + 210 + (index * 35));
+                    });
+
+                    // Footer
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillStyle = '#ff6b35';
+                    ctx.fillText('✨ Track attendance together!', padding, textStartY + 450);
+                    ctx.fillText('Super smooth and super fun!', padding, textStartY + 480);
+
+                    // Convert to blob and share
+                    combinedCanvas.toBlob(function (blob) {
+                        const file = new File([blob], `${editingClassName}_Bunkit_Setup.png`, { type: 'image/png' });
 
                         if (navigator.share) {
-                            // Try sharing with text and file together
-                            const shareData = {
-                                title: `Join ${editingClassName} on Bunkit!`,
-                                text: shareText,
+                            navigator.share({
                                 files: [file]
-                            };
-
-                            if (navigator.canShare && navigator.canShare(shareData)) {
-                                navigator.share(shareData).catch(console.error);
-                            } else {
-                                // Fallback: Share text first, then QR
-                                navigator.share({
-                                    title: `Join ${editingClassName} on Bunkit!`,
-                                    text: shareText
-                                }).then(() => {
-                                    setTimeout(() => {
-                                        if (confirm('✅ Message sent! Now share the QR code?')) {
-                                            navigator.share({ files: [file] }).catch(console.error);
-                                        }
-                                    }, 500);
-                                }).catch(() => {
-                                    navigator.share({ files: [file] }).catch(console.error);
-                                });
-                            }
+                            }).catch(console.error);
                         } else {
-                            alert("Sharing not supported on this device/browser. Please use Download.");
+                            alert("Sharing not supported. Please use Download.");
                         }
-                    });
+                    }, 'image/png');
+                };
+
+                // Load QR image
+                let dataUrl = source.src || source.toDataURL();
+                qrImage.src = dataUrl;
             }
 
             function downloadQRImageTab() {
