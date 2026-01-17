@@ -14277,21 +14277,36 @@ CRITICAL RULES:
                     .then(res => res.blob())
                     .then(blob => {
                         const file = new File([blob], "class_qr.png", { type: "image/png" });
-                        const shareText = `📚 ${editingClassName} - Class Setup\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📋 How to Import:\n1. Open Bunkit app\n2. Tap "Scan QR" in Edit Class\n3. Scan the QR code\n4. Class setup done!\n\n✨ Track attendance together!`;
+                        const shareText = `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`;
 
                         if (navigator.share) {
-                            // Copy text to clipboard first
-                            navigator.clipboard.writeText(shareText).then(() => {
-                                // Then share the file
+                            // Strategy 1: Try sharing with text, title, and files together
+                            const shareData = {
+                                title: `Join ${editingClassName} on Bunkit!`,
+                                text: shareText,
+                                files: [file]
+                            };
+
+                            // Check if browser supports sharing this combination
+                            if (navigator.canShare && navigator.canShare(shareData)) {
+                                navigator.share(shareData).catch(console.error);
+                            } else {
+                                // Strategy 2: Share text first, then prompt to share QR
                                 navigator.share({
-                                    files: [file]
+                                    title: `Join ${editingClassName} on Bunkit!`,
+                                    text: shareText
                                 }).then(() => {
-                                    alert('✅ Message copied to clipboard! Paste it after sharing the QR code.');
-                                }).catch(console.error);
-                            }).catch(() => {
-                                // If clipboard fails, just share file
-                                navigator.share({ files: [file] }).catch(console.error);
-                            });
+                                    // After text is shared, ask to share QR
+                                    setTimeout(() => {
+                                        if (confirm('✅ Message sent! Now share the QR code?')) {
+                                            navigator.share({ files: [file] }).catch(console.error);
+                                        }
+                                    }, 500);
+                                }).catch(() => {
+                                    // Fallback: Just share the file
+                                    navigator.share({ files: [file] }).catch(console.error);
+                                });
+                            }
                         } else {
                             alert("Sharing not supported on this device/browser. Please use Download.");
                         }
