@@ -67,7 +67,7 @@ module.exports = async function handler(req, res) {
 
         switch (action) {
             case 'chat':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
                     contents: [{
                         parts: systemPrompt
@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
                 break;
 
             case 'vision':
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 payload = {
                     contents: [{
                         parts: [
