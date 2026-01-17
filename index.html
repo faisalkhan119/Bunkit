@@ -16107,9 +16107,9 @@ Answer helpfully using this context.`;
                                 // Priority 1: Personal Key (User entered in Settings)
                                 keysToUse.push(...personalKey.split(',').map(k => k.trim()).filter(k => k));
                                 console.log('🤖 Chatbot: Using Personal Key(s)');
-                            } else if (SHARED_CHATBOT_KEY && SHARED_CHATBOT_KEY.length > 5) {
+                            } else if (window.SHARED_CHATBOT_KEY && window.SHARED_CHATBOT_KEY.length > 5) {
                                 // Priority 2: Injected Shared Keys (From Build/Env)
-                                keysToUse.push(...SHARED_CHATBOT_KEY.split(',').map(k => k.trim()).filter(k => k));
+                                keysToUse.push(...window.SHARED_CHATBOT_KEY.split(',').map(k => k.trim()).filter(k => k));
                                 console.log('🤖 Chatbot: Using Injected Shared Keys');
                             }
 
