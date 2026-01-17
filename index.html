@@ -55,7 +55,7 @@
                 const hasContent = body && body.innerHTML.trim().length > 500;
 
                 if (!hasContent) {
-                    console.warn('?? App appears stuck - attempting recovery...');
+                    console.warn('⚠ App appears stuck - attempting recovery...');
 
                     if (!recentRecovery) {
                         // Mark recovery attempt
@@ -166,7 +166,7 @@
                 if (widthThreshold || heightThreshold) {
                     if (!devToolsOpen) {
                         devToolsOpen = true;
-                        console.log('%c?? DevTools detected - Welcome developer! ??', 'font-size: 20px; color: #ff6b6b;');
+                        console.log('%c?? DevTools detected - Welcome developer! ', 'font-size: 20px; color: #ff6b6b;');
                     }
                 } else {
                     devToolsOpen = false;
@@ -183,7 +183,7 @@
                 }
             });
 
-            console.log('%c?? Security measures active', 'color: #28a745; font-weight: bold;');
+            console.log('%c??  🔒 Security measures active', 'color: #28a745; font-weight: bold;');
         })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -830,7 +830,7 @@
 
         .theme-switch .slider:before {
             position: absolute;
-            content: "??";
+            content: "\00d7";
             height: 20px;
             width: 20px;
             left: 3px;
@@ -849,7 +849,7 @@
         }
 
         .theme-switch input:checked+.slider:before {
-            content: "??";
+            content: "\00d7";
             transform: translateX(24px);
             background-color: var(--dark-text);
             color: white;
@@ -4400,7 +4400,7 @@
         <div style="height: 1px; background: var(--border-color); margin: 10px 15px;"></div>
 
         <!-- File Options -->
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">?? File <span>?</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)"> File <span>▼</span></a>
         <div class="sidenav-dropdown-content">
             <a href="#" onclick="openImportModal(); closeNav();">Import Class (JSON)</a>
             <a href="#" onclick="openExportModal(); closeNav();">Export Class (JSON)</a>
@@ -4409,29 +4409,29 @@
             <a href="#" onclick="restoreDefaultClass(); closeNav();">Restore Default Class</a>
         </div>
 
-        <a href="#" onclick="openNotificationSettings(); closeNav();">?? Notification Settings</a>
-        <a href="#" onclick="openAPISettings(); closeNav();">?? API Settings</a>
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">??? View Options <span>?</span></a>
+        <a href="#" onclick="openNotificationSettings(); closeNav();"> Notification Settings</a>
+        <a href="#" onclick="openAPISettings(); closeNav();">⚙ API Settings</a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)"> View Options <span>▼</span></a>
         <div class="sidenav-dropdown-content">
-            <a href="#" onclick="switchView('cards')">??? Card View</a>
-            <a href="#" onclick="switchView('table')">?? Table View</a>
-            <a href="#" onclick="switchView('graph')">?? Analytics Graph</a>
+            <a href="#" onclick="switchView('cards')"> Card View</a>
+            <a href="#" onclick="switchView('table')"> Table View</a>
+            <a href="#" onclick="switchView('graph')"> Analytics Graph</a>
         </div>
 
         <a href="#" id="periodViewMenuItem" onclick="openPeriodAttendanceModal(); closeNav();" style="display: none;">??
             Period-wise Attendance</a>
 
-        <a href="#" onclick="openHelpModal(); closeNav();">?? How to Use</a>
+        <a href="#" onclick="openHelpModal(); closeNav();">❓ How to Use</a>
 
         <!-- Legal & Info Dropdown -->
-        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">?? Legal & Info <span>?</span></a>
+        <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">⚖ Legal & Info <span>▼</span></a>
         <div class="sidenav-dropdown-content">
-            <a href="/about.html" onclick="closeNav();">?? About Us</a>
+            <a href="/about.html" onclick="closeNav();">ℹ About Us</a>
             <a href="/faq.html" onclick="closeNav();">? FAQ</a>
-            <a href="/support.html" onclick="closeNav();">?? Support</a>
-            <a href="/contact.html" onclick="closeNav();">?? Contact Us</a>
-            <a href="/privacy.html" onclick="closeNav();">?? Privacy Policy</a>
-            <a href="/terms.html" onclick="closeNav();">?? Terms of Service</a>
+            <a href="/support.html" onclick="closeNav();"> Support</a>
+            <a href="/contact.html" onclick="closeNav();"> Contact Us</a>
+            <a href="/privacy.html" onclick="closeNav();"> Privacy Policy</a>
+            <a href="/terms.html" onclick="closeNav();"> Terms of Service</a>
         </div>
 
         <a href="#" onclick="openDonateModal(); closeNav();" style="color: #ff6b6b; font-weight: 600;">? Buy Me a
@@ -4466,71 +4466,71 @@
                     style="display: flex; width: max-content; animation: marqueeEffect 120s linear infinite;">
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Portal Mode: Track daily attendance with automatic calculations</div>
+                         Portal Mode: Track daily attendance with automatic calculations</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? OCR is 95% accurate - always verify extracted numbers with your screenshot</div>
+                         OCR is 95% accurate - always verify extracted numbers with your screenshot</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Fast Setup: Use AI to generate JSON from your timetable screenshot</div>
+                        ⚡ Fast Setup: Use AI to generate JSON from your timetable screenshot</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? 3 View Options: Card View (detailed), Table View (compact), Graph View (visual)</div>
+                         3 View Options: Card View (detailed), Table View (compact), Graph View (visual)</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
                         ? Edit Anytime: Click attended/total numbers to update in any view</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Settings: Toggle between Per-Subject or Overall attendance mode</div>
+                        ⚙ Settings: Toggle between Per-Subject or Overall attendance mode</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? 100% Offline: All data saved locally - works without internet</div>
+                         100% Offline: All data saved locally - works without internet</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Notifications: Set daily reminders to mark your attendance</div>
+                         Notifications: Set daily reminders to mark your attendance</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? History Editor: View and edit past logs using the calendar</div>
+                         History Editor: View and edit past logs using the calendar</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
                         ? Safe Skip %: Shows your % after skipping maximum allowed classes</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Backup/Restore: Save all classes to file and restore on any device</div>
+                         Backup/Restore: Save all classes to file and restore on any device</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Export/Import: Share class setup with friends via JSON</div>
+                         Export/Import: Share class setup with friends via JSON</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ??? Daily Dashboard: Color-coded status (??Critical ??Low ??Safe) for today's classes</div>
+                         Daily Dashboard: Color-coded status ( Critical  Low  Safe) for today's classes</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Daily Logs: Track attended/skipped/cancelled classes for accuracy</div>
+                         Daily Logs: Track attended/skipped/cancelled classes for accuracy</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ??? Leave Planner: Enter planned leaves to see impact on attendance</div>
+                         Leave Planner: Enter planned leaves to see impact on attendance</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Max Safe Leave: Find exact dates you can skip without issues</div>
+                         Max Safe Leave: Find exact dates you can skip without issues</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Long Weekend Finder: Discover best leave days for extended breaks</div>
+                         Long Weekend Finder: Discover best leave days for extended breaks</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Can I Skip Today?: Quick check for today's class impact</div>
+                         Can I Skip Today?: Quick check for today's class impact</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Smart Baseline: Portal logs before baseline intelligently merged</div>
+                         Smart Baseline: Portal logs before baseline intelligently merged</div>
                     <div class="slide"
                         style="flex-shrink: 0; padding: 0 40px; font-size: 0.95rem; color: #ffffff; white-space: nowrap; font-weight: 500;">
-                        ?? Auto History: Last 10 calculations saved - restore anytime</div>
+                        ⏳ Auto History: Last 10 calculations saved - restore anytime</div>
                 </div>
             </div>
         </header>
 
         <div class="class-selector-section">
             <div class="class-selector-header">
-                <h3>?? Select Your Class</h3>
+                <h3> Select Your Class</h3>
                 <div class="header-actions">
                     <button class="btn primary-btn" onclick="openAddClassModal()"
                         style="padding: 8px 20px; font-size: 0.9rem;">+ Add Class</button>
@@ -4542,7 +4542,7 @@
                 </div>
                 <div class="class-search-wrapper">
                     <input type="text" class="class-search" id="classSearch"
-                        placeholder="?? Type to search for a class..." oninput="handleSearchInput()"
+                        placeholder=" Type to search for a class..." oninput="handleSearchInput()"
                         list="class-suggestions">
                     <datalist id="class-suggestions"></datalist>
                 </div>
@@ -4551,7 +4551,7 @@
             </div>
 
             <div id="timetableSection" style="display: none;">
-                <h3>?? Weekly Timetable</h3>
+                <h3> Weekly Timetable</h3>
                 <div class="timetable-wrapper">
                     <div id="timetableGrid" class="timetable-grid"></div>
                 </div>
@@ -4584,7 +4584,7 @@
                     </div>
 
                     <div class="preview-section" id="previewSection" style="display: none;">
-                        <h4 style="margin-bottom: 15px; color: var(--dark-text);">?? Uploaded Images Preview:</h4>
+                        <h4 style="margin-bottom: 15px; color: var(--dark-text);"> Uploaded Images Preview:</h4>
                         <div id="previewImagesGrid" class="preview-images-grid"></div>
                     </div>
 
@@ -4595,7 +4595,7 @@
 
 
                     <div class="settings-section">
-                        <h3>?? Calculation Settings</h3>
+                        <h3> Calculation Settings</h3>
                         <div class="grid-inputs">
                             <div class="input-group">
                                 <label for="minAttendanceInput">Minimum Attendance %</label>
@@ -4615,14 +4615,14 @@
                                 </div>
                             </div>
                             <div class="input-group" style="justify-content: flex-end;">
-                                <button class="btn info-btn" onclick="checkSkipToday()">?? Can I Skip
+                                <button class="btn info-btn" onclick="checkSkipToday()"> Can I Skip
                                     Today?</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="date-section">
-                        <h3>?? Semester Timeline</h3>
+                        <h3>⏳ Semester Timeline</h3>
                         <div class="grid-inputs">
                             <div class="input-group"><label for="currentDate">Current Date:</label><input type="date"
                                     id="currentDate" onchange="updateDailyDashboard()"></div>
@@ -4632,13 +4632,13 @@
                     </div>
 
                     <div class="manual-input" id="manualInput">
-                        <h3>?? Manual Attendance Entry</h3>
+                        <h3>✍ Manual Attendance Entry</h3>
                         <div class="subjects-grid" id="subjectsGrid"></div>
                         <button class="calculate-btn" onclick="calculateFromManual()">Calculate Attendance</button>
                     </div>
 
                     <div class="manual-input" id="jsonInput">
-                        <h3>?? Paste Attendance JSON</h3>
+                        <h3> Paste Attendance JSON</h3>
                         <div class="json-instructions">
                             <strong>How to use:</strong>
                             <ol>
@@ -4650,7 +4650,7 @@
                             </ol>
                         </div>
                         <button class="btn secondary-btn" onclick="copyAttendanceAIPrompt()"
-                            style="width: 100%; margin: 15px 0;">?? Copy Prompt for AI</button>
+                            style="width: 100%; margin: 15px 0;"> Copy Prompt for AI</button>
                         <div class="form-group">
                             <textarea id="attendanceJsonPasteArea"
                                 placeholder='{ "SUBJECT-CODE-1": { "total": 40, "present": 35 }, "SUBJECT-CODE-2": { "total": 42, "present": 30 } }'
@@ -4674,7 +4674,7 @@
 
                     <div id="leaveRecommendationContainer" style="display: none;">
                         <div class="subject-card" style="border-left-color: var(--info-color);">
-                            <div class="subject-title">?? Long Weekend Finder</div>
+                            <div class="subject-title"> Long Weekend Finder</div>
                             <p>Find the best time to take leave for the longest possible break.</p>
                             <div class="weekend-finder-controls">
                                 <div class="input-group">
@@ -4707,7 +4707,7 @@
             <div class="modal-content">
                 <button class="modal-close" onclick="closeModal('notificationSettingsModal')">&times;</button>
                 <div class="modal-header">
-                    <h2>?? Notification Settings</h2>
+                    <h2> Notification Settings</h2>
                     <p>Get daily reminders to log your attendance</p>
                 </div>
                 <div class="form-group">
@@ -7055,7 +7055,7 @@
                                 <li>Paste the entire JSON code into the text box below and click Save.</li>
                             </ol>
                         </div>
-                        <button class="btn secondary-btn" onclick="copyAIPrompt()" style="width: 100%; margin-bottom: 15px;">?? Copy Prompt for AI</button>
+                        <button class="btn secondary-btn" onclick="copyAIPrompt()" style="width: 100%; margin-bottom: 15px;"> Copy Prompt for AI</button>
                         <div class="form-group">
                             <label for="jsonPasteArea">Paste JSON here:</label>
                             <textarea id="jsonPasteArea" placeholder='{ "Your Class Name": { "lastDate": "...", "holidays": [...], "subjects": [...] } }'></textarea>
@@ -7097,7 +7097,7 @@
                     const helpModalHTML = `
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
-                    <div class="modal-header"><h2>?? How to Use This Tool</h2></div>
+                    <div class="modal-header"><h2>❓ How to Use This Tool</h2></div>
                     
                     <div class="alert-message warning" style="border-left-color: var(--warning-color);">
                         <strong>Important:</strong> OCR (image reading) is accurate only about 95% of the time. <strong>Always compare the extracted numbers</strong> with your screenshot to ensure they are correct. You can edit them directly in the results cards.
@@ -7130,7 +7130,7 @@
                     <ul>
                         <li><strong>Calculation Settings:</strong> Set your college's minimum attendance percentage. Use the toggle to switch between viewing your status for each subject individually or for your overall average.</li>
                         <li><strong>Can I Skip Today?:</strong> A quick check to see how skipping all of today's classes would affect your final attendance percentage for each subject.</li>
-                        <li><strong>Daily Dashboard:</strong> Shows which classes you have on the selected "Current Date" and a color-coded status (??Critical, ??Low, ??Safe) based on your latest calculation.</li>
+                        <li><strong>Daily Dashboard:</strong> Shows which classes you have on the selected "Current Date" and a color-coded status ( Critical,  Low,  Safe) based on your latest calculation.</li>
                         <li><strong>Daily Log:</strong> Keep track of days you attended, skipped, or had classes cancelled. This makes future calculations more accurate as it accounts for cancelled classes.</li>
                         <li><strong>Leave Planner & Compulsory Events:</strong> Enter planned leaves and must-attend events to see their impact on your ability to take leave. Use the "Recalculate Max Safe Leave" to get updated recommendations.</li>
                         <li><strong>Max Safe Leave:</strong> Calculates the exact dates you could skip entirely without falling below the minimum attendance requirement, considering your planned leaves and compulsory events.</li>
@@ -7159,7 +7159,7 @@
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>?? API Settings</h2>
+                        <h2>⚙ API Settings</h2>
                         <p>Configure AI-powered attendance extraction</p>
                     </div>
                     
@@ -8440,7 +8440,7 @@ CRITICAL INSTRUCTIONS:
                 // Update modal title to show class name
                 const modalHeader = modal.querySelector('.modal-header h2');
                 if (modalHeader) {
-                    modalHeader.innerHTML = `?? Notification Settings<br><small style="font-size:0.7em;opacity:0.8">for ${className}</small>`;
+                    modalHeader.innerHTML = ` Notification Settings<br><small style="font-size:0.7em;opacity:0.8">for ${className}</small>`;
                 }
 
                 openModal('notificationSettingsModal');
@@ -8704,7 +8704,7 @@ CRITICAL INSTRUCTIONS:
                         <div class="modal-content">
                             <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                             <div class="modal-header">
-                                <h2>?? API Settings</h2>
+                                <h2>⚙ API Settings</h2>
                                 <p>Configure your Gemini API key for OCR and AI Assistant features</p>
                             </div>
                             <div class="form-group">
@@ -9093,7 +9093,7 @@ ${subjectLines.join('\n')}
 
                         // Check if active
                         if (!registration.active) {
-                            console.warn('?? Service Worker found but not active yet.');
+                            console.warn('⚠ Service Worker found but not active yet.');
                         }
 
                         await registration.showNotification('?? Test Notification', {
@@ -9352,7 +9352,7 @@ ${subjectLines.join('\n')}
                 <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
                     <button class="modal-close" onclick="closeModal('helpModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>?? How to Use Bunk it</h2>
+                        <h2>❓ How to Use Bunk it</h2>
                         <p>Complete guide to all features</p>
                     </div>
                     
@@ -9457,7 +9457,7 @@ ${subjectLines.join('\n')}
                 <div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
                     <button class="modal-close" onclick="closeModal('privacyPolicyModal')">&times;</button>
                     <div class="modal-header">
-                        <h2>?? Privacy Policy</h2>
+                        <h2> Privacy Policy</h2>
                         <p>Last updated: December 2024</p>
                     </div>
                     
@@ -10297,7 +10297,7 @@ CRITICAL RULES:
                     <div class="subject-card" style="border-left-color: var(--info-color);">
                         <div class="subject-title">?? Medical Certificate Opportunity</div>
                         <div style="background: rgba(52, 152, 219, 0.1); padding: 20px; border-radius: 8px; border-left: 4px solid var(--info-color); text-align: center;">
-                            <p style="color: var(--info-color); font-weight: bold; margin-bottom: 10px;">?? Portal Mode Recommended</p>
+                            <p style="color: var(--info-color); font-weight: bold; margin-bottom: 10px;"> Portal Mode Recommended</p>
                             <p style="margin-bottom: 15px;">For accurate Medical Certificate recommendations, switch to <strong>Portal Mode</strong> where you can track daily attendance logs.</p>
                             <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--medium-text);">Standard calculation mode provides instant analysis, but Portal Mode gives you ML recommendations based on your actual attendance history.</p>
                             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -10668,7 +10668,7 @@ CRITICAL RULES:
                     const excludeCodes = unrecoverableSubjects.map(s => s.code).join(',');
                     container.innerHTML = `
                         <div class="subject-card" style="border-left-color: var(--danger-color);">
-                            <div class="subject-title">?? Max Safe Leave Unavailable</div>
+                            <div class="subject-title"> Max Safe Leave Unavailable</div>
                             <p style="color: var(--danger-color);">
                                 <strong>Cannot calculate safe leave dates.</strong><br><br>
                                 The following subject(s) cannot reach ${minCriteria}% minimum attendance even if you attend all remaining classes:<br>
@@ -13080,7 +13080,7 @@ CRITICAL RULES:
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button class="btn primary-btn" onclick="initPortal()" style="font-size: 0.9rem; opacity: 1; pointer-events: none;">
-                                ?? Portal Mode
+                                 Portal Mode
                             </button>
                             <button class="btn secondary-btn" onclick="switchToStandardMode()" style="font-size: 0.9rem;">
                                 ?? Standard Calculation
@@ -15267,7 +15267,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                                 if (flashModel) {
                                     console.log('? Found Flash Model:', flashModel.name);
                                 } else {
-                                    console.warn('?? No "flash" model found in list!');
+                                    console.warn('⚠ No "flash" model found in list!');
                                 }
                             } else {
                                 console.error('? Failed to list models:', await listResponse.text());
@@ -15409,7 +15409,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                             } else if (response.status === 403) {
                                 throw new Error(`API key denied. Please verify your key at Google AI Studio.`);
                             } else if (response.status === 429) {
-                                console.warn('?? Gemini Quota Exceeded (429)');
+                                console.warn('⚠ Gemini Quota Exceeded (429)');
                                 throw new Error(`Quota exceeded. Daily limit: 10,000 requests.`);
                             } else {
                                 throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
@@ -15521,7 +15521,7 @@ OR download Bunkit app and scan the QR code I'm sharing!
                                     // Continue to Tier 3
                                 }
                             } else {
-                                console.warn('?? Shared Gemini quota exceeded or key missing. Falling back to Tesseract.');
+                                console.warn('⚠ Shared Gemini quota exceeded or key missing. Falling back to Tesseract.');
                             }
 
                             // TIER 3: Use Tesseract Fallback
@@ -16435,7 +16435,7 @@ Answer helpfully using this context.`;
                     <div class="modal-content">
                         <button class="modal-close" onclick="closeModal('ocrSettingsModal')">&times;</button>
                         <div class="modal-header">
-                            <h2>?? API Settings</h2>
+                            <h2>⚙ API Settings</h2>
                             <p>Configure your Gemini API key for OCR and AI Assistant features</p>
                         </div>
                         <div class="form-group">
