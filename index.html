@@ -14277,12 +14277,21 @@ CRITICAL RULES:
                     .then(res => res.blob())
                     .then(blob => {
                         const file = new File([blob], "class_qr.png", { type: "image/png" });
+                        const shareText = `📚 ${editingClassName} - Class Setup\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📋 How to Import:\n1. Open Bunkit app\n2. Tap "Scan QR" in Edit Class\n3. Scan the QR code\n4. Class setup done!\n\n✨ Track attendance together!`;
+
                         if (navigator.share) {
-                            navigator.share({
-                                title: 'Join my Class on Bunk it!',
-                                text: `📚 ${editingClassName} - Class Setup\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📋 How to Import:\n1. Open Bunkit app\n2. Tap "Scan QR" in Edit Class\n3. Scan the QR code\n4. Class setup done!\n\n✨ Track attendance together!`,
-                                files: [file]
-                            }).catch(console.error);
+                            // Copy text to clipboard first
+                            navigator.clipboard.writeText(shareText).then(() => {
+                                // Then share the file
+                                navigator.share({
+                                    files: [file]
+                                }).then(() => {
+                                    alert('✅ Message copied to clipboard! Paste it after sharing the QR code.');
+                                }).catch(console.error);
+                            }).catch(() => {
+                                // If clipboard fails, just share file
+                                navigator.share({ files: [file] }).catch(console.error);
+                            });
                         } else {
                             alert("Sharing not supported on this device/browser. Please use Download.");
                         }
