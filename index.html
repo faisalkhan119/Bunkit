@@ -14271,87 +14271,59 @@ CRITICAL RULES:
                     return;
                 }
 
-                // Create a new canvas to combine QR + Text
-                const combinedCanvas = document.createElement('canvas');
-                const ctx = combinedCanvas.getContext('2d');
-
-                // Set canvas size (QR width + text area)
-                const qrSize = source.width || 512;
-                const padding = 40;
-                const textAreaHeight = 600;
-                combinedCanvas.width = qrSize + (padding * 2);
-                combinedCanvas.height = qrSize + textAreaHeight + (padding * 3);
-
-                // Background
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-
-                // Draw QR code at top
-                const qrImage = new Image();
-                qrImage.onload = function () {
-                    ctx.drawImage(qrImage, padding, padding, qrSize, qrSize);
-
-                    // Add text below QR
-                    const textStartY = qrSize + (padding * 2);
-                    ctx.fillStyle = '#000000';
-                    ctx.textAlign = 'left';
-
-                    // Title
-                    ctx.font = 'bold 28px Arial';
-                    ctx.fillText('👋 Hey friends!', padding, textStartY);
-
-                    // Subtitle
-                    ctx.font = '22px Arial';
-                    ctx.fillText('Check out this amazing app!', padding, textStartY + 40);
-
-                    // App link
-                    ctx.font = 'bold 20px Arial';
-                    ctx.fillStyle = '#0066cc';
-                    ctx.fillText('📱 Download Bunkit:', padding, textStartY + 90);
-                    ctx.fillText('https://bunkitapp.in', padding, textStartY + 120);
-
-                    // Instructions
-                    ctx.fillStyle = '#000000';
-                    ctx.font = 'bold 22px Arial';
-                    ctx.fillText(`📝 How to set up ${editingClassName}:`, padding, textStartY + 170);
-
-                    ctx.font = '18px Arial';
-                    const steps = [
-                        '1. Open the Bunkit app',
-                        '2. Enter your name',
-                        '3. Tap Add New Class',
-                        '4. Hit Scan QR',
-                        '5. Scan the QR code above',
-                        '6. And boom! Class setup done 🎉'
-                    ];
-
-                    steps.forEach((step, index) => {
-                        ctx.fillText(step, padding + 10, textStartY + 210 + (index * 35));
-                    });
-
-                    // Footer
-                    ctx.font = 'bold 20px Arial';
-                    ctx.fillStyle = '#ff6b35';
-                    ctx.fillText('✨ Track attendance together!', padding, textStartY + 450);
-                    ctx.fillText('Super smooth and super fun!', padding, textStartY + 480);
-
-                    // Convert to blob and share
-                    combinedCanvas.toBlob(function (blob) {
-                        const file = new File([blob], `${editingClassName}_Bunkit_Setup.png`, { type: 'image/png' });
-
-                        if (navigator.share) {
-                            navigator.share({
-                                files: [file]
-                            }).catch(console.error);
-                        } else {
-                            alert("Sharing not supported. Please use Download.");
-                        }
-                    }, 'image/png');
-                };
-
-                // Load QR image
                 let dataUrl = source.src || source.toDataURL();
-                qrImage.src = dataUrl;
+
+                fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const file = new File([blob], "class_qr.png", { type: "image/png" });
+                        const shareText = `👋 Hey friends! Check out this amazing app!\n\n📱 Download Bunkit: https://bunkitapp.in\n\n📝 How to set up our ${editingClassName} class:\n\n1. Open the Bunkit app\n2. Enter your name\n3. Tap Add New Class\n4. Hit Scan QR\n5. Scan the class QR code\n6. And boom! Class setup done 🎉\n\n✨ Now we can track attendance together — super smooth and super fun!`;
+
+                        // WhatsApp-first approach (90% users share via WhatsApp)
+                        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                        if (isMobile) {
+                            // Mobile: Use WhatsApp deep link
+                            // First download the QR image
+                            const link = document.createElement('a');
+                            link.href = dataUrl;
+                            link.download = `${editingClassName}_QR.png`;
+                            link.click();
+
+                            // Then open WhatsApp with pre-filled message
+                            setTimeout(() => {
+                                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+                                window.open(whatsappUrl, '_blank');
+
+                                // Show instruction
+                                setTimeout(() => {
+                                    alert('📱 Instructions:\n\n1. WhatsApp opened with message\n2. QR image downloaded to your device\n3. In WhatsApp, tap 📎 (attach) → Gallery\n4. Select the downloaded QR image\n5. Send! 🚀');
+                                }, 1000);
+                            }, 500);
+                        } else {
+                            // Desktop: Use Web Share API fallback
+                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                                navigator.share({
+                                    title: `Join ${editingClassName} on Bunkit!`,
+                                    text: shareText,
+                                    files: [file]
+                                }).catch(console.error);
+                            } else {
+                                // Desktop WhatsApp Web approach
+                                const link = document.createElement('a');
+                                link.href = dataUrl;
+                                link.download = `${editingClassName}_QR.png`;
+                                link.click();
+
+                                setTimeout(() => {
+                                    const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+                                    window.open(whatsappUrl, '_blank');
+
+                                    alert('💻 Instructions:\n\n1. WhatsApp Web opened with message\n2. QR image downloaded\n3. In WhatsApp, click 📎 (attach) → Photos & Videos\n4. Select the downloaded QR image\n5. Send! 🚀');
+                                }, 500);
+                            }
+                        }
+                    });
             }
 
             function downloadQRImageTab() {
