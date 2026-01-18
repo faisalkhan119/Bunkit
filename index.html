@@ -404,6 +404,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
+    <!-- LZ-String for URL Compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <!-- Google Identity Services for OAuth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Google API for Drive -->
@@ -564,8 +566,8 @@
         body.dark-mode .modal-content,
         body.dark-mode .sidenav,
         body.dark-mode .fixed-ui-button {
-            backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
@@ -5635,10 +5637,67 @@
             // Run immediately
             checkForClassImport();
 
+            function checkClassDuplicate(name, newClassData) {
+                // 1. Check for exact class name match
+                if (classes[name]) {
+                    const existingClass = classes[name];
+                    const existingTimetable = JSON.parse(localStorage.getItem(`timetable_arrangement_${name}`) || '{}');
+
+                    // 1. Compare Subjects (Name, Code, Schedule)
+                    const formatSubject = s => ({
+                        n: s.name,
+                        c: s.code,
+                        s: JSON.stringify(s.schedule)
+                    });
+                    const existingSubjectsStr = JSON.stringify(existingClass.subjects.map(formatSubject));
+                    const newSubjectsStr = JSON.stringify(newClassData.subjects.map(formatSubject));
+
+                    // 2. Compare Holidays
+                    const sortStr = arr => JSON.stringify((arr || []).sort());
+                    const existingHolidaysStr = sortStr(existingClass.holidays);
+                    const newHolidaysStr = sortStr(newClassData.holidays);
+
+                    // 3. Compare Timetable Arrangement
+                    const existingTimetableStr = JSON.stringify(existingTimetable);
+                    const newTimetableStr = JSON.stringify(newClassData.timetable || {});
+
+                    // 4. Compare Last Date
+                    const isLastDateSame = existingClass.lastDate === newClassData.lastDate;
+
+                    const isDuplicate =
+                        (existingSubjectsStr === newSubjectsStr) &&
+                        (existingHolidaysStr === newHolidaysStr) &&
+                        (existingTimetableStr === newTimetableStr) &&
+                        isLastDateSame;
+
+                    if (isDuplicate) {
+                        return { status: 'exact_duplicate' };
+                    } else {
+                        // Generate a unique name
+                        let counter = 1;
+                        let newName = `${name} (${counter})`;
+                        while (classes[newName]) {
+                            counter++;
+                            newName = `${name} (${counter})`;
+                        }
+                        return { status: 'name_conflict', suggestedName: newName };
+                    }
+                }
+
+                return { status: 'ok' };
+            }
+
             function importClassFromURL(encodedData) {
                 try {
-                    // Decode base64 class data
-                    const jsonString = atob(encodedData);
+                    // Decode class data (Support for v2 compressed and v1 base64)
+                    let jsonString;
+                    if (encodedData.startsWith('v2_')) {
+                        jsonString = LZString.decompressFromEncodedURIComponent(encodedData.substring(3));
+                    } else {
+                        jsonString = atob(encodedData);
+                    }
+
+                    if (!jsonString) throw new Error("Decompression failed or invalid string");
                     const classData = JSON.parse(jsonString);
 
                     // Validate essential data
@@ -5650,60 +5709,26 @@
                     let finalName = inputName;
                     let shouldImport = true;
 
-                    // STRICT DUPLICATE CHECK
-                    if (classes[inputName]) {
-                        const existingClass = classes[inputName];
+                    // STRICT DUPLICATE CHECK (Now passes full classData)
+                    const dupResult = checkClassDuplicate(inputName, classData);
 
-                        // Compare timetables to see if it's the EXACT same class
-                        // We use the existing timetable arrangement or fallback to generated schedule
-                        const existingArrangement = getTimetableArrangement(inputName) || {};
-                        const newArrangement = classData.timetable || {}; // Assuming timetable is passed in data
+                    if (dupResult.status === 'exact_duplicate') {
+                        alert(`⚠️ Class "${inputName}" already exists on this device with the same schedule!`);
 
-                        // Simple stringify comparison of critical data for equality check
-                        const existingSignature = JSON.stringify({
-                            subjects: existingClass.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
-                            timetable: existingArrangement
-                        });
+                        // Clear pending import to prevent infinite loop
+                        sessionStorage.removeItem('pendingClassImport');
 
-                        // Reconstruct new signature from import data
-                        // If imported data doesn't have explicit timetable, we might need to rely on subjects/schedule
-                        let newSignature;
-                        if (classData.timetable) {
-                            newSignature = JSON.stringify({
-                                subjects: classData.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
-                                timetable: classData.timetable
-                            });
-                        } else {
-                            // Fallback signature if explicit timetable missing from import (depend on schedule)
-                            newSignature = JSON.stringify({
-                                subjects: classData.subjects.map(s => ({ code: s.code, schedule: s.schedule })),
-                                timetable: {} // We can't compare arrangements if missing, so this might fail strict equality which is good (safer)
-                            });
-                        }
+                        // If they are just finishing onboarding, we should still let them proceed to dashboard
+                        // So we just reload to show the existing class
+                        localStorage.setItem('hasCompletedOnboarding', 'true');
+                        localStorage.setItem('selectedClass', inputName);
+                        location.reload();
+                        return;
+                    }
 
-                        // Just checking subjects and schedule is usually enough for "Same Class" detection
-                        const simpleExisting = JSON.stringify(existingClass.subjects.map(s => ({ c: s.code, sc: s.schedule })));
-                        const simpleNew = JSON.stringify(classData.subjects.map(s => ({ c: s.code, sc: s.schedule })));
-
-                        if (simpleExisting === simpleNew) {
-                            alert(`⚠️ Class "${inputName}" already exists on this device with the same schedule!`);
-                            // Stop import - user already has this class
-                            shouldImport = false;
-
-                            // If they are just finishing onboarding, we should still let them proceed to dashboard
-                            // So we just reload to show the existing class
-                            localStorage.setItem('hasCompletedOnboarding', 'true');
-                            localStorage.setItem('selectedClass', inputName);
-                            location.reload();
-                            return;
-                        } else {
-                            // Same name but DIFFERENT schedule -> Create Copy
-                            let counter = 1;
-                            while (classes[finalName]) {
-                                finalName = `${inputName} (${counter++})`;
-                            }
-                            // Proceed with valid unique name
-                        }
+                    if (dupResult.status === 'name_conflict') {
+                        // Same name but DIFFERENT schedule -> Create Copy
+                        finalName = dupResult.suggestedName;
                     }
 
                     if (!shouldImport) return;
@@ -5882,9 +5907,18 @@
 
                 localStorage.setItem('hasCompletedOnboarding', 'true');
 
+                // Explicitly Add Example Class
+                const exampleClassName = 'CSE Core - H (Example)';
+                // Only add if not already present (though unlikely in this flow)
+                if (!classes[exampleClassName]) {
+                    classes[exampleClassName] = JSON.parse(JSON.stringify(defaultExampleClass[exampleClassName]));
+                    saveToStorage();
+                    populateClassSelector(); // Refresh dropdown
+                }
+
                 // Select the example class in dropdown
                 const classSelector = document.getElementById('classSelector');
-                const exampleClassName = 'CSE Core - H (Example)';
+                // exampleClassName already defined above
 
                 if (classSelector) {
                     classSelector.value = exampleClassName;
@@ -6709,7 +6743,7 @@
             // --- INITIALIZATION & DATA MANAGEMENT ---
             function loadFromStorage() {
                 const storedClasses = localStorage.getItem('attendanceClasses_v2');
-                classes = storedClasses ? JSON.parse(storedClasses) : JSON.parse(JSON.stringify(defaultExampleClass));
+                classes = storedClasses ? JSON.parse(storedClasses) : {};
             }
 
             function saveToStorage() {
@@ -6886,9 +6920,10 @@
                     loadFromStorage();
 
                     // Verify classes loaded
+                    // Verify classes loaded
                     if (Object.keys(classes).length === 0) {
-                        console.log('⚠️ No classes found, loading defaults...');
-                        classes = JSON.parse(JSON.stringify(defaultExampleClass));
+                        console.log('⚠️ No classes found. Waiting for user action.');
+                        // Do not auto-load defaults
                     }
 
                     document.getElementById('currentDate').value = formatLocalDate(new Date());
@@ -9655,10 +9690,36 @@ CRITICAL INSTRUCTIONS:
                 return ta;
             }
 
+            /**
+             * Checks for class duplicates.
+             * Returns { status: 'ok' | 'exact_duplicate' | 'name_conflict', suggestedName: string }
+             */
+            function checkClassDuplicate(inputName, newSubjects, newTimetable = {}) {
+                if (!classes[inputName]) return { status: 'ok', suggestedName: inputName };
+
+                const existingClass = classes[inputName];
+
+                // 1. Compare Subjects & Schedules (Most critical for identity)
+                const simpleExisting = JSON.stringify(existingClass.subjects.map(s => ({ c: s.code, sc: s.schedule })));
+                const simpleNew = JSON.stringify(newSubjects.map(s => ({ c: s.code, sc: s.schedule })));
+
+                if (simpleExisting === simpleNew) {
+                    return { status: 'exact_duplicate', suggestedName: inputName };
+                }
+
+                // 2. Name Conflict (Same name, different data) -> Generate unique name
+                let finalName = inputName;
+                let counter = 1;
+                while (classes[finalName]) {
+                    finalName = `${inputName} (${counter++})`;
+                }
+                return { status: 'name_conflict', suggestedName: finalName };
+            }
+
             function submitClassForm() { if (isJsonMode) { submitClassFromJson(); } else { submitClassFromForm(); } }
 
             function submitClassFromForm() {
-                const className = document.getElementById('newClassName').value.trim();
+                let className = document.getElementById('newClassName').value.trim();
                 const lastDate = document.getElementById('newClassLastDate').value;
                 if (!className || !lastDate) { alert('Please fill in Class Name and Last Date.'); return; }
                 const subjects = [];
@@ -9671,6 +9732,39 @@ CRITICAL INSTRUCTIONS:
                     subjects.push({ name, code, schedule });
                 });
                 if (!isValid || subjects.length === 0) { alert('Please fill all details for each subject.'); return; }
+
+                // Check for duplicates only if creating a new class
+                if (!editingClassName) {
+                    // Assemble full class data for strict check
+                    const currentHolidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort();
+                    const currentTimetable = tempTimetableArrangement || JSON.parse(localStorage.getItem(`timetable_arrangement_${className}`) || '{}');
+
+                    const tempClassData = {
+                        name: className,
+                        lastDate: lastDate,
+                        subjects: subjects,
+                        holidays: currentHolidays,
+                        timetable: currentTimetable
+                    };
+
+                    const dupResult = checkClassDuplicate(className, tempClassData);
+
+                    if (dupResult.status === 'exact_duplicate') {
+                        alert(`⚠️ Class "${className}" already exists with this exact schedule!`);
+                        return;
+                    }
+                    if (dupResult.status === 'name_conflict') {
+                        if (confirm(`⚠️ Class "${className}" already exists but has a different schedule.\n\nSave as "${dupResult.suggestedName}" instead?`)) {
+                            className = dupResult.suggestedName;
+                            // Update input for clarity
+                            const nameInput = document.getElementById('newClassName');
+                            if (nameInput) nameInput.value = className;
+                        } else {
+                            return;
+                        }
+                    }
+                }
+
                 const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort();
 
                 if (editingClassName && editingClassName !== className) {
@@ -9761,9 +9855,24 @@ CRITICAL INSTRUCTIONS:
                         data = normalizedData;
                     }
 
-                    const className = Object.keys(data)[0];
+                    let className = Object.keys(data)[0];
                     if (!className) throw new Error("JSON is missing the top-level class name key.");
                     const classData = data[className];
+
+                    // Check for duplicates
+                    const dupResult = checkClassDuplicate(className, classData);
+                    if (dupResult.status === 'exact_duplicate') {
+                        alert(`⚠️ Class "${className}" already exists with this exact schedule!`);
+                        return;
+                    }
+                    if (dupResult.status === 'name_conflict') {
+                        if (confirm(`⚠️ Class "${className}" already exists but has a different schedule.\n\nSave as "${dupResult.suggestedName}" instead?`)) {
+                            className = dupResult.suggestedName;
+                        } else {
+                            return;
+                        }
+                    }
+
                     if (!classData.lastDate || !Array.isArray(classData.holidays) || !Array.isArray(classData.subjects)) {
                         throw new Error("JSON structure is invalid. Missing 'lastDate', 'holidays', or 'subjects'.");
                     }
@@ -14429,7 +14538,9 @@ CRITICAL RULES:
                     periodTimes: currentClass.periodTimes || {}
                 };
 
-                const encodedData = btoa(JSON.stringify(cleanClassData));
+                // Compression v2
+                const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(cleanClassData));
+                const encodedData = 'v2_' + compressed;
                 const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
 
                 const shareData = {
@@ -15244,7 +15355,9 @@ CRITICAL RULES:
                         };
 
                         // Encode data
-                        const encodedData = btoa(JSON.stringify(classData));
+                        // Compression v2
+                        const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(classData));
+                        const encodedData = 'v2_' + compressed;
                         const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
 
                         const shareData = {
@@ -16697,8 +16810,8 @@ Answer helpfully using this context.`;
                         opacity: 1;
                         pointer-events: auto;
                         animation: toastIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-                        backdrop-filter: blur(12px);
                         -webkit-backdrop-filter: blur(12px);
+                        backdrop-filter: blur(12px);
                     }
 
                     .toast.hide {
