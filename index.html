@@ -4633,9 +4633,9 @@
                         <h3>📅 Semester Timeline</h3>
                         <div class="grid-inputs">
                             <div class="input-group"><label for="currentDate">Current Date:</label><input type="date"
-                                    id="currentDate" onchange="updateDailyDashboard()"></div>
+                                    id="currentDate" onchange="updateDailyDashboard(); triggerRecalculation()"></div>
                             <div class="input-group"><label for="lastDate">Last Working Date:</label><input type="date"
-                                    id="lastDate"></div>
+                                    id="lastDate" onchange="triggerRecalculation()"></div>
                         </div>
                     </div>
 
@@ -6846,6 +6846,37 @@
                 }
                 // Update medical max based on restored min attendance
                 if (typeof updateMedicalMax === 'function') updateMedicalMax();
+
+                // Semester Timeline: Check mode and set read-only state
+                const hasStoredData = localStorage.getItem('attendanceClasses_v2');
+                const currentDateInput = document.getElementById('currentDate');
+                const lastDateInput = document.getElementById('lastDate');
+
+                if (hasStoredData) {
+                    // Portal Mode: Dates are fixed (read-only)
+                    if (currentDateInput) {
+                        currentDateInput.readOnly = true;
+                        currentDateInput.style.opacity = '0.7';
+                        currentDateInput.title = "Date is fixed in Portal Mode";
+                    }
+                    if (lastDateInput) {
+                        lastDateInput.readOnly = true;
+                        lastDateInput.style.opacity = '0.7';
+                        lastDateInput.title = "Date is fixed in Portal Mode";
+                    }
+                } else {
+                    // Standard Calculation Mode: Dates are editable
+                    if (currentDateInput) {
+                        currentDateInput.readOnly = false;
+                        currentDateInput.style.opacity = '1';
+                        currentDateInput.title = "Change date to simulate scenarios";
+                    }
+                    if (lastDateInput) {
+                        lastDateInput.readOnly = false;
+                        lastDateInput.style.opacity = '1';
+                        lastDateInput.title = "Set semester end date";
+                    }
+                }
 
                 // POST-IMPORT TUTORIAL TRIGGER (moved here from restoreAppState which was never called)
                 if (localStorage.getItem('postImportTutorial') === 'true') {
