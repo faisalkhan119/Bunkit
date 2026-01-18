@@ -11132,7 +11132,7 @@ CRITICAL RULES:
                 container.innerHTML = resultHTML;
             }
 
-            // Calculate Max Possible Bunk - Skip days at 65% detention threshold + ML suggestions to reach 75%
+            // Calculate Max Possible Bunk - Skip days at medical threshold + ML suggestions to reach min attendance
             function calculateMaxPossibleBunk() {
                 calculateLeaveImpact(); // Run impact analysis first
                 const container = document.getElementById('maxPossibleBunkResults');
@@ -11140,8 +11140,9 @@ CRITICAL RULES:
                 const lastDate = new Date(document.getElementById('lastDate').value + 'T00:00:00');
                 const holidayDates = (selectedClass.holidays || []).map(h => new Date(h + 'T00:00:00'));
 
-                const minCriteria = getMinAttendanceCriteria(); // Usually 0.75 (75%)
-                const detentionCriteria = 0.65; // 65% detention threshold
+                const minCriteria = getMinAttendanceCriteria(); // e.g., 0.75 (75%)
+                const detentionCriteria = getMinMedicalCriteria() / 100; // Medical threshold as decimal
+                const detentionPercent = getMinMedicalCriteria(); // Medical threshold as percent (for display)
 
                 // Get planned leave and compulsory dates
                 const leavePeriods = Array.from(document.querySelectorAll('.leave-period-entry')).map(p => ({ start: p.querySelector('.leave-start-date').value, end: p.querySelector('.leave-end-date').value })).filter(d => d.start && d.end);
@@ -11153,12 +11154,12 @@ CRITICAL RULES:
                 const compulsoryDateSet = new Set();
                 compulsoryPeriods.forEach(p => { for (let d = new Date(p.start); d <= new Date(p.end); d.setDate(d.getDate() + 1)) { compulsoryDateSet.add(d.setHours(0, 0, 0, 0)); } });
 
-                // Check if any subject is already below 65% even with all remaining attended
+                // Check if any subject is already below medical threshold even with all remaining attended
                 const unreachable65 = currentAnalysisData.filter(subject => {
                     const finalTotal = subject.totalHeld + subject.remaining;
                     const maxPossible = subject.attended + subject.remaining;
                     const maxPercent = finalTotal > 0 ? (maxPossible / finalTotal) * 100 : 0;
-                    return maxPercent < 65;
+                    return maxPercent < detentionPercent;
                 });
 
                 if (unreachable65.length > 0) {
@@ -11168,7 +11169,7 @@ CRITICAL RULES:
                         <div class="subject-card" style="border-left-color: var(--danger-color);">
                             <div class="subject-title">🚫 Detention Risk!</div>
                             <p style="color: var(--danger-color);">
-                                <strong>Critical Warning:</strong> The following subject(s) cannot reach 65% even if you attend all remaining classes:<br>
+                                <strong>Critical Warning:</strong> The following subject(s) cannot reach ${detentionPercent}% even if you attend all remaining classes:<br>
                                 <strong>${subjectNames}</strong><br><br>
                                 You must focus on these subjects immediately or seek academic help.
                             </p>
@@ -11333,9 +11334,9 @@ CRITICAL RULES:
                 container.style.display = 'block';
                 let resultHTML = `
                     <div class="subject-card" style="border-left-color: var(--danger-color);">
-                        <div class="subject-title">🚫 Max Possible Bunk (Avoid Detention at 65%)</div>
+                        <div class="subject-title">🚫 Max Possible Bunk (Avoid Detention at ${detentionPercent}%)</div>
                         <p style="margin-bottom: 15px; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: 8px;">
-                            <strong>⚠️ Important:</strong> These are dates you can skip without falling below <strong>65%</strong> (detention threshold). Bottleneck: <strong>${bottleneckSubject65.name}</strong>
+                            <strong>⚠️ Important:</strong> These are dates you can skip without falling below <strong>${detentionPercent}%</strong> (detention threshold). Bottleneck: <strong>${bottleneckSubject65.name}</strong>
                         </p>`;
 
                 if (bunkableDates.length > 0) {
@@ -11345,7 +11346,7 @@ CRITICAL RULES:
                             ${bunkableDates.map(d => `<li>${d.date.toDateString()}</li>`).join('')}
                         </ul>`;
                 } else {
-                    resultHTML += `<p>No additional days can be bunked without going below 65%.</p>`;
+                    resultHTML += `<p>No additional days can be bunked without going below ${detentionPercent}%.</p>`;
                 }
 
                 // ML recommendations
