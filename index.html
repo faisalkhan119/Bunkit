@@ -6821,6 +6821,58 @@
                 initializeApp();
                 // Clear any recovery attempt flag after successful init
                 localStorage.removeItem('initRecoveryAttempt');
+
+                // POST-IMPORT TUTORIAL TRIGGER (moved here from restoreAppState which was never called)
+                if (localStorage.getItem('postImportTutorial') === 'true') {
+                    localStorage.removeItem('postImportTutorial');
+                    console.log('🤖 [TUTORIAL] Flag detected in DOMContentLoaded! Starting 2s timer...');
+
+                    setTimeout(() => {
+                        console.log('🤖 [TUTORIAL] Timer complete. Showing tutorial...');
+
+                        // Ensure chatbot button exists and is visible
+                        let botBtn = document.getElementById('aiChatbotButton');
+                        if (!botBtn) {
+                            console.log('🤖 [TUTORIAL] Creating chatbot button...');
+                            botBtn = document.createElement('div');
+                            botBtn.id = 'aiChatbotButton';
+                            botBtn.innerHTML = '💬';
+                            Object.assign(botBtn.style, {
+                                position: 'fixed',
+                                bottom: '20px',
+                                right: '20px',
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                zIndex: '2147483647'
+                            });
+                            document.body.appendChild(botBtn);
+                        }
+
+                        botBtn.style.display = 'flex';
+                        botBtn.classList.add('glowing-pulse');
+
+                        // Call tutorial function
+                        if (typeof showBunkmateTutorial === 'function') {
+                            try {
+                                showBunkmateTutorial('newclass');
+                                console.log('✅ [TUTORIAL] Tutorial started successfully!');
+                            } catch (err) {
+                                console.error('❌ [TUTORIAL] Error:', err);
+                            }
+                        } else {
+                            console.error('❌ [TUTORIAL] showBunkmateTutorial not defined!');
+                        }
+                    }, 2000);
+                }
             });
             // === SIMPLE FIX: Auto-reload when PWA resumes from frozen state ===
             let lastActiveTime = Date.now();
