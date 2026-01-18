@@ -15817,7 +15817,7 @@ CRITICAL RULES:
 
                             // TIER 2: Try Shared/Proxy Gemini API
                             // If no personal key, we use the proxy which handles its own key
-                            const personalKey = localStorage.getItem('personalGeminiKey');
+                            // (personalKey already declared in Tier 1 block above)
                             const useProxy = !personalKey; // Proxy mode when no personal key
 
                             const sharedQuota = getGeminiQuota('shared');
