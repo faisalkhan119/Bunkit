@@ -15940,15 +15940,24 @@ CRITICAL RULES:
                             for (const file of fileInput.files) {
                                 const base64 = await new Promise((resolve) => {
                                     const reader = new FileReader();
-                                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                                    reader.onloadend = () => {
+                                        if (reader.result) {
+                                            resolve(reader.result.split(',')[1]);
+                                        } else {
+                                            console.error("FileReader result is null/empty for file:", file.name);
+                                            resolve(null);
+                                        }
+                                    };
                                     reader.readAsDataURL(file);
                                 });
-                                imageParts.push({
-                                    inlineData: {
-                                        data: base64,
-                                        mimeType: file.type
-                                    }
-                                });
+                                if (base64) {
+                                    imageParts.push({
+                                        inlineData: {
+                                            data: base64,
+                                            mimeType: file.type
+                                        }
+                                    });
+                                }
                             }
 
                             // 2. Prepare Prompt
