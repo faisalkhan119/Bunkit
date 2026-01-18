@@ -15698,10 +15698,12 @@ CRITICAL RULES:
                                 // CASE B: Shared Key (Backend Proxy)
                                 console.log('🔄 Using Shared Gemini Proxy');
 
-                                // Proxy expects 'action' and 'contents'
+                                // Proxy expects: action, prompt, imageData, mimeType
                                 const proxyPayload = {
-                                    action: 'generate',
-                                    ...generationBody
+                                    action: 'vision',  // Use 'vision' for image processing
+                                    prompt: prompt,
+                                    imageData: base64,
+                                    mimeType: imageFile.type
                                 };
 
                                 response = await fetch('/api/gemini', {

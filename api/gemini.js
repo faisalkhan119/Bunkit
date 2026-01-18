@@ -105,6 +105,18 @@ module.exports = async function handler(req, res) {
                 };
                 break;
 
+            case 'generate':
+                // Generic generation - pass contents directly
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                payload = {
+                    contents: req.body.contents,
+                    generationConfig: req.body.generationConfig || {
+                        temperature: 0.2,
+                        maxOutputTokens: 4096,
+                    }
+                };
+                break;
+
             default:
                 return res.status(400).json({ error: 'Invalid action: ' + action });
         }
