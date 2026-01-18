@@ -16066,6 +16066,24 @@ CRITICAL RULES:
                                 }
                             }
 
+                            // SANITIZE: Convert Schedule Strings ("1,2") to Counts (2)
+                            if (classData.subjects && Array.isArray(classData.subjects)) {
+                                classData.subjects = classData.subjects.map(subj => {
+                                    if (!subj.schedule || !Array.isArray(subj.schedule)) return subj;
+
+                                    const newSchedule = subj.schedule.map(val => {
+                                        if (typeof val === 'number') return val;
+                                        if (typeof val === 'string') {
+                                            if (val === '0' || !val.trim()) return 0;
+                                            // Count comma-separated periods
+                                            return val.split(',').filter(p => p.trim() && p.trim() !== '0').length;
+                                        }
+                                        return 0;
+                                    });
+                                    return { ...subj, schedule: newSchedule };
+                                });
+                            }
+
                             // 4. Populate Form
                             populateClassFormFromJSON(classData);
 
