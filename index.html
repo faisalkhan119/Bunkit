@@ -5722,18 +5722,11 @@
                     try {
                         dupResult = checkClassDuplicate(inputName, classData);
                     } catch (e) {
-                        console.warn("Strict duplicate check failed, falling back to basic name check", e);
-                        // Fallback: Check if name simply exists
-                        if (classes[inputName]) {
-                            // Suggest a rudimentary copy name
-                            let counter = 1;
-                            let newName = `${inputName} (${counter})`;
-                            while (classes[newName]) {
-                                counter++;
-                                newName = `${inputName} (${counter})`;
-                            }
-                            dupResult = { status: 'name_conflict', suggestedName: newName };
-                        }
+                        console.error("Strict duplicate check crashed:", e);
+                        // USER REQUEST: Strict error, no copy creation
+                        alert("❌ Class already exists or the link is broken/invalid. Cannot import.");
+                        sessionStorage.removeItem('pendingClassImport');
+                        return; // ABORT IMPORT
                     }
 
                     if (dupResult.status === 'exact_duplicate') {
