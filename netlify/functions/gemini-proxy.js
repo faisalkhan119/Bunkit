@@ -89,6 +89,18 @@ exports.handler = async (event, context) => {
                 };
                 break;
 
+            case 'generate':
+                // Generic generation - pass contents directly (for multi-image support)
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                payload = {
+                    contents: requestBody.contents,
+                    generationConfig: requestBody.generationConfig || {
+                        temperature: 0.2,
+                        maxOutputTokens: 4096,
+                    }
+                };
+                break;
+
             default:
                 return {
                     statusCode: 400,
