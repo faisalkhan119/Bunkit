@@ -5775,7 +5775,10 @@
 
                 } catch (error) {
                     console.error('Failed to import class:', error);
-                    alert('❌ Failed to import class link. The link might be broken or invalid.');
+                    // CRITICAL: Clear pending import so it doesn't loop on refresh
+                    sessionStorage.removeItem('pendingClassImport');
+
+                    alert(`❌ Failed to import class link.\n\nError: ${error.message}\n\nThe link might be broken or from an older version.`);
 
                     // Fallback to normal onboarding if this was part of first login
                     if (!localStorage.getItem('hasCompletedOnboarding')) {
