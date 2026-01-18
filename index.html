@@ -5718,7 +5718,23 @@
                     let shouldImport = true;
 
                     // STRICT DUPLICATE CHECK (Now passes full classData)
-                    const dupResult = checkClassDuplicate(inputName, classData);
+                    let dupResult = { status: 'ok' };
+                    try {
+                        dupResult = checkClassDuplicate(inputName, classData);
+                    } catch (e) {
+                        console.warn("Strict duplicate check failed, falling back to basic name check", e);
+                        // Fallback: Check if name simply exists
+                        if (classes[inputName]) {
+                            // Suggest a rudimentary copy name
+                            let counter = 1;
+                            let newName = `${inputName} (${counter})`;
+                            while (classes[newName]) {
+                                counter++;
+                                newName = `${inputName} (${counter})`;
+                            }
+                            dupResult = { status: 'name_conflict', suggestedName: newName };
+                        }
+                    }
 
                     if (dupResult.status === 'exact_duplicate') {
                         alert(`⚠️ Class "${inputName}" already exists on this device with the same schedule!`);
@@ -5770,6 +5786,9 @@
 
                     // Set as current class and reload
                     localStorage.setItem('selectedClass', finalName);
+
+                    // Flag to trigger tutorial after reload (2s delay handled in initializeApp)
+                    sessionStorage.setItem('postImportTutorial', 'true');
 
                     setTimeout(() => location.reload(), 1000);
 
@@ -6898,6 +6917,18 @@
                     }
                     if (typeof updateSidebarAccountUI === 'function') {
                         updateSidebarAccountUI();
+                    }
+
+                    // 5. Check for Post-Import Tutorial Trigger
+                    if (sessionStorage.getItem('postImportTutorial')) {
+                        sessionStorage.removeItem('postImportTutorial');
+                        console.log('🤖 Triggering post-import chatbot tutorial in 2s...');
+                        setTimeout(() => {
+                            if (typeof showBunkmateTutorial === 'function') {
+                                // "intro" is the standard onboarding flow
+                                showBunkmateTutorial('intro');
+                            }
+                        }, 2000);
                     }
 
                     // 5. Re-check login status
