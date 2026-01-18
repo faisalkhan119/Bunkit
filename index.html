@@ -15958,28 +15958,45 @@ CRITICAL RULES:
 
                     USER NOTES: "${textInput}"
 
-                    IMPORTANT: Return ONLY a valid JSON object in this exact format:
+                    Generate a JSON structure for a weekly class timetable.
+
+                    **Global Fields:**
+                    * Include \`lastDate\` (validity as YYYY-MM-DD), a list of \`holidays\` (array of YYYY-MM-DD strings), and a \`qrCode\` string (for export/sharing - use empty string).
+
+                    **Subjects Array:**
+                    * The structure must **not** include a separate \`timetableArrangement\` object. All scheduling logic belongs inside \`subjects\`.
+                    * Each subject object must contain: \`name\`, \`code\`, \`shortName\`, and \`schedule\`.
+
+                    **Schedule Logic:**
+                    * The \`schedule\` key must be an array of 7 strings (representing days 0-6, Mon-Sun).
+                    * Use the period number as a string (e.g., "1").
+                    * If a subject occupies multiple periods on one day, separate them with commas (e.g., "2,3").
+                    * If there is no class, use "0".
+
+                    EXACT JSON STRUCTURE:
                     {
-                    "className": "Extracted Class Name",
-                    "lastDate": "YYYY-MM-DD",
-                    "holidays": ["YYYY-MM-DD", "YYYY-MM-DD"],
-                    "subjects": [
-                    {
-                    "name": "Subject Name",
-                    "code": "Subject Code",
-                    "schedule": [0, 1, 0, 2, 0, 0, 0]
-                    }
-                    ]
+                      "CLASS NAME": {
+                        "lastDate": "YYYY-MM-DD",
+                        "qrCode": "",
+                        "holidays": ["YYYY-MM-DD", "YYYY-MM-DD"],
+                        "subjects": [
+                          {
+                            "name": "Full Subject Name",
+                            "shortName": "ABBR",
+                            "code": "SUBJECT-CODE",
+                            "schedule": ["1", "1,2", "0", "3", "0", "0", "0"]
+                          }
+                        ]
+                      }
                     }
 
-                    Rules:
-                    1. "schedule": Array of 7 integers (Monday to Sunday). Each number is the count of classes for that
-                    subject on that day.
-                    2. "lastDate": If not found, estimate end of current semester (e.g., Dec 20 or May 20).
-                    3. "holidays": Extract any specific dates mentioned.
-                    4. "subjects": Extract all subjects found in timetable or attendance list.
-                    5. **IMPORTANT**: Only include subjects that are VISIBLE in the attendance detail screenshot. Do NOT add subjects that are not present in the image.
-                    6. Return ONLY JSON.
+                    CRITICAL INSTRUCTIONS:
+                    1. The top-level key MUST be the class name (e.g., "CSE Core - H").
+                    2. 'lastDate' is the single last working day of the semester.
+                    3. 'holidays' is an array of date strings for all holiday dates.
+                    4. For 'shortName', use a short abbreviation (2-5 characters) like "DS&A", "OS", "CO&A".
+                    5. The 'schedule' array represents Mon(0) to Sun(6). Use period numbers as strings.
+                    6. Provide ONLY the JSON code block in your response, with no extra text.
                     `;
 
                             // 3. Call Gemini API (Direct or Proxy)
