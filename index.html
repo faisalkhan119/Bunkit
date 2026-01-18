@@ -16042,7 +16042,20 @@ CRITICAL RULES:
 
                             if (!jsonMatch) throw new Error("Could not parse JSON from AI response.");
 
-                            const classData = JSON.parse(jsonMatch[0]);
+                            let classData = JSON.parse(jsonMatch[0]);
+
+                            // Fix for nested structure { "ClassName": { ... } }
+                            if (!classData.className) {
+                                const keys = Object.keys(classData);
+                                if (keys.length === 1 && typeof classData[keys[0]] === 'object') {
+                                    const possibleClassName = keys[0];
+                                    const nestedData = classData[possibleClassName];
+                                    // Verify it looks like our class data
+                                    if (nestedData.subjects || nestedData.lastDate) {
+                                        classData = { ...nestedData, className: possibleClassName };
+                                    }
+                                }
+                            }
 
                             // 4. Populate Form
                             populateClassFormFromJSON(classData);
