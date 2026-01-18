@@ -16118,8 +16118,7 @@ CRITICAL RULES:
                         if (data.holidays && Array.isArray(data.holidays)) {
                             data.holidays.forEach(date => {
                                 const li = document.createElement('li');
-                                li.innerHTML = `${formatDate(date)} <span class="remove-holiday"
-                        onclick="this.parentElement.remove()">×</span>`;
+                                li.innerHTML = `<span>${date}</span><button type="button" class="remove-holiday-btn" onclick="this.parentElement.remove()">Remove</button>`;
                                 li.dataset.date = date;
                                 holidayList.appendChild(li);
                             });
