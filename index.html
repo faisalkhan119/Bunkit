@@ -16066,22 +16066,66 @@ CRITICAL RULES:
                                 }
                             }
 
-                            // SANITIZE: Convert Schedule Strings ("1,2") to Counts (2)
-                            if (classData.subjects && Array.isArray(classData.subjects)) {
-                                classData.subjects = classData.subjects.map(subj => {
-                                    if (!subj.schedule || !Array.isArray(subj.schedule)) return subj;
+                            // GENERATE TIMETABLE ARRANGEMENT & SANITIZE SCHEDULE
+                            // Detect if schedule uses new string format (e.g. "1,2")
+                            const isNewFormat = classData.subjects && classData.subjects.some(sub =>
+                                sub.schedule && sub.schedule.some(val => typeof val === 'string' && val.includes(','))
+                            );
 
+                            if (isNewFormat) {
+                                console.log("AI Import: Detected new string-based schedule format. Generating timetable arrangement...");
+                                let arrangement = {};
+                                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+                                // Calculate max periods
+                                let maxPeriods = 0;
+                                classData.subjects.forEach(subject => {
+                                    if (Array.isArray(subject.schedule)) {
+                                        subject.schedule.forEach(daySchedule => {
+                                            if (daySchedule && daySchedule !== '0') {
+                                                const periods = String(daySchedule).split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+                                                if (periods.length > 0) maxPeriods = Math.max(maxPeriods, Math.max(...periods));
+                                            }
+                                        });
+                                    }
+                                });
+
+                                // Build arrangement
+                                days.forEach((dayName, dayIndex) => {
+                                    arrangement[dayIndex] = Array(maxPeriods).fill(null);
+                                    classData.subjects.forEach(subject => {
+                                        if (subject.schedule && subject.schedule[dayIndex] && subject.schedule[dayIndex] !== '0') {
+                                            const periods = String(subject.schedule[dayIndex]).split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
+                                            periods.forEach(periodNum => {
+                                                if (periodNum > 0 && periodNum <= maxPeriods) {
+                                                    arrangement[dayIndex][periodNum - 1] = subject.code;
+                                                }
+                                            });
+                                        }
+                                    });
+                                    // Clean up trailing nulls
+                                    while (arrangement[dayIndex].length > 0 && arrangement[dayIndex][arrangement[dayIndex].length - 1] === null) {
+                                        arrangement[dayIndex].pop();
+                                    }
+                                });
+
+                                // Store in global temp variable for save
+                                tempTimetableArrangement = arrangement;
+
+                                // Convert schedule to counts for form
+                                classData.subjects = classData.subjects.map(subj => {
                                     const newSchedule = subj.schedule.map(val => {
-                                        if (typeof val === 'number') return val;
                                         if (typeof val === 'string') {
                                             if (val === '0' || !val.trim()) return 0;
-                                            // Count comma-separated periods
                                             return val.split(',').filter(p => p.trim() && p.trim() !== '0').length;
                                         }
-                                        return 0;
+                                        return typeof val === 'number' ? val : 0;
                                     });
                                     return { ...subj, schedule: newSchedule };
                                 });
+                            } else {
+                                // Clear temp arrangement if not new format
+                                tempTimetableArrangement = null;
                             }
 
                             // 4. Populate Form
