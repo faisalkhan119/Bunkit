@@ -4603,6 +4603,11 @@
                             <div class="input-group">
                                 <label for="minAttendanceInput">Minimum Attendance %</label>
                                 <input type="number" id="minAttendanceInput" value="75" min="1" max="100"
+                                    oninput="triggerRecalculation(); updateMedicalMax()">
+                            </div>
+                            <div class="input-group">
+                                <label for="minMedicalInput">Min % for Medical</label>
+                                <input type="number" id="minMedicalInput" value="65" min="0" max="75"
                                     oninput="triggerRecalculation()">
                             </div>
                             <div class="input-group">
@@ -6822,6 +6827,26 @@
                 // Clear any recovery attempt flag after successful init
                 localStorage.removeItem('initRecoveryAttempt');
 
+                // Restore saved calculation settings
+                const savedMinAttendance = localStorage.getItem('calcSettings_minAttendance');
+                const savedMinMedical = localStorage.getItem('calcSettings_minMedical');
+                const savedIsOverall = localStorage.getItem('calcSettings_isOverall');
+
+                if (savedMinAttendance) {
+                    const minAttInput = document.getElementById('minAttendanceInput');
+                    if (minAttInput) minAttInput.value = savedMinAttendance;
+                }
+                if (savedMinMedical) {
+                    const minMedInput = document.getElementById('minMedicalInput');
+                    if (minMedInput) minMedInput.value = savedMinMedical;
+                }
+                if (savedIsOverall !== null) {
+                    const overallCheckbox = document.getElementById('overallCriteriaCheckbox');
+                    if (overallCheckbox) overallCheckbox.checked = savedIsOverall === 'true';
+                }
+                // Update medical max based on restored min attendance
+                if (typeof updateMedicalMax === 'function') updateMedicalMax();
+
                 // POST-IMPORT TUTORIAL TRIGGER (moved here from restoreAppState which was never called)
                 if (localStorage.getItem('postImportTutorial') === 'true') {
                     localStorage.removeItem('postImportTutorial');
@@ -7391,11 +7416,38 @@
                 return isNaN(value) || value <= 0 ? 0.75 : value / 100;
             }
 
+            function getMinMedicalCriteria() {
+                const input = document.getElementById('minMedicalInput');
+                const value = parseFloat(input ? input.value : 65);
+                return isNaN(value) || value < 0 ? 65 : value;
+            }
+
+            function updateMedicalMax() {
+                const minAttendance = document.getElementById('minAttendanceInput').value;
+                const medicalInput = document.getElementById('minMedicalInput');
+                if (medicalInput) {
+                    medicalInput.max = minAttendance;
+                    // If current value exceeds new max, reduce it
+                    if (parseFloat(medicalInput.value) > parseFloat(minAttendance)) {
+                        medicalInput.value = minAttendance;
+                    }
+                }
+            }
+
             function isOverallMode() {
                 return document.getElementById('overallCriteriaCheckbox').checked;
             }
 
             function triggerRecalculation() {
+                // Save calculation settings to localStorage
+                const minAttendanceInput = document.getElementById('minAttendanceInput');
+                const minMedicalInput = document.getElementById('minMedicalInput');
+                const overallCheckbox = document.getElementById('overallCriteriaCheckbox');
+
+                if (minAttendanceInput) localStorage.setItem('calcSettings_minAttendance', minAttendanceInput.value);
+                if (minMedicalInput) localStorage.setItem('calcSettings_minMedical', minMedicalInput.value);
+                if (overallCheckbox) localStorage.setItem('calcSettings_isOverall', overallCheckbox.checked);
+
                 if (currentAnalysisData.length > 0) {
                     calculateAttendance(currentAnalysisData);
                 }
@@ -10512,7 +10564,7 @@ CRITICAL RULES:
                 <div class="subject-title">🏥 Medical Certificate Opportunity</div>`;
 
                 const minCriteria = getMinAttendanceCriteria() * 100;
-                const condonationThreshold = 65;
+                const condonationThreshold = getMinMedicalCriteria();
 
                 if (activeStats.maxPossiblePercent >= minCriteria) {
                     // CONDITION A: SAFE
