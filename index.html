@@ -6848,11 +6848,24 @@
                 if (typeof updateMedicalMax === 'function') updateMedicalMax();
 
                 // Semester Timeline: Check mode and set read-only state
-                const hasStoredData = localStorage.getItem('attendanceClasses_v2');
+                // Strict check: Portal Mode only if `attendanceClasses_v2` exists AND has actual classes
+                const storedDataStr = localStorage.getItem('attendanceClasses_v2');
+                let isPortalMode = false;
+                if (storedDataStr) {
+                    try {
+                        const parsedData = JSON.parse(storedDataStr);
+                        if (parsedData && Object.keys(parsedData).length > 0) {
+                            isPortalMode = true;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing stored data for mode check", e);
+                    }
+                }
+
                 const currentDateInput = document.getElementById('currentDate');
                 const lastDateInput = document.getElementById('lastDate');
 
-                if (hasStoredData) {
+                if (isPortalMode) {
                     // Portal Mode: Dates are fixed (read-only)
                     if (currentDateInput) {
                         currentDateInput.readOnly = true;
