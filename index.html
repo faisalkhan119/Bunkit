@@ -6958,20 +6958,51 @@
                     // Check local storage instead of session just to be safe
                     if (localStorage.getItem('postImportTutorial') === 'true') {
                         localStorage.removeItem('postImportTutorial');
-                        console.log('🤖 Triggering post-import chatbot tutorial in 2s...');
+                        console.log('🤖 [TUTORIAL] Flag detected! Triggering chatbot tutorial in 2s...');
 
                         setTimeout(() => {
-                            // Ensure chatbot button is visible
-                            const botBtn = document.getElementById('aiChatbotButton');
-                            if (botBtn) {
-                                botBtn.style.display = 'flex';
-                                // Add glow
-                                botBtn.classList.add('glowing-pulse');
+                            console.log('🤖 [TUTORIAL] Timer fired. Setting up tutorial...');
+
+                            // Ensure chatbot button is visible or create it
+                            let botBtn = document.getElementById('aiChatbotButton');
+                            if (!botBtn) {
+                                console.log('🤖 [TUTORIAL] Creating fallback chatbot button...');
+                                botBtn = document.createElement('div');
+                                botBtn.id = 'aiChatbotButton';
+                                botBtn.innerHTML = '💬';
+                                Object.assign(botBtn.style, {
+                                    position: 'fixed',
+                                    bottom: '20px',
+                                    right: '20px',
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                    zIndex: '2147483647'
+                                });
+                                document.body.appendChild(botBtn);
                             }
 
+                            botBtn.style.display = 'flex';
+                            botBtn.classList.add('glowing-pulse');
+                            console.log('🤖 [TUTORIAL] Chatbot button ready. Calling showBunkmateTutorial...');
+
                             if (typeof showBunkmateTutorial === 'function') {
-                                // Use 'newclass' for better context (showing Form/Schedule tips)
-                                showBunkmateTutorial('newclass');
+                                try {
+                                    showBunkmateTutorial('newclass');
+                                    console.log('✅ [TUTORIAL] showBunkmateTutorial called successfully!');
+                                } catch (tutErr) {
+                                    console.error('❌ [TUTORIAL] showBunkmateTutorial crashed:', tutErr);
+                                }
+                            } else {
+                                console.error('❌ [TUTORIAL] showBunkmateTutorial is not defined!');
                             }
                         }, 2000);
                     }
@@ -15784,30 +15815,33 @@ CRITICAL RULES:
                                 }
                             }
 
-                            // TIER 2: Try Shared Gemini API Key
-                            // Always try shared key if personal key didn't work, unless explicitly out of quota
-                            const sharedQuota = getGeminiQuota('shared');
-                            const hasQuota = hasGeminiQuotaRemaining('shared', GEMINI_API_KEY);
+                            // TIER 2: Try Shared/Proxy Gemini API
+                            // If no personal key, we use the proxy which handles its own key
+                            const personalKey = localStorage.getItem('personalGeminiKey');
+                            const useProxy = !personalKey; // Proxy mode when no personal key
 
-                            console.log(`🤖 Checking Shared Gemini: Quota ${sharedQuota.count}/${sharedQuota.limit}, HasQuota:
-                    ${hasQuota}`);
+                            const sharedQuota = getGeminiQuota('shared');
+                            // For proxy mode, we don't check key existence since proxy has its own
+                            const hasQuota = useProxy ? (sharedQuota.count < sharedQuota.limit) : hasGeminiQuotaRemaining('shared', GEMINI_API_KEY);
+
+                            console.log(`🤖 Tier 2 Check: UseProxy=${useProxy}, Quota ${sharedQuota.count}/${sharedQuota.limit}, HasQuota: ${hasQuota}`);
 
                             if (hasQuota) {
                                 if (showProgress) {
-                                    console.log(`🤖 Processing with Shared Gemini AI (${sharedQuota.count}/${sharedQuota.limit}
-                    today)...`);
+                                    console.log(`🤖 Processing with ${useProxy ? 'Proxy' : 'Shared'} Gemini AI (${sharedQuota.count}/${sharedQuota.limit} today)...`);
                                 }
 
                                 try {
-                                    const result = await processImageWithGemini(imageFile, GEMINI_API_KEY);
+                                    // processImageWithGemini now handles proxy internally
+                                    const result = await processImageWithGemini(imageFile);
                                     incrementGeminiQuota('shared');
-                                    return { data: result, method: 'Shared Gemini AI', success: true };
+                                    return { data: result, method: useProxy ? 'Proxy Gemini AI' : 'Shared Gemini AI', success: true };
                                 } catch (geminiError) {
-                                    console.error('❌ Shared Gemini failed:', geminiError);
+                                    console.error('❌ Gemini (Tier 2) failed:', geminiError);
                                     // Continue to Tier 3
                                 }
                             } else {
-                                console.warn('⚠️ Shared Gemini quota exceeded or key missing. Falling back to Tesseract.');
+                                console.warn('⚠️ Shared Gemini quota exceeded. Falling back to Tesseract.');
                             }
 
                             // TIER 3: Use Tesseract Fallback
