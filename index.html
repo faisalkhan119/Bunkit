@@ -5649,11 +5649,16 @@
                         c: s.code,
                         s: JSON.stringify(s.schedule)
                     });
-                    const existingSubjectsStr = JSON.stringify(existingClass.subjects.map(formatSubject));
-                    const newSubjectsStr = JSON.stringify(newClassData.subjects.map(formatSubject));
+
+                    // Safety check: ensure subjects are arrays
+                    const existingSubjectsArr = Array.isArray(existingClass.subjects) ? existingClass.subjects : [];
+                    const newSubjectsArr = Array.isArray(newClassData.subjects) ? newClassData.subjects : [];
+
+                    const existingSubjectsStr = JSON.stringify(existingSubjectsArr.map(formatSubject));
+                    const newSubjectsStr = JSON.stringify(newSubjectsArr.map(formatSubject));
 
                     // 2. Compare Holidays
-                    const sortStr = arr => JSON.stringify((arr || []).sort());
+                    const sortStr = arr => JSON.stringify((Array.isArray(arr) ? arr : []).sort());
                     const existingHolidaysStr = sortStr(existingClass.holidays);
                     const newHolidaysStr = sortStr(newClassData.holidays);
 
@@ -5662,7 +5667,10 @@
                     const newTimetableStr = JSON.stringify(newClassData.timetable || {});
 
                     // 4. Compare Last Date
-                    const isLastDateSame = existingClass.lastDate === newClassData.lastDate;
+                    // Treat undefined as empty string for comparison
+                    const existingLastDate = existingClass.lastDate || '';
+                    const newLastDate = newClassData.lastDate || '';
+                    const isLastDateSame = existingLastDate === newLastDate;
 
                     const isDuplicate =
                         (existingSubjectsStr === newSubjectsStr) &&
@@ -15348,6 +15356,7 @@ CRITICAL RULES:
                         // Prepare class data (clean structure)
                         const classData = {
                             name: selectedClass.name,
+                            lastDate: selectedClass.lastDate, // Added for strict duplicate check
                             subjects: selectedClass.subjects || [],
                             holidays: selectedClass.holidays || [],
                             timetable: selectedClass.timetable || {},
