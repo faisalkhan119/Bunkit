@@ -9863,7 +9863,7 @@ CRITICAL INSTRUCTIONS:
                         timetable: currentTimetable
                     };
 
-                    const dupResult = checkClassDuplicate(className, tempClassData);
+                    const dupResult = checkClassDuplicate(className, subjects, currentTimetable);
 
                     if (dupResult.status === 'exact_duplicate') {
                         alert(`⚠️ Class "${className}" already exists with this exact schedule!`);
