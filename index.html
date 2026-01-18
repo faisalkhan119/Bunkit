@@ -14652,7 +14652,8 @@ CRITICAL RULES:
                     subjects: currentClass.subjects || [],
                     holidays: currentClass.holidays || [],
                     timetable: getTimetableArrangement(editingClassName) || {},
-                    periodTimes: currentClass.periodTimes || {}
+                    periodTimes: currentClass.periodTimes || {},
+                    lastDate: currentClass.lastDate || ''
                 };
 
                 // Compression v2
@@ -14661,8 +14662,12 @@ CRITICAL RULES:
                 const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
 
                 const shareData = {
-                    title: 'Join my Class on Bunkit',
-                    text: `Hey! I'm using Bunkit to track attendance. Here's our class setup for ${cleanClassData.name}. Click to import subjects and timetable:\n\n`,
+                    title: `${cleanClassData.name} | Bunkit Class`,
+                    text: `${cleanClassData.name} | Bunkit Class\n\n` +
+                        `Hey everyone! If you want to track attendance and timetable easily, just follow these quick steps:\n\n` +
+                        `Click the link below and your subjects + timetable will import automatically.\n\n` +
+                        `Use Bunkit on the web or add it to your home screen to use it just like an app for both iOS and Android.\n\n` +
+                        `Import Link: ${shareUrl}`,
                     url: shareUrl
                 };
 
