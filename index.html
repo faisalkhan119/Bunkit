@@ -5787,8 +5787,8 @@
                     // Set as current class and reload
                     localStorage.setItem('selectedClass', finalName);
 
-                    // Flag to trigger tutorial after reload (2s delay handled in initializeApp)
-                    sessionStorage.setItem('postImportTutorial', 'true');
+                    // Flag to trigger tutorial after reload (Use localStorage for better reliability across refreshes)
+                    localStorage.setItem('postImportTutorial', 'true');
 
                     setTimeout(() => location.reload(), 1000);
 
@@ -6065,9 +6065,14 @@
                     `💬 <b>Confused?</b> Koi tension nahi! Neeche right side mein mera <b>chat icon</b> 💬 hai - mujhse kuch bhi poocho, main hoon na! 🤗`
                 ];
 
-                tutorialMessages = [...introMessages, ...(type === 'newclass' ? newClassMessages : exampleMessages)];
-                tutorialCloudIndex = 0;
+                // Correctly mapping 'intro' to 'introMessages'
+                if (type === 'intro') {
+                    tutorialMessages = introMessages;
+                } else {
+                    tutorialMessages = [...introMessages, ...(type === 'newclass' ? newClassMessages : exampleMessages)];
+                }
 
+                tutorialCloudIndex = 0;
                 createTutorialOverlay();
                 showNextCloud();
             }
@@ -6920,13 +6925,23 @@
                     }
 
                     // 5. Check for Post-Import Tutorial Trigger
-                    if (sessionStorage.getItem('postImportTutorial')) {
-                        sessionStorage.removeItem('postImportTutorial');
+                    // Check local storage instead of session just to be safe
+                    if (localStorage.getItem('postImportTutorial') === 'true') {
+                        localStorage.removeItem('postImportTutorial');
                         console.log('🤖 Triggering post-import chatbot tutorial in 2s...');
+
                         setTimeout(() => {
+                            // Ensure chatbot button is visible
+                            const botBtn = document.getElementById('aiChatbotButton');
+                            if (botBtn) {
+                                botBtn.style.display = 'flex';
+                                // Add glow
+                                botBtn.classList.add('glowing-pulse');
+                            }
+
                             if (typeof showBunkmateTutorial === 'function') {
-                                // "intro" is the standard onboarding flow
-                                showBunkmateTutorial('intro');
+                                // Use 'newclass' for better context (showing Form/Schedule tips)
+                                showBunkmateTutorial('newclass');
                             }
                         }, 2000);
                     }
