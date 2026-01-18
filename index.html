@@ -16005,7 +16005,8 @@ CRITICAL RULES:
                     3. 'holidays' is an array of date strings for all holiday dates.
                     4. For 'shortName', use a short abbreviation (2-5 characters) like "DS&A", "OS", "CO&A".
                     5. The 'schedule' array represents Mon(0) to Sun(6). Use period numbers as strings.
-                    6. Provide ONLY the JSON code block in your response, with no extra text.
+                    6. Merge 'Theory' and 'Lab' sessions of the same subject into a SINGLE subject entry with a combined schedule. (e.g., "Physics" and "Physics Lab" must be one subject).
+                    7. Provide ONLY the JSON code block in your response, with no extra text.
                     `;
 
                             // 3. Call Gemini API (Direct or Proxy)
