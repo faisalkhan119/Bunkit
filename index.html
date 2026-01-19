@@ -12848,7 +12848,7 @@ CRITICAL INSTRUCTIONS:
                     };
                 }
 
-                const lastLog = new Date(lastLogDate);
+                const lastLog = parseLocalDate(lastLogDate);
                 const todayStr = formatLocalDate(today);
 
                 // If last log is today, all complete
@@ -13395,9 +13395,12 @@ CRITICAL INSTRUCTIONS:
                     const logDate = parseLocalDate(dateStr);
                     if (logDate > baselineDate && logDate <= effectiveDateObj) {
                         const dayLog = logs[dateStr];
-                        Object.keys(dayLog).forEach(code => {
+                        Object.keys(dayLog).forEach(key => {
+                            // Extract base subject code from Subject_pX or use as-is (legacy)
+                            const code = key.split('_p')[0];
+
                             if (effectiveStats[code]) {
-                                const status = dayLog[code];
+                                const status = dayLog[key];
                                 if (status === 'Attended' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)') {
                                     effectiveStats[code].attended++;
                                     effectiveStats[code].total++;
