@@ -15091,12 +15091,23 @@ CRITICAL INSTRUCTIONS:
                         if (!isDateHoliday(dateStr)) {
                             const periods = getTimetableForDay(scheduleIndex);
                             const dayLog = logs[dateStr] || {};
+                            const seenCounts = {};
 
                             periods.forEach(period => {
                                 // Skip null/free periods
                                 if (!period || !period.code) return;
 
-                                const status = dayLog[period.code];
+                                // Track instance count for this subject (e.g., 1st MATH, 2nd MATH)
+                                seenCounts[period.code] = (seenCounts[period.code] || 0) + 1;
+                                const instance = seenCounts[period.code];
+                                const specificKey = `${period.code}_p${instance}`;
+
+                                // Check period-specific key first, then fallback to legacy key
+                                let status = dayLog[specificKey];
+                                if (!status && instance === 1) {
+                                    status = dayLog[period.code];
+                                }
+
                                 if (!status || status === 'Default') {
                                     notLoggedCount++;
                                 } else if (status === 'Attended') {
