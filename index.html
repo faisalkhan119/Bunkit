@@ -7762,8 +7762,8 @@ Generate a JSON object mapping subject codes to attendance numbers. Use this EXA
 }
 
 CRITICAL RULES:
-1. Use EXACT subject codes from the list above
-2. Extract "total" (classes held) and "present" (classes attended) as integers
+1. Use EXACT subject codes from the list above.
+2. "total" (classes held) MUST be >= "present" (classes attended). If ambiguous, assume the larger number is "total".
 3. Return ONLY JSON, no explanations`;
 
                     const response = await fetch(
@@ -7808,6 +7808,18 @@ CRITICAL RULES:
                     }
 
                     const data = JSON.parse(jsonString);
+
+                    // SANITY CHECK: Swap if present > total (Fix for >100% bug)
+                    Object.keys(data).forEach(key => {
+                        const entry = data[key];
+                        if (entry.present > entry.total) {
+                            console.warn(`Fixed swapped data for ${key}: Present (${entry.present}) > Total (${entry.total}). Swapping.`);
+                            const temp = entry.present;
+                            entry.present = entry.total;
+                            entry.total = temp;
+                        }
+                    });
+
                     return { success: true, data };
 
                 } catch (error) {
