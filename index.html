@@ -14784,7 +14784,7 @@ CRITICAL INSTRUCTIONS:
                 if (!selectedClass?.portalSetup?.semesterStartDate) return [];
 
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
-                const startDate = new Date(selectedClass.portalSetup.semesterStartDate);
+                const startDate = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -15765,11 +15765,56 @@ Provide ONLY the JSON code block, no explanations.`;
                     }
 
                     function copyShareLinkToClipboard(text) {
-                        navigator.clipboard.writeText(text).then(() => {
-                            alert('🔗 Link copied to clipboard!\n\nYou can now paste and share it.');
-                        }).catch(() => {
-                            alert('❌ Failed to copy link.');
-                        });
+                        // Try modern Clipboard API first
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).then(() => {
+                                alert('🔗 Link copied to clipboard!\n\nYou can now paste and share it.');
+                            }).catch(() => {
+                                // Fallback for iOS Safari and older browsers
+                                copyToClipboardFallback(text);
+                            });
+                        } else {
+                            // Fallback for browsers without Clipboard API
+                            copyToClipboardFallback(text);
+                        }
+                    }
+
+                    // iOS-compatible clipboard fallback using execCommand
+                    function copyToClipboardFallback(text) {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+
+                        // iOS Safari requires specific styling
+                        textArea.style.position = 'fixed';
+                        textArea.style.left = '-9999px';
+                        textArea.style.top = '0';
+                        textArea.style.opacity = '0';
+                        textArea.setAttribute('readonly', ''); // Prevent zoom on iOS
+
+                        document.body.appendChild(textArea);
+
+                        // iOS Safari requires this specific selection approach
+                        const range = document.createRange();
+                        range.selectNodeContents(textArea);
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        textArea.setSelectionRange(0, text.length); // For older iOS
+
+                        try {
+                            const successful = document.execCommand('copy');
+                            if (successful) {
+                                alert('🔗 Link copied to clipboard!\n\nYou can now paste and share it.');
+                            } else {
+                                // Show link for manual copy
+                                prompt('Copy this link manually:', text);
+                            }
+                        } catch (err) {
+                            // Show link for manual copy
+                            prompt('Copy this link manually:', text);
+                        }
+
+                        document.body.removeChild(textArea);
                     }
 
                     function downloadQRImage() {
