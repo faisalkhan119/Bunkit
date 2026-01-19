@@ -11882,21 +11882,28 @@ CRITICAL INSTRUCTIONS:
                 }
 
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
-                if (!logs[dateStr]) {
-                    logs[dateStr] = {};
-                }
+
+                // FIX: Create a FRESH object for this day to prevent "ghost logs"
+                // (e.g., if user had 5 periods in custom schedule, marked them, then reverted to default 1 period,
+                // we want the other 4 logs to be removed, not processed as a merge)
+                const newDayLog = {};
 
                 document.querySelectorAll('#dailyLogSubjects select').forEach(select => {
                     const code = select.dataset.code;
                     const status = select.value;
-                    if (status === 'Default') {
-                        delete logs[dateStr][code];
-                    } else {
-                        logs[dateStr][code] = status;
+
+                    // Only save non-default statuses
+                    if (status !== 'Default') {
+                        // Special handling for legacy keys if needed, but standardizing on code is safer
+                        newDayLog[code] = status;
                     }
                 });
 
-                if (Object.keys(logs[dateStr]).length === 0) {
+                // Update the main logs object
+                if (Object.keys(newDayLog).length > 0) {
+                    logs[dateStr] = newDayLog;
+                } else {
+                    // If all are default, remove the entry for this date entirely
                     delete logs[dateStr];
                 }
 
@@ -15044,7 +15051,28 @@ CRITICAL INSTRUCTIONS:
                         // Get subjects for this day - PRESERVE LOGGED DATA
                         // Logged data is NEVER affected by timetable changes - it stays as-is
                         const loggedSubjectCodes = Object.keys(dayLog);
-                        const timetablePeriods = getTimetableForDay(scheduleIndex);
+
+                        // FIX: Check for Custom Schedule FIRST
+                        const customSchedule = getCustomScheduleForDate(dateStr);
+                        let timetablePeriods = [];
+
+                        if (customSchedule && customSchedule._periods) {
+                            // Use Custom Schedule Periods (New Format)
+                            timetablePeriods = customSchedule._periods.map(code => {
+                                if (!code) return null; // Free period
+                                const subject = selectedClass.subjects.find(s => s.code === code);
+                                return subject ? { code: subject.code, name: subject.name } : null;
+                            });
+                        } else if (customSchedule && typeof customSchedule === 'object' && !Array.isArray(customSchedule)) {
+                            // Use Custom Schedule Periods (Old Count-based Format via Fallback Logic)
+                            // Since old format doesn't have order, we try to reconstruct or just fall back to default
+                            // For simplicity and safety, we'll fall back to default timetable order but filtered by count
+                            // (Ideally users should just re-save as period-based if they want strict order)
+                            timetablePeriods = getTimetableForDay(scheduleIndex);
+                        } else {
+                            // Default Timetable
+                            timetablePeriods = getTimetableForDay(scheduleIndex);
+                        }
 
                         // Create a combined list with smart ordering
                         let periodsToShow = [];
