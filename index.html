@@ -13484,64 +13484,107 @@ CRITICAL INSTRUCTIONS:
                 // Check for custom schedule for this date
                 const customSchedule = getCustomScheduleForDate(dateStr);
 
-                selectedClass.subjects.forEach(subject => {
-                    // Check if this subject should be shown and how many times
-                    let periodCount = 0;
+                // Get day of week for timetable lookup
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, 6=Sun
 
-                    if (customSchedule) {
-                        // Custom schedule exists
-                        if (Array.isArray(customSchedule)) {
-                            // Old format: array of codes (count occurrences)
-                            periodCount = customSchedule.filter(code => code === subject.code).length;
-                            // Fallback for old format which might have only 1 entry for duplicate subject
-                            if (periodCount === 0 && customSchedule.includes(subject.code)) periodCount = 1;
-                        } else {
-                            // New format: object {code: count}
-                            periodCount = customSchedule[subject.code] || 0;
+                // Get timetable arrangement for period ordering
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
+                const dayArrangement = arrangement[dayIndex] || [];
+
+                // Build ordered list of subjects based on timetable periods
+                const orderedSubjects = [];
+
+                if (customSchedule && typeof customSchedule === 'object' && !Array.isArray(customSchedule)) {
+                    // Custom schedule mode: subject counts (not period-based yet)
+                    // Sort by timetable order where possible
+                    const subjectOrder = {};
+                    dayArrangement.forEach((item, idx) => {
+                        const code = typeof item === 'object' ? item?.code : item;
+                        if (code && !subjectOrder[code]) subjectOrder[code] = idx;
+                    });
+
+                    // Get subjects with custom counts, sorted by timetable order
+                    selectedClass.subjects
+                        .filter(s => customSchedule[s.code] > 0)
+                        .sort((a, b) => (subjectOrder[a.code] ?? 999) - (subjectOrder[b.code] ?? 999))
+                        .forEach(subject => {
+                            const periodCount = customSchedule[subject.code];
+                            for (let i = 1; i <= periodCount; i++) {
+                                orderedSubjects.push({ subject, periodNum: i, totalPeriods: periodCount });
+                            }
+                        });
+                } else if (dayArrangement.length > 0) {
+                    // Use timetable arrangement order (period by period)
+                    const periodCounts = {}; // Track how many periods each subject has been added
+
+                    dayArrangement.forEach((item, periodIdx) => {
+                        const code = typeof item === 'object' ? item?.code : item;
+                        if (!code) return; // Skip free periods
+
+                        const subject = selectedClass.subjects.find(s => s.code === code);
+                        if (!subject) return;
+
+                        periodCounts[code] = (periodCounts[code] || 0) + 1;
+                        const totalForSubject = dayArrangement.filter(i => {
+                            const c = typeof i === 'object' ? i?.code : i;
+                            return c === code;
+                        }).length;
+
+                        orderedSubjects.push({
+                            subject,
+                            periodNum: periodCounts[code],
+                            totalPeriods: totalForSubject,
+                            timetablePeriod: periodIdx + 1 // Actual period number in timetable
+                        });
+                    });
+                } else {
+                    // Fallback: use default schedule counts in storage order
+                    selectedClass.subjects.forEach(subject => {
+                        const periodCount = subject.schedule[dayIndex] || 0;
+                        for (let i = 1; i <= periodCount; i++) {
+                            orderedSubjects.push({ subject, periodNum: i, totalPeriods: periodCount });
                         }
-                    } else {
-                        // Use default schedule
-                        const date = new Date(dateStr);
-                        const dayOfWeek = date.getDay();
-                        const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                        periodCount = subject.schedule[scheduleIndex] || 0;
+                    });
+                }
+
+                // Render subjects in order
+                orderedSubjects.forEach(({ subject, periodNum, totalPeriods, timetablePeriod }) => {
+                    const periodKey = `${subject.code}_p${periodNum}`;
+                    let currentStatus = dayLog[periodKey];
+
+                    if (!currentStatus && periodNum === 1) {
+                        // Fallback to legacy key 'SUBJECT' if 'SUBJECT_p1' is missing
+                        currentStatus = dayLog[subject.code];
                     }
 
-                    if (periodCount === 0) return;
+                    currentStatus = currentStatus || 'Default';
 
-                    // Render a dropdown for EACH period of this subject
-                    for (let i = 1; i <= periodCount; i++) {
-                        // Key for storage: SUBJECT_p1, SUBJECT_p2, etc.
-                        // BACKWARD COMPATIBILITY: If _p1 doesn't exist, check base code (legacy data)
-                        // If it's the first period, we might have stored it as just "SUBJECT"
-                        const periodKey = `${subject.code}_p${i}`;
-                        let currentStatus = dayLog[periodKey];
+                    const div = document.createElement('div');
+                    div.className = 'subject-log-entry';
 
-                        if (!currentStatus && i === 1) {
-                            // Fallback to legacy key 'SUBJECT' if 'SUBJECT_p1' is missing
-                            currentStatus = dayLog[subject.code];
-                        }
-
-                        // Default fallback
-                        currentStatus = currentStatus || 'Default';
-
-                        const div = document.createElement('div');
-                        div.className = 'subject-log-entry';
-                        const labelSuffix = periodCount > 1 ? ` (Period ${i})` : '';
-
-                        div.innerHTML = `
-                        <label>${subject.name} ${labelSuffix}</label>
-                        <select data-code="${periodKey}" data-previous-value="${currentStatus}" onchange="handleStatusChange(this)">
-                            <option value="Default" ${currentStatus === 'Default' ? 'selected' : ''}>Default (Held)</option>
-                            <option value="Attended" ${currentStatus === 'Attended' ? 'selected' : ''}>Attended</option>
-                            <option value="Skipped" ${currentStatus === 'Skipped' ? 'selected' : ''}>Skipped</option>
-                            <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                            <option value="Duty Leave (OD)" ${currentStatus === 'Duty Leave (OD)' ? 'selected' : ''}>Duty Leave (OD)</option>
-                            <option value="Medical Leave (ML)" ${currentStatus === 'Medical Leave (ML)' ? 'selected' : ''}>Medical Leave (ML)</option>
-                        </select>
-                    `;
-                        subjectList.appendChild(div);
+                    // Show period number if multiple or if we have timetable info
+                    let labelSuffix = '';
+                    if (timetablePeriod) {
+                        labelSuffix = ` (Period ${timetablePeriod})`;
+                    } else if (totalPeriods > 1) {
+                        labelSuffix = ` (Period ${periodNum})`;
                     }
+
+                    div.innerHTML = `
+                    <label>${subject.name}${labelSuffix}</label>
+                    <select data-code="${periodKey}" data-previous-value="${currentStatus}" onchange="handleStatusChange(this)">
+                        <option value="Default" ${currentStatus === 'Default' ? 'selected' : ''}>Default (Held)</option>
+                        <option value="Attended" ${currentStatus === 'Attended' ? 'selected' : ''}>Attended</option>
+                        <option value="Skipped" ${currentStatus === 'Skipped' ? 'selected' : ''}>Skipped</option>
+                        <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        <option value="Duty Leave (OD)" ${currentStatus === 'Duty Leave (OD)' ? 'selected' : ''}>Duty Leave (OD)</option>
+                        <option value="Medical Leave (ML)" ${currentStatus === 'Medical Leave (ML)' ? 'selected' : ''}>Medical Leave (ML)</option>
+                    </select>
+                `;
+                    subjectList.appendChild(div);
                 });
             }
 
