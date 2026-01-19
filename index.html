@@ -13396,9 +13396,10 @@ CRITICAL INSTRUCTIONS:
                     const past = pastLogStats[code] || { attended: 0, total: 0 };
 
                     // Logic: If user has logged enough classes to match the baseline total, 
+                    // OR if logs are COMPLETE (no gaps from sem start to today),
                     // trust the LOGS (Fact) over the BASELINE (Estimate).
                     // This fixes the case where user backfills logs (e.g. 45/100) but baseline was higher (50/100).
-                    if (past.total >= base.total && base.total > 0) {
+                    if (logStatus.allComplete || (past.total >= base.total && base.total > 0)) {
                         effectiveStats[code] = {
                             attended: past.attended,
                             total: past.total
