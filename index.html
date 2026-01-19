@@ -15208,14 +15208,45 @@ CRITICAL INSTRUCTIONS:
                             }
 
                             if (shouldKeepLogOrder) {
-                                // Keep log's original order - timetable doesn't match
-                                loggedSubjectCodes.forEach(code => {
-                                    const subject = selectedClass?.subjects?.find(s => s.code === code);
+                                // Logs have extra subjects not in timetable - show BOTH timetable AND extra logged subjects
+                                // First add all timetable periods with their log status
+                                const seenCounts = {};
+                                const addedCodes = new Set();
+
+                                timetablePeriods.forEach(p => {
+                                    if (!p) {
+                                        periodsToShow.push({ code: null, name: 'Free', status: 'free' });
+                                        return;
+                                    }
+
+                                    seenCounts[p.code] = (seenCounts[p.code] || 0) + 1;
+                                    const instance = seenCounts[p.code];
+                                    const specificKey = `${p.code}_p${instance}`;
+                                    let status = dayLog[specificKey];
+
+                                    if (!status && instance === 1) {
+                                        status = dayLog[p.code];
+                                    }
+
                                     periodsToShow.push({
-                                        code: code,
-                                        name: subject?.name || code,
-                                        status: dayLog[code]
+                                        code: p.code,
+                                        editKey: specificKey,
+                                        name: p.name,
+                                        status: status || 'Default'
                                     });
+                                    addedCodes.add(p.code);
+                                });
+
+                                // Then add any logged subjects NOT in timetable (timetable changed)
+                                loggedSubjectCodes.forEach(code => {
+                                    if (!addedCodes.has(code)) {
+                                        const subject = selectedClass?.subjects?.find(s => s.code === code);
+                                        periodsToShow.push({
+                                            code: code,
+                                            name: subject?.name || code,
+                                            status: dayLog[code]
+                                        });
+                                    }
                                 });
                             } else {
                                 // Timetable matches - use timetable sequence
@@ -15313,9 +15344,9 @@ CRITICAL INSTRUCTIONS:
                                 else if (status === 'Duty Leave (OD)') { cellClass = 'od'; symbol = 'OD'; }
                                 else if (status === 'Medical Leave (ML)') { cellClass = 'ml'; symbol = 'ML'; }
 
-                                // Glow effect using subject color, box color based on status
+                                // Glow effect using subject color - enhanced for visibility over status colors
                                 const glowColor = subjectColor ? subjectColor.glow : '#667eea';
-                                const glowStyle = `box-shadow: 0 0 8px 2px ${glowColor}40, inset 0 0 0 2px ${glowColor};`;
+                                const glowStyle = `box-shadow: 0 0 12px 3px ${glowColor}60, inset 0 0 0 3px ${glowColor};`;
 
                                 // Use editKey if available (new logic), otherwise fallback to code
                                 const codeToUse = period.editKey || period.code;
