@@ -15187,12 +15187,13 @@ CRITICAL INSTRUCTIONS:
 
                         html += `
                                 </div>
-                                </div>
                             </div>
-                            <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px; text-align: center;">
-                                <button class="btn primary-btn" onclick="document.getElementById('logScreenshotInput').click()">✨ Auto-Fill from Screenshot</button>
-                                <input type="file" id="logScreenshotInput" accept="image/*" style="display:none" onchange="handleLogScreenshot(this)">
-                                <p style="font-size: 0.8rem; color: var(--medium-text); margin-top: 5px;">Upload a portal screenshot showing these dates.</p>
+                            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                                <input type="file" id="autoFillLogInput" accept="image/*" style="display:none;" onchange="handleLogScreenshot(this)">
+                                <button class="btn primary-btn" onclick="document.getElementById('autoFillLogInput').click()" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 1.2rem;">📷</span> Auto-Fill from Screenshot
+                                </button>
+                                <span id="autoFillLogStatus" style="font-size: 0.85rem; color: var(--medium-text);"></span>
                             </div>`;
                     } else {
                         html += `<p style="color: var(--success-grad-start); font-weight: bold;">🎉 All dates are logged! Great job!</p>`;
@@ -15265,129 +15266,145 @@ CRITICAL INSTRUCTIONS:
                 document.getElementById('dailyLogModal').classList.add('active');
             }
 
+
+
+
+            // ==================== AUTO-FILL LOGS FROM SCREENSHOT ====================
             async function handleLogScreenshot(input) {
-                if (!input.files || !input.files[0]) return;
-                const file = input.files[0];
-                const missingDates = getMissingLogDates();
+                if (!input.files.length) return;
 
-                if (missingDates.length === 0) {
-                    alert('No missing dates to fill!');
-                    return;
-                }
-
-                // Show loading state
-                const originalText = input.previousElementSibling.innerText;
-                input.previousElementSibling.innerText = '🤖 Analyzing...';
-                input.previousElementSibling.disabled = true;
+                const statusSpan = document.getElementById('autoFillLogStatus');
+                statusSpan.textContent = '⏳ Analyzing screenshot...';
 
                 try {
-                    const base64 = await new Promise((resolve) => {
+                    const missingDates = getMissingLogDates();
+                    if (missingDates.length === 0) {
+                        statusSpan.textContent = '✅ No missing dates to fill!';
+                        input.value = '';
+                        return;
+                    }
+
+                    // Get API key
+                    let apiKey = localStorage.getItem('personalGeminiKey') || SHARED_GEMINI_KEY;
+
+                    // Convert image to base64
+                    const file = input.files[0];
+                    const base64 = await new Promise((resolve, reject) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
 
-                    const personalKey = localStorage.getItem('personalGeminiKey');
+                    // Get subjects for context
+                    const subjectCodes = selectedClass?.subjects?.map(s => s.code) || [];
 
-                    const prompt = `Analyze this attendance screenshot. 
-I have the following missing dates: ${JSON.stringify(missingDates)}.
+                    const prompt = `Analyze this attendance screenshot from a university portal. I need to fill in missing attendance logs for these specific dates:
 
-For EACH of these dates found in the screenshot, determine the status:
-- "Present": If the student attended at least one class (or marked present).
-- "Absent": If the student was absent for all classes.
-- "Holiday": If it is marked as a holiday or no class.
+MISSING DATES TO CHECK: ${missingDates.join(', ')}
 
-Return a JSON array ONLY for the dates found:
-[ { "date": "YYYY-MM-DD", "status": "Present"|"Absent"|"Holiday" } ]
+SUBJECT CODES IN MY CLASS: ${subjectCodes.join(', ')}
 
-Provide ONLY the JSON.`;
+For each date you can identify in the screenshot, tell me:
+1. Which subjects had classes that day
+2. For each subject: was the student "Present", "Absent", or on "Medical Leave (ML)" / "Duty Leave (OD)"
 
-                    let response;
-                    const requestBody = {
-                        contents: [{
-                            parts: [
-                                { text: prompt },
-                                { inlineData: { mimeType: file.type, data: base64 } }
-                            ]
-                        }]
-                    };
+IMPORTANT RULES:
+- ONLY include dates from my "MISSING DATES" list above
+- Look for hour-wise or period-wise attendance data
+- If a date shows mixed attendance (some Present, some Absent), include ALL subject statuses for that day
+- Use EXACT subject codes from my list
 
-                    if (personalKey) {
-                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(requestBody)
-                        });
-                    } else {
-                        response = await fetch('/api/gemini', {
+Return a JSON array with this EXACT structure:
+[
+  {
+    "date": "YYYY-MM-DD",
+    "subjects": {
+      "SUBJECT-CODE-1": "Present",
+      "SUBJECT-CODE-2": "Absent"
+    }
+  }
+]
+
+Provide ONLY the JSON code block, no explanations.`;
+
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+                        {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                action: 'generate',
-                                ...requestBody
+                                contents: [{
+                                    parts: [
+                                        { text: prompt },
+                                        {
+                                            inlineData: {
+                                                data: base64.split(',')[1],
+                                                mimeType: file.type
+                                            }
+                                        }
+                                    ]
+                                }]
                             })
-                        });
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
                     }
 
                     const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    let generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-                    let jsonStr = text.replace(/```json|```/g, '').trim();
-                    const updates = JSON.parse(jsonStr);
+                    // Extract JSON
+                    if (generatedText.includes('```json')) {
+                        generatedText = generatedText.split('```json')[1].split('```')[0].trim();
+                    } else if (generatedText.includes('```')) {
+                        generatedText = generatedText.split('```')[1].split('```')[0].trim();
+                    }
 
-                    if (!Array.isArray(updates)) throw new Error('Invalid AI response');
+                    const logData = JSON.parse(generatedText);
 
-                    applyAutoLogResults(updates);
+                    if (!Array.isArray(logData) || logData.length === 0) {
+                        statusSpan.textContent = '⚠️ No matching dates found in screenshot';
+                        input.value = '';
+                        return;
+                    }
 
-                } catch (error) {
-                    console.error('Auto-Log Error:', error);
-                    alert('Failed to analyze screenshot. Please try again.');
-                } finally {
-                    input.previousElementSibling.innerText = originalText;
-                    input.previousElementSibling.disabled = false;
-                    input.value = ''; // Reset input
-                }
-            }
+                    // Apply the logs
+                    const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                    let filledCount = 0;
 
-            function applyAutoLogResults(updates) {
-                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
-                let count = 0;
+                    logData.forEach(entry => {
+                        if (!entry.date || !entry.subjects) return;
 
-                updates.forEach(update => {
-                    const { date, status } = update;
-                    // Determine log object based on status
-                    // For "Present", we assume all subjects for that day are Present (simplification for missing logs)
-                    // Or better, we mark it as a special "Daily Status". 
-                    // But Bunkit uses subject-wise logs.
-                    // STRATEGY: Get timetable for that day. 
-                    // If Present -> Mark all subjects as Present.
-                    // If Absent -> Mark all as Absent.
-
-                    if (!logs[date]) logs[date] = {};
-
-                    const dayIndex = new Date(date).getDay() - 1; // 0=Mon
-                    if (dayIndex < 0 || dayIndex > 6) return;
-
-                    const subjectsForDay = getTimetableForDay(dayIndex);
-
-                    subjectsForDay.forEach(sub => {
-                        if (sub) { // if not free period
-                            if (status === 'Present') logs[date][sub.code] = 'Present';
-                            else if (status === 'Absent') logs[date][sub.code] = 'Absent';
-                            else if (status === 'Holiday') logs[date][sub.code] = 'Holiday';
+                        // Only fill if date is actually missing
+                        if (missingDates.includes(entry.date)) {
+                            logs[entry.date] = entry.subjects;
+                            filledCount++;
                         }
                     });
-                    count++;
-                });
 
-                localStorage.setItem('attendance_logs', JSON.stringify(logs));
-                alert(`✅ Successfully auto-filled logs for ${count} dates!`);
-                openHistoryEditor(); // Refresh modal
-                if (selectedClass?.portalSetup?.active) calculateFromPortal(); // Refresh stats
+                    localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                    statusSpan.textContent = `✅ Auto-filled ${filledCount} day(s)!`;
+                    input.value = '';
+
+                    // Refresh the view
+                    setTimeout(() => {
+                        openHistoryEditor();
+                        if (selectedClass?.portalSetup?.active) {
+                            calculateFromPortal();
+                        }
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Auto-fill error:', error);
+                    statusSpan.textContent = `❌ Error: ${error.message}`;
+                    input.value = '';
+                }
             }
-
-
-
+            window.handleLogScreenshot = handleLogScreenshot;
 
         </script>
         <!-- Share Class Modal -->
