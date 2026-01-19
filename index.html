@@ -13364,10 +13364,13 @@ CRITICAL INSTRUCTIONS:
                             if (!pastLogStats[code]) pastLogStats[code] = { attended: 0, total: 0 };
 
                             const status = dayLog[key];
-                            if (status === 'Attended' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)') {
+                            const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)';
+                            const isAbsent = status === 'Skipped' || status === 'Absent';
+
+                            if (isPresent) {
                                 pastLogStats[code].attended++;
                                 pastLogStats[code].total++;
-                            } else if (status === 'Skipped') {
+                            } else if (isAbsent) {
                                 pastLogStats[code].total++;
                             }
                             // Cancelled adds nothing
@@ -13415,10 +13418,13 @@ CRITICAL INSTRUCTIONS:
 
                             if (effectiveStats[code]) {
                                 const status = dayLog[key];
-                                if (status === 'Attended' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)') {
+                                const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)';
+                                const isAbsent = status === 'Skipped' || status === 'Absent';
+
+                                if (isPresent) {
                                     effectiveStats[code].attended++;
                                     effectiveStats[code].total++;
-                                } else if (status === 'Skipped') {
+                                } else if (isAbsent) {
                                     effectiveStats[code].total++;
                                 }
                             }
@@ -15587,8 +15593,8 @@ YOUR TASK:
 4. Report the attendance status for each subject
 
 OUTPUT STATUS VALUES TO USE:
-- "Present" for P or C/Cancelled
-- "Absent" for A
+- "Attended" for P or C/Cancelled (Use "Attended", NOT "Present")
+- "Skipped" for A (Use "Skipped", NOT "Absent")
 - "Medical Leave (ML)" for ML
 - "Duty Leave (OD)" for OD
 
