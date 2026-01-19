@@ -15532,7 +15532,7 @@ CRITICAL INSTRUCTIONS:
                     }
 
                     // Get API key
-                    let apiKey = localStorage.getItem('personalGeminiKey') || SHARED_GEMINI_KEY;
+                    let apiKey = localStorage.getItem('personalGeminiKey') || 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
 
                     // Convert image to base64
                     const file = input.files[0];
@@ -17057,7 +17057,8 @@ Answer helpfully using this context.`;
                                 // Decode base64 obfuscated keys
                                 const obfuscatedKeys = [
                                     'QUl6YVN5Q1F6ck9yVG5NUjFlbGFlZUNNcmxubUttSzdnaGtxZXRv',
-                                    'QUl6YVN5QjFxQk8xMzNHMnBoWVgwOVBTMFdPSjZ4WnFxY1Bydlo0'
+                                    'QUl6YVN5QjFxQk8xMzNHMnBoWVgwOVBTMFdPSjZ4WnFxY1Bydlo0',
+                                    'QUl6YVN5QzQxVnZJbFVoR1FwcjJ5eDB3SzNacHVFVkV6STJDSkNB'
                                 ];
                                 try {
                                     keysToUse.push(...obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza')));
