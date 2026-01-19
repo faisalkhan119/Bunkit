@@ -13426,15 +13426,44 @@ CRITICAL INSTRUCTIONS:
             // --- MEDICAL LEAVE & HISTORY ENHANCEMENTS ---
 
             function isHolidayOrNoClass(dateStr) {
-                // Check holidays
+                // Check holidays first
                 if ((selectedClass.holidays || []).includes(dateStr)) return { isHoliday: true, reason: 'Holiday' };
 
-                // Check schedule
+                // Get day of week
                 const date = new Date(dateStr);
                 const dayOfWeek = date.getDay();
-                const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                const hasClasses = selectedClass.subjects.some(s => s.schedule[scheduleIndex] > 0);
+                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, 6=Sun
 
+                // Check for custom schedule - if exists, date has classes
+                const customSchedule = getCustomScheduleForDate(dateStr);
+                if (customSchedule) {
+                    // Custom schedule exists - check if it has any classes
+                    if (customSchedule._periods) {
+                        const hasPeriodsSet = customSchedule._periods.some(code => code && code !== '');
+                        if (hasPeriodsSet) return { isHoliday: false };
+                    } else {
+                        // Old count-based format
+                        const totalClasses = Object.keys(customSchedule).filter(k => k !== '_periods').reduce((sum, key) => sum + (customSchedule[key] || 0), 0);
+                        if (totalClasses > 0) return { isHoliday: false };
+                    }
+                }
+
+                // Check timetable arrangement for the day
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
+                const dayArrangement = arrangement[dayIndex] || [];
+
+                if (dayArrangement.length > 0) {
+                    // Check if any period has a subject assigned
+                    const hasClassesInArrangement = dayArrangement.some(item => {
+                        const code = typeof item === 'object' ? item?.code : item;
+                        return code && code !== '' && code !== null;
+                    });
+                    if (hasClassesInArrangement) return { isHoliday: false };
+                }
+
+                // Fallback: Check count-based schedule
+                const hasClasses = selectedClass.subjects.some(s => s.schedule[dayIndex] > 0);
                 if (!hasClasses) return { isHoliday: true, reason: 'No Classes Scheduled (e.g., Sunday)' };
 
                 return { isHoliday: false };
@@ -13497,16 +13526,33 @@ CRITICAL INSTRUCTIONS:
                 // Build ordered list of subjects based on timetable periods
                 const orderedSubjects = [];
 
-                if (customSchedule && typeof customSchedule === 'object' && !Array.isArray(customSchedule)) {
-                    // Custom schedule mode: subject counts (not period-based yet)
-                    // Sort by timetable order where possible
+                if (customSchedule && customSchedule._periods) {
+                    // New period-based custom schedule format
+                    const periodCounts = {};
+                    customSchedule._periods.forEach((code, periodIdx) => {
+                        if (!code) return; // Skip FREE periods
+
+                        const subject = selectedClass.subjects.find(s => s.code === code);
+                        if (!subject) return;
+
+                        periodCounts[code] = (periodCounts[code] || 0) + 1;
+                        const totalForSubject = customSchedule._periods.filter(c => c === code).length;
+
+                        orderedSubjects.push({
+                            subject,
+                            periodNum: periodCounts[code],
+                            totalPeriods: totalForSubject,
+                            timetablePeriod: periodIdx + 1
+                        });
+                    });
+                } else if (customSchedule && typeof customSchedule === 'object' && !Array.isArray(customSchedule)) {
+                    // Old count-based custom schedule (backward compatibility)
                     const subjectOrder = {};
                     dayArrangement.forEach((item, idx) => {
                         const code = typeof item === 'object' ? item?.code : item;
                         if (code && !subjectOrder[code]) subjectOrder[code] = idx;
                     });
 
-                    // Get subjects with custom counts, sorted by timetable order
                     selectedClass.subjects
                         .filter(s => customSchedule[s.code] > 0)
                         .sort((a, b) => (subjectOrder[a.code] ?? 999) - (subjectOrder[b.code] ?? 999))
@@ -13599,29 +13645,57 @@ CRITICAL INSTRUCTIONS:
             function openCustomScheduleModal(dateStr) {
                 const modal = document.getElementById('customScheduleModal');
                 const customSchedule = getCustomScheduleForDate(dateStr);
-                const maxPeriods = getMaxPeriods(); // Get max periods from timetable
+                const maxPeriods = getMaxPeriods();
 
-                // Build subject period inputs
-                let subjectHTML = '';
+                // Get day of week for default timetable
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+                // Get default timetable for this day
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
+                const dayArrangement = arrangement[dayIndex] || [];
+
+                // Build subject options HTML
+                let subjectOptions = '<option value="">-- FREE --</option>';
                 if (selectedClass?.subjects) {
                     selectedClass.subjects.forEach(subject => {
-                        // Get current count from custom schedule (now stored as object {code: count})
-                        let currentCount = 0;
-                        if (customSchedule && typeof customSchedule === 'object' && !Array.isArray(customSchedule)) {
-                            currentCount = customSchedule[subject.code] || 0;
-                        } else if (Array.isArray(customSchedule)) {
-                            // Backward compatibility: old format was array of codes
-                            currentCount = customSchedule.includes(subject.code) ? 1 : 0;
-                        }
-
-                        subjectHTML += `
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--light-bg);">
-                                <label style="flex: 1; font-weight: 500;">${subject.name} <span style="color: var(--medium-text); font-weight: 400;">(${subject.code})</span></label>
-                                <input type="number" id="customSched_${subject.code}" value="${currentCount}" min="0" max="${maxPeriods}" 
-                                       onchange="updateCustomScheduleTotal()" oninput="updateCustomScheduleTotal()"
-                                       style="width: 60px; padding: 8px; text-align: center; border-radius: 6px; border: 1px solid var(--border-color); font-size: 1rem;">
-                            </div>`;
+                        subjectOptions += `<option value="${subject.code}">${subject.name} (${subject.code})</option>`;
                     });
+                }
+
+                // Build period rows
+                let periodHTML = '';
+                for (let i = 0; i < maxPeriods; i++) {
+                    // Get current value: from custom schedule or default timetable
+                    let currentSubject = '';
+
+                    if (customSchedule && customSchedule._periods) {
+                        // New period-based format
+                        currentSubject = customSchedule._periods[i] || '';
+                    } else if (dayArrangement[i]) {
+                        // Default from timetable
+                        const item = dayArrangement[i];
+                        currentSubject = typeof item === 'object' ? item?.code : item;
+                    }
+
+                    // Generate options with current selection
+                    let optionsWithSelection = '<option value="">-- FREE --</option>';
+                    if (selectedClass?.subjects) {
+                        selectedClass.subjects.forEach(subject => {
+                            const selected = subject.code === currentSubject ? 'selected' : '';
+                            optionsWithSelection += `<option value="${subject.code}" ${selected}>${subject.name} (${subject.code})</option>`;
+                        });
+                    }
+
+                    periodHTML += `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--light-bg);">
+                            <span style="font-weight: 600; min-width: 70px; color: var(--primary-color);">Period ${i + 1}</span>
+                            <select id="customPeriod_${i}" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.95rem;">
+                                ${optionsWithSelection}
+                            </select>
+                        </div>`;
                 }
 
                 modal.innerHTML = `
@@ -13629,37 +13703,27 @@ CRITICAL INSTRUCTIONS:
                         <button class="modal-close" onclick="closeModal('customScheduleModal')">&times;</button>
                         <div class="modal-header">
                             <h2>📅 Custom Schedule</h2>
-                            <p>Set how many classes each subject had on <strong>${dateStr}</strong></p>
+                            <p>Set which subject was in each period on <strong>${dateStr}</strong></p>
                         </div>
-                        <div class="modal-body" style="max-height: 350px; overflow-y: auto;">
-                            <div style="background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color);">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 0.9rem; color: var(--medium-text);">Total Periods:</span>
-                                    <span id="customScheduleTotal" style="font-size: 1.2rem; font-weight: 600;">0 / ${maxPeriods}</span>
-                                </div>
-                                <div id="customScheduleWarning" style="color: var(--danger-color); font-size: 0.85rem; margin-top: 5px; display: none;">
-                                    ⚠️ Total exceeds max periods (${maxPeriods})!
-                                </div>
-                            </div>
+                        <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
                             <p style="font-size: 0.85rem; color: var(--medium-text); margin-bottom: 15px;">
-                                <strong>Tip:</strong> Use this if the timetable was different on this day. Enter the number of classes (periods) for each subject.
+                                <strong>💡 Tip:</strong> Use this if the timetable was different on this day. Select the subject for each period slot.
                             </p>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                ${subjectHTML}
+                                ${periodHTML}
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 20px;">
                             <button class="btn secondary-btn" onclick="clearCustomSchedule('${dateStr}')" style="flex: 1;">
                                 🗑️ Use Default
                             </button>
-                            <button class="btn primary-btn" onclick="saveCustomSchedule('${dateStr}')" style="flex: 1;">
+                            <button class="btn primary-btn" onclick="saveCustomSchedulePeriodBased('${dateStr}')" style="flex: 1;">
                                 💾 Save Schedule
                             </button>
                         </div>
                     </div>`;
 
                 modal.classList.add('active');
-                updateCustomScheduleTotal(); // Initialize total
             }
 
             function updateCustomScheduleTotal() {
@@ -13730,6 +13794,49 @@ CRITICAL INSTRUCTIONS:
                 populateDailyLog(); // Refresh the daily log form
 
                 alert(`✅ Custom schedule saved for ${dateStr} (${total} periods)`);
+            }
+
+            function saveCustomSchedulePeriodBased(dateStr) {
+                const className = document.getElementById('classSelector')?.value;
+                if (!className) return;
+
+                const maxPeriods = getMaxPeriods();
+                const periods = [];
+                const subjectCounts = {};
+
+                // Get subject for each period from dropdowns
+                for (let i = 0; i < maxPeriods; i++) {
+                    const select = document.getElementById(`customPeriod_${i}`);
+                    if (select) {
+                        const subjectCode = select.value;
+                        periods.push(subjectCode || null);
+                        if (subjectCode) {
+                            subjectCounts[subjectCode] = (subjectCounts[subjectCode] || 0) + 1;
+                        }
+                    }
+                }
+
+                // Validation - at least one subject should be selected
+                const totalClasses = Object.values(subjectCounts).reduce((a, b) => a + b, 0);
+                if (totalClasses === 0) {
+                    alert('Please select at least one subject for a period.');
+                    return;
+                }
+
+                // Save in new format with _periods array AND subject counts for backward compatibility
+                const scheduleData = {
+                    ...subjectCounts,
+                    _periods: periods // Special key for period-by-period data
+                };
+
+                const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${className}`) || '{}');
+                customSchedules[dateStr] = scheduleData;
+                localStorage.setItem(`custom_schedules_${className}`, JSON.stringify(customSchedules));
+
+                closeModal('customScheduleModal');
+                populateDailyLog(); // Refresh the daily log form
+
+                alert(`✅ Custom schedule saved for ${dateStr} (${totalClasses} classes)`);
             }
 
             function clearCustomSchedule(dateStr) {
