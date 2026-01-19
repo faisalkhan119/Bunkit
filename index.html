@@ -437,6 +437,7 @@
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                 // New content is available, refresh the page
                                 console.log('New content available! Refreshing...');
+                                showToast('🔄 Update available! reloading...', 'info');
                                 // Skip waiting and activate immediately
                                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                             }
@@ -5780,7 +5781,12 @@
                     sessionStorage.removeItem('pendingClassImport');
 
                     // Show success message
-                    showToast(`🎉 Welcome! "${finalName}" has been added!`, 'success');
+                    const safeName = finalName.replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                    showToast(`🎉 Welcome! "${safeName}" has been added!`, 'success');
 
                     // Set as current class and reload
                     localStorage.setItem('selectedClass', finalName);
@@ -5795,7 +5801,8 @@
                     // CRITICAL: Clear pending import so it doesn't loop on refresh
                     sessionStorage.removeItem('pendingClassImport');
 
-                    alert(`❌ Failed to import class link.\n\nError: ${error.message}\n\nThe link might be broken or from an older version.`);
+                    const safeError = error.message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    alert(`❌ Failed to import class link.\n\nError: ${safeError}\n\nThe link might be broken or from an older version.`);
 
                     // Fallback to normal onboarding if this was part of first login
                     if (!localStorage.getItem('hasCompletedOnboarding')) {
@@ -6817,9 +6824,16 @@
             }
 
             function saveToStorage() {
-                localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
-                // Track last app interaction time for sync comparison
-                localStorage.setItem('lastAppInteraction', new Date().toISOString());
+                try {
+                    localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+                    // Track last app interaction time for sync comparison
+                    localStorage.setItem('lastAppInteraction', new Date().toISOString());
+                } catch (e) {
+                    console.error("Storage save failed:", e);
+                    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                        alert("⚠️ Storage Full!\n\nYour browser cannot save more data. Please delete old classes or clear some space.");
+                    }
+                }
             }
 
             document.addEventListener('DOMContentLoaded', function () {
