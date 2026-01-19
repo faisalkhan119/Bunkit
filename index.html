@@ -13412,6 +13412,80 @@ CRITICAL INSTRUCTIONS:
                     }
                 });
 
+                // 4. Calculate theoretical max classes per subject from semester start to effective current date
+                const semesterStart = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
+                const effectiveEnd = parseLocalDate(effectiveCurrentDate);
+                const holidays = selectedClass.holidays || [];
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
+
+                // Count max possible classes per subject
+                const maxPossibleClasses = {};
+                selectedClass.subjects.forEach(s => { maxPossibleClasses[s.code] = 0; });
+
+                let currentDate = new Date(semesterStart);
+                while (currentDate <= effectiveEnd) {
+                    const dateStr = formatLocalDate(currentDate);
+
+                    // Skip holidays
+                    if (!holidays.includes(dateStr)) {
+                        const dayOfWeek = currentDate.getDay();
+                        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+                        // Check for custom schedule first
+                        const customSchedule = getCustomScheduleForDate(dateStr);
+
+                        if (customSchedule && customSchedule._periods) {
+                            // Period-based custom schedule
+                            customSchedule._periods.forEach(code => {
+                                if (code && maxPossibleClasses[code] !== undefined) {
+                                    maxPossibleClasses[code]++;
+                                }
+                            });
+                        } else if (customSchedule && typeof customSchedule === 'object') {
+                            // Count-based custom schedule
+                            Object.keys(customSchedule).filter(k => k !== '_periods').forEach(code => {
+                                if (maxPossibleClasses[code] !== undefined) {
+                                    maxPossibleClasses[code] += customSchedule[code] || 0;
+                                }
+                            });
+                        } else if (arrangement[dayIndex] && arrangement[dayIndex].length > 0) {
+                            // Use timetable arrangement
+                            arrangement[dayIndex].forEach(item => {
+                                const code = typeof item === 'object' ? item?.code : item;
+                                if (code && maxPossibleClasses[code] !== undefined) {
+                                    maxPossibleClasses[code]++;
+                                }
+                            });
+                        } else {
+                            // Fallback to schedule counts
+                            selectedClass.subjects.forEach(subject => {
+                                const count = subject.schedule[dayIndex] || 0;
+                                maxPossibleClasses[subject.code] += count;
+                            });
+                        }
+                    }
+
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
+                // 5. Cap effectiveStats at max possible classes
+                selectedClass.subjects.forEach(subject => {
+                    const code = subject.code;
+                    const maxClasses = maxPossibleClasses[code] || 0;
+
+                    if (effectiveStats[code]) {
+                        if (effectiveStats[code].total > maxClasses) {
+                            console.warn(`${code}: Total classes (${effectiveStats[code].total}) capped at max possible (${maxClasses})`);
+                            effectiveStats[code].total = maxClasses;
+                        }
+                        if (effectiveStats[code].attended > effectiveStats[code].total) {
+                            console.warn(`${code}: Attended (${effectiveStats[code].attended}) capped at total (${effectiveStats[code].total})`);
+                            effectiveStats[code].attended = effectiveStats[code].total;
+                        }
+                    }
+                });
+
                 // Prepare data for existing calculation engine
                 const attendanceData = [];
                 selectedClass.subjects.forEach(subject => {
