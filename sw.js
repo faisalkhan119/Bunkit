@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bunkit-v110';
+const CACHE_NAME = 'bunkit-v111';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

@@ -13523,6 +13523,13 @@ CRITICAL INSTRUCTIONS:
             // --- MEDICAL LEAVE & HISTORY ENHANCEMENTS ---
 
             function isHolidayOrNoClass(dateStr) {
+                // IMMEDIATE CHECK: If logs exist for this date, allow editing/viewing regardless of holiday status
+                // This fixes the edge case where a user has an extra class on a Sunday/Holiday
+                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                if (logs[dateStr] && Object.keys(logs[dateStr]).length > 0) {
+                    return { isHoliday: false };
+                }
+
                 // Check holidays first
                 if ((selectedClass.holidays || []).includes(dateStr)) return { isHoliday: true, reason: 'Holiday' };
 
@@ -13693,13 +13700,26 @@ CRITICAL INSTRUCTIONS:
                     });
                 }
 
+                if (orderedSubjects.length === 0) {
+                    // FAILSAFE: If it's a working day but no subjects found (e.g., corrupt custom schedule), 
+                    // fall back to default schedule to prevent blank screen
+                    console.warn('⚠️ No subjects found for working day. Using default fallback.');
+                    selectedClass.subjects.forEach(subject => {
+                        const periodCount = subject.schedule[dayIndex] || 0;
+                        for (let i = 1; i <= periodCount; i++) {
+                            orderedSubjects.push({ subject, periodNum: i, totalPeriods: periodCount });
+                        }
+                    });
+                }
+
                 // Render subjects in order
                 orderedSubjects.forEach(({ subject, periodNum, totalPeriods, timetablePeriod }) => {
                     const periodKey = `${subject.code}_p${periodNum}`;
                     let currentStatus = dayLog[periodKey];
 
-                    if (!currentStatus && periodNum === 1) {
+                    if (!currentStatus) {
                         // Fallback to legacy key 'SUBJECT' if 'SUBJECT_p1' is missing
+                        // MODIFIED: Apply to ALL periods, not just the first one, for Auto-Fill sync
                         currentStatus = dayLog[subject.code];
                     }
 
