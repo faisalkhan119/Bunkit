@@ -117,6 +117,35 @@ module.exports = async function handler(req, res) {
                 };
                 break;
 
+            case 'vision-multi':
+                // Handle multiple images (for AI Import)
+                const { images } = req.body;
+                if (!images || !Array.isArray(images)) {
+                    return res.status(400).json({ error: 'Missing or invalid images array' });
+                }
+
+                const imageParts = images.map(img => ({
+                    inline_data: {
+                        mime_type: img.mimeType || 'image/jpeg',
+                        data: img.data
+                    }
+                }));
+
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                payload = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            ...imageParts
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        maxOutputTokens: 8192,
+                    }
+                };
+                break;
+
             default:
                 return res.status(400).json({ error: 'Invalid action: ' + action });
         }

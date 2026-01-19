@@ -7705,21 +7705,80 @@
                         }
                     }
 
-                    // Fall back to shared Gemini API keys with rotation
-                    console.log('Attempting OCR with shared Gemini API keys...');
+                    // Fall back to shared Gemini API via backend proxy
+                    console.log('Attempting OCR with backend proxy...');
                     let keyData = getNextAvailableOCRKey();
-                    while (keyData) {
-                        console.log(`🔑 Trying OCR Key #${keyData.index + 1}...`);
+
+                    if (keyData.useProxy) {
+                        // Use backend proxy for shared key
+                        try {
+                            const base64Image = await new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(file);
+                            });
+
+                            const subjectsList = selectedClass.subjects.map(s => `${s.code}: ${s.name}`).join(', ');
+                            const prompt = `Extract attendance data from this university attendance screenshot. The class has these subjects: ${subjectsList}.
+
+Generate a JSON object mapping subject codes to attendance numbers. Use this EXACT format:
+{
+  "SUBJECT-CODE-1": { "total": TOTAL_CLASSES, "present": ATTENDED_CLASSES }
+}
+
+CRITICAL RULES:
+1. Use EXACT subject codes from the list above.
+2. "total" (classes held) MUST be >= "present" (classes attended). If ambiguous, assume the larger number is "total".
+3. Return ONLY JSON, no explanations`;
+
+                            const response = await fetch('/api/gemini', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'vision',
+                                    prompt: prompt,
+                                    imageData: base64Image.split(',')[1],
+                                    mimeType: file.type
+                                })
+                            });
+
+                            if (response.ok) {
+                                const result = await response.json();
+                                let generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                                // Extract JSON
+                                let jsonString = generatedText.trim();
+                                if (jsonString.includes('```json')) {
+                                    jsonString = jsonString.split('```json')[1].split('```')[0].trim();
+                                } else if (jsonString.includes('```')) {
+                                    jsonString = jsonString.split('```')[1].split('```')[0].trim();
+                                }
+
+                                const data = JSON.parse(jsonString);
+
+                                // SANITY CHECK: Swap if present > total
+                                Object.keys(data).forEach(key => {
+                                    const entry = data[key];
+                                    const p = parseInt(entry.present);
+                                    const t = parseInt(entry.total);
+                                    if (p > t) {
+                                        console.warn(`Fixed swapped data for ${key}: Present (${entry.present}) > Total (${entry.total}). Swapping.`);
+                                        entry.present = t;
+                                        entry.total = p;
+                                    }
+                                });
+
+                                return { success: true, data, method: 'Backend Proxy' };
+                            }
+                        } catch (proxyError) {
+                            console.error('Backend proxy OCR failed:', proxyError);
+                        }
+                    } else if (keyData.key) {
+                        // Use direct key (legacy path)
                         const sharedResult = await processImageWithGemini(file, keyData.key);
                         if (sharedResult.success) {
-                            return { success: true, data: sharedResult.data, method: `Shared Gemini API (Key #${keyData.index + 1})` };
-                        }
-                        // Check if quota exhausted (429 error)
-                        if (sharedResult.quotaExhausted) {
-                            markOCRKeyExhausted(keyData.index);
-                            keyData = getNextAvailableOCRKey();
-                        } else {
-                            break; // Other error, don't try more keys
+                            return { success: true, data: sharedResult.data, method: 'Shared Gemini API' };
                         }
                     }
 
@@ -15613,8 +15672,8 @@ CRITICAL INSTRUCTIONS:
                         return;
                     }
 
-                    // Get API key
-                    let apiKey = localStorage.getItem('personalGeminiKey') || 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
+                    // Get API key - use personal key or fall back to backend proxy
+                    const personalKey = localStorage.getItem('personalGeminiKey');
 
                     // Convert image to base64
                     const file = input.files[0];
@@ -15700,26 +15759,44 @@ Return a JSON array with this EXACT structure:
 
 Provide ONLY the JSON code block, no explanations.`;
 
-                    const response = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-                        {
+                    let response;
+
+                    if (personalKey) {
+                        // Use personal API key directly
+                        response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        parts: [
+                                            { text: prompt },
+                                            {
+                                                inlineData: {
+                                                    data: base64.split(',')[1],
+                                                    mimeType: file.type
+                                                }
+                                            }
+                                        ]
+                                    }]
+                                })
+                            }
+                        );
+                    } else {
+                        // Use backend proxy for shared key
+                        console.log('📸 Autofill: Using backend proxy');
+                        response = await fetch('/api/gemini', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                contents: [{
-                                    parts: [
-                                        { text: prompt },
-                                        {
-                                            inlineData: {
-                                                data: base64.split(',')[1],
-                                                mimeType: file.type
-                                            }
-                                        }
-                                    ]
-                                }]
+                                action: 'vision',
+                                prompt: prompt,
+                                imageData: base64.split(',')[1],
+                                mimeType: file.type
                             })
-                        }
-                    );
+                        });
+                    }
 
                     if (!response.ok) {
                         throw new Error(`API Error: ${response.status}`);
@@ -16430,14 +16507,23 @@ Provide ONLY the JSON code block, no explanations.`;
                                     body: JSON.stringify(requestBody)
                                 });
                             } else {
-                                // CASE B: Shared Key (Hardcoded Fallback)
-                                console.log('🔄 Using Shared Gemini Key (Client-Side) for Import');
-                                const SHARED_KEY_LITERAL = 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
+                                // CASE B: Use Backend Proxy (Shared Key)
+                                console.log('🔄 Using Backend Proxy for AI Import');
 
-                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${SHARED_KEY_LITERAL}`, {
+                                // Convert imageParts to format backend can handle
+                                const imageDataArray = imageParts.map(part => ({
+                                    data: part.inlineData.data,
+                                    mimeType: part.inlineData.mimeType
+                                }));
+
+                                response = await fetch('/api/gemini', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(requestBody)
+                                    body: JSON.stringify({
+                                        action: 'vision-multi',
+                                        prompt: promptText,
+                                        images: imageDataArray
+                                    })
                                 });
                             }
 
