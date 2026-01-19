@@ -15299,21 +15299,64 @@ CRITICAL INSTRUCTIONS:
                     // Get subjects for context
                     const subjectCodes = selectedClass?.subjects?.map(s => s.code) || [];
 
-                    const prompt = `Analyze this attendance screenshot from a university portal. I need to fill in missing attendance logs for these specific dates:
+                    // Get timetable arrangement for period-to-subject mapping
+                    const className = document.getElementById('classSelector')?.value;
+                    const arrangement = getTimetableArrangement(className) || {};
+                    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-MISSING DATES TO CHECK: ${missingDates.join(', ')}
+                    // Build period mapping string for the prompt
+                    let timetableMapping = '';
+                    Object.keys(arrangement).forEach(dayIdx => {
+                        const periods = arrangement[dayIdx];
+                        if (periods && periods.length > 0) {
+                            const dayName = dayNames[parseInt(dayIdx)];
+                            const periodList = periods.map((subj, idx) => {
+                                const code = typeof subj === 'object' ? subj?.code : subj;
+                                return `Period ${idx + 1}: ${code || 'FREE'}`;
+                            }).join(', ');
+                            timetableMapping += `${dayName}: ${periodList}\n`;
+                        }
+                    });
+
+                    const prompt = `Analyze this HOUR-WISE/PERIOD-WISE attendance screenshot from a university portal.
+
+The screenshot shows columns numbered 1, 2, 3, 4, 5, 6, 7 which represent PERIOD NUMBERS (Hour 1, Hour 2, etc.).
+Each row is a DATE with status codes for each period.
+
+STATUS CODES TO RECOGNIZE:
+- P = Present (attended)
+- A = Absent (missed)
+- ML = Medical Leave
+- OD = On Duty / Duty Leave
+- C or Cancelled = Class was cancelled (treat as Present since no penalty)
+- - (dash) in column 7 or last column = No class for period 7 (normal for 6-period days)
+- - (dash) in middle periods where timetable shows a subject = NOT LOGGED YET by teacher (SKIP this date entirely)
+
+MY TIMETABLE (Period → Subject mapping by day):
+${timetableMapping || 'Not available - use column numbers as period numbers'}
 
 SUBJECT CODES IN MY CLASS: ${subjectCodes.join(', ')}
 
-For each date you can identify in the screenshot, tell me:
-1. Which subjects had classes that day
-2. For each subject: was the student "Present", "Absent", or on "Medical Leave (ML)" / "Duty Leave (OD)"
+MISSING DATES I NEED TO FILL: ${missingDates.join(', ')}
 
-IMPORTANT RULES:
-- ONLY include dates from my "MISSING DATES" list above
-- Look for hour-wise or period-wise attendance data
-- If a date shows mixed attendance (some Present, some Absent), include ALL subject statuses for that day
+YOUR TASK:
+1. For each DATE visible in the screenshot that matches my MISSING DATES list
+2. Look at the status code in each numbered column (period)
+3. Use my TIMETABLE to determine which SUBJECT CODE corresponds to each period on that day of week
+4. Report the attendance status for each subject
+
+OUTPUT STATUS VALUES TO USE:
+- "Present" for P or C/Cancelled
+- "Absent" for A
+- "Medical Leave (ML)" for ML
+- "Duty Leave (OD)" for OD
+
+CRITICAL RULES:
+- ONLY include dates from my "MISSING DATES" list
+- Use the DATE to determine DAY OF WEEK, then use my timetable to map Period → Subject
+- If the same subject appears in multiple periods on one day: mark "Present" if ANY period shows P/C, otherwise use the most common status
 - Use EXACT subject codes from my list
+- Ignore periods with "-" or blank (no class)
 
 Return a JSON array with this EXACT structure:
 [
