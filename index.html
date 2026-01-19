@@ -15344,9 +15344,9 @@ CRITICAL INSTRUCTIONS:
                                 else if (status === 'Duty Leave (OD)') { cellClass = 'od'; symbol = 'OD'; }
                                 else if (status === 'Medical Leave (ML)') { cellClass = 'ml'; symbol = 'ML'; }
 
-                                // Glow effect using subject color - enhanced for visibility over status colors
+                                // Glow effect using subject color
                                 const glowColor = subjectColor ? subjectColor.glow : '#667eea';
-                                const glowStyle = `box-shadow: 0 0 12px 3px ${glowColor}60, inset 0 0 0 3px ${glowColor};`;
+                                const glowStyle = `box-shadow: 0 0 8px 2px ${glowColor}40, inset 0 0 0 2px ${glowColor};`;
 
                                 // Use editKey if available (new logic), otherwise fallback to code
                                 const codeToUse = period.editKey || period.code;
