@@ -7855,9 +7855,9 @@ CRITICAL RULES:
                 const analysisResults = [];
 
                 attendanceData.forEach(subject => {
-                    const currentDate = new Date(document.getElementById('currentDate').value);
-                    const lastDate = new Date(document.getElementById('lastDate').value);
-                    const holidayDates = (selectedClass.holidays || []).map(h => new Date(h + 'T00:00:00'));
+                    const currentDate = parseLocalDate(document.getElementById('currentDate').value);
+                    const lastDate = parseLocalDate(document.getElementById('lastDate').value);
+                    const holidayDates = (selectedClass.holidays || []).map(h => parseLocalDate(h));
                     const remaining = countClassesInRange(new Date(currentDate.getTime() + 86400000), lastDate, subject.schedule, holidayDates, subject.code);
 
                     const attended = subject.initialAttended ?? subject.attended;

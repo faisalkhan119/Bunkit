@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bunkit-v106';
+const CACHE_NAME = 'bunkit-v107';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -579,8 +579,9 @@ async function analyzeAttendanceContext() {
         }
 
         // Days since last log
-        const lastLogDate = dates[0] ? new Date(dates[0]) : null;
-        const daysSinceLastLog = lastLogDate ?
+        // iOS-compatible date parsing (use slash format)
+        const lastLogDate = dates[0] ? new Date(dates[0].replace(/-/g, '/')) : null;
+        const daysSinceLastLog = lastLogDate && !isNaN(lastLogDate.getTime()) ?
             Math.floor((new Date() - lastLogDate) / (1000 * 60 * 60 * 24)) : 999;
 
         return {
@@ -606,7 +607,11 @@ async function wasReminderShownRecently(type, hours = 24) {
         const lastShown = await getFromIndexedDB(`reminder_${type}`);
         if (!lastShown) return false;
 
-        const hoursSinceShown = (Date.now() - new Date(lastShown).getTime()) / (1000 * 60 * 60);
+        // Validate timestamp before parsing to prevent errors from corrupted data
+        const parsedDate = new Date(lastShown);
+        const hoursSinceShown = !isNaN(parsedDate.getTime())
+            ? (Date.now() - parsedDate.getTime()) / (1000 * 60 * 60)
+            : Infinity;
         return hoursSinceShown < hours;
     } catch {
         return false;
