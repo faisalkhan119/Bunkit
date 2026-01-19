@@ -16021,21 +16021,14 @@ Provide ONLY the JSON code block, no explanations.`;
                                     body: JSON.stringify(generationBody)
                                 });
                             } else {
-                                // CASE B: Shared Key (Backend Proxy)
-                                console.log('🔄 Using Shared Gemini Proxy');
+                                // CASE B: Shared Key (Hardcoded Fallback)
+                                console.log('🔄 Using Shared Gemini Key (Client-Side)');
+                                const SHARED_KEY_LITERAL = 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
 
-                                // Proxy expects: action, prompt, imageData, mimeType
-                                const proxyPayload = {
-                                    action: 'vision',  // Use 'vision' for image processing
-                                    prompt: prompt,
-                                    imageData: base64,
-                                    mimeType: imageFile.type
-                                };
-
-                                response = await fetch('/api/gemini', {
+                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${SHARED_KEY_LITERAL}`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(proxyPayload)
+                                    body: JSON.stringify(generationBody)
                                 });
                             }
                         } catch (netErr) {
@@ -16355,15 +16348,14 @@ Provide ONLY the JSON code block, no explanations.`;
                                     body: JSON.stringify(requestBody)
                                 });
                             } else {
-                                // CASE B: Shared Key (Backend Proxy)
-                                console.log('🔄 Using Shared Gemini Proxy for Import');
-                                response = await fetch('/api/gemini', {
+                                // CASE B: Shared Key (Hardcoded Fallback)
+                                console.log('🔄 Using Shared Gemini Key (Client-Side) for Import');
+                                const SHARED_KEY_LITERAL = 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
+
+                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${SHARED_KEY_LITERAL}`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        action: 'generate',
-                                        ...requestBody
-                                    })
+                                    body: JSON.stringify(requestBody)
                                 });
                             }
 
