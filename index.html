@@ -13523,13 +13523,6 @@ CRITICAL INSTRUCTIONS:
             // --- MEDICAL LEAVE & HISTORY ENHANCEMENTS ---
 
             function isHolidayOrNoClass(dateStr) {
-                // IMMEDIATE CHECK: If logs exist for this date, allow editing/viewing regardless of holiday status
-                // This fixes the edge case where a user has an extra class on a Sunday/Holiday
-                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
-                if (logs[dateStr] && Object.keys(logs[dateStr]).length > 0) {
-                    return { isHoliday: false };
-                }
-
                 // Check holidays first
                 if ((selectedClass.holidays || []).includes(dateStr)) return { isHoliday: true, reason: 'Holiday' };
 
