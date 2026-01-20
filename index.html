@@ -16011,7 +16011,18 @@ Provide ONLY the JSON code block, no explanations.`;
                         // Compression v2
                         const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(classData));
                         const encodedData = 'v2_' + compressed;
-                        const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
+
+                        // Get base URL (works for subdirectories too)
+                        const baseUrl = window.location.href.split('?')[0].split('#')[0];
+                        const shareUrl = `${baseUrl}?class=${encodedData}`;
+
+                        // Check URL length - warn if too long for some platforms
+                        if (shareUrl.length > 2000) {
+                            console.warn(`Share URL length: ${shareUrl.length} chars (may be too long for some platforms)`);
+                            if (shareUrl.length > 8000) {
+                                showToast('⚠️ Class data is very large. Link may not work on all platforms.', 'warning');
+                            }
+                        }
 
                         const shareData = {
                             title: 'Join my Class on Bunkit',
