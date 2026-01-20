@@ -15750,54 +15750,35 @@ CRITICAL INSTRUCTIONS:
 
                     const prompt = `Analyze this HOUR-WISE/PERIOD-WISE attendance screenshot from a university portal.
 
-The screenshot shows columns numbered 1, 2, 3, 4, 5, 6, 7 which represent PERIOD NUMBERS (Hour 1, Hour 2, etc.).
+The screenshot shows columns numbered 1, 2, 3, 4, 5, 6, 7 (or similar) representing PERIOD NUMBERS.
 Each row is a DATE with status codes for each period.
 
 STATUS CODES TO RECOGNIZE:
-- P = Present (attended)
-- A = Absent (missed)
+- P = Present
+- A = Absent
 - ML = Medical Leave
 - OD = On Duty / Duty Leave
-- C or Cancelled = Class was cancelled (treat as Present since no penalty)
-- - (dash) in column 7 or last column = No class for period 7 (normal for 6-period days)
-- - (dash) in middle periods where timetable shows a subject = NOT LOGGED YET by teacher (SKIP this date entirely)
-
-MY TIMETABLE (Period → Subject mapping by day):
-${timetableMapping || 'Not available - use column numbers as period numbers'}
-
-SUBJECT CODES IN MY CLASS: ${subjectCodes.join(', ')}
+- C = Cancelled
+- - (dash) or blank = No class / Free period
 
 MISSING DATES I NEED TO FILL: ${missingDates.join(', ')}
 
 YOUR TASK:
-1. For each DATE visible in the screenshot that matches my MISSING DATES list
-2. Look at the status code in each numbered column (period)
-3. Use my TIMETABLE to determine which SUBJECT CODE corresponds to each period on that day of week
-4. Report the attendance status for each subject
-
-OUTPUT STATUS VALUES TO USE:
-- "Attended" for P or C/Cancelled (Use "Attended", NOT "Present")
-- "Skipped" for A (Use "Skipped", NOT "Absent")
-- "Medical Leave (ML)" for ML
-- "Duty Leave (OD)" for OD
-
-CRITICAL RULES:
-- ONLY include dates from my "MISSING DATES" list
-- Use the DATE to determine DAY OF WEEK, then use my timetable to map Period → Subject
-- If the same subject appears in multiple periods on one day: mark "Present" if ANY period shows P/C, otherwise use the most common status
-- Use EXACT subject codes from my list
-- Ignore periods with "-" or blank (no class)
+Extract the status for each PERIOD (in order: Period 1, Period 2, Period 3, etc.) for each date.
 
 Return a JSON array with this EXACT structure:
 [
   {
     "date": "YYYY-MM-DD",
-    "subjects": {
-      "SUBJECT-CODE-1": "Present",
-      "SUBJECT-CODE-2": "Absent"
-    }
+    "periods": ["P", "A", "-", "P", "P", "-", "-"]
   }
 ]
+
+RULES:
+- "periods" array should contain status for each column in order (Period 1, Period 2, etc.)
+- Use these exact values: "P", "A", "ML", "OD", "C", "-"
+- ONLY include dates from my MISSING DATES list
+- If a date has dashes in middle periods (not fully logged), SKIP that date entirely
 
 Provide ONLY the JSON code block, no explanations.`;
 
@@ -15862,23 +15843,94 @@ Provide ONLY the JSON code block, no explanations.`;
                         return;
                     }
 
-                    // Apply the logs
+                    // Status normalization map
+                    const normalizeStatus = (status) => {
+                        if (!status || typeof status !== 'string') return null;
+                        const s = status.toUpperCase().trim();
+                        if (s === 'P' || s === 'C') return 'Attended';
+                        if (s === 'A') return 'Skipped';
+                        if (s === 'ML') return 'Medical Leave (ML)';
+                        if (s === 'OD') return 'Duty Leave (OD)';
+                        if (s === '-' || s === '') return null; // Free period - skip
+                        return null;
+                    };
+
+                    // Apply the logs by mapping period sequence to subjects using timetable
                     const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                     let filledCount = 0;
+                    let skippedDates = [];
 
                     logData.forEach(entry => {
-                        if (!entry.date || !entry.subjects) return;
+                        if (!entry.date || !entry.periods || !Array.isArray(entry.periods)) return;
 
                         // Only fill if date is actually missing
-                        if (missingDates.includes(entry.date)) {
-                            logs[entry.date] = entry.subjects;
+                        if (!missingDates.includes(entry.date)) return;
+
+                        // Get day of week for this date
+                        const date = new Date(entry.date);
+                        const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, etc.
+                        const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to 0=Mon, 6=Sun
+
+                        // Get timetable for this day
+                        const dayPeriods = arrangement[scheduleIndex] || [];
+
+                        if (dayPeriods.length === 0) {
+                            skippedDates.push(entry.date + ' (no timetable)');
+                            return;
+                        }
+
+                        const subjectsForDay = {};
+                        const subjectStatuses = {}; // Track multiple periods of same subject
+
+                        // Map each period status to its subject
+                        entry.periods.forEach((periodStatus, periodIndex) => {
+                            if (periodIndex >= dayPeriods.length) return; // More periods than timetable has
+
+                            const subjectEntry = dayPeriods[periodIndex];
+                            const subjectCode = typeof subjectEntry === 'object' ? subjectEntry?.code : subjectEntry;
+
+                            if (!subjectCode || subjectCode === 'FREE' || subjectCode === null) return;
+
+                            const normalizedStatus = normalizeStatus(periodStatus);
+                            if (!normalizedStatus) return; // Skip free periods
+
+                            // For subjects with multiple periods, use priority: Attended > OD/ML > Skipped
+                            if (!subjectStatuses[subjectCode]) {
+                                subjectStatuses[subjectCode] = [];
+                            }
+                            subjectStatuses[subjectCode].push(normalizedStatus);
+                        });
+
+                        // Resolve final status for each subject
+                        Object.keys(subjectStatuses).forEach(code => {
+                            const statuses = subjectStatuses[code];
+                            // Priority: If ANY period is Attended, mark as Attended
+                            if (statuses.includes('Attended')) {
+                                subjectsForDay[code] = 'Attended';
+                            } else if (statuses.includes('Medical Leave (ML)')) {
+                                subjectsForDay[code] = 'Medical Leave (ML)';
+                            } else if (statuses.includes('Duty Leave (OD)')) {
+                                subjectsForDay[code] = 'Duty Leave (OD)';
+                            } else {
+                                subjectsForDay[code] = statuses[0]; // Use first (likely Skipped)
+                            }
+                        });
+
+                        if (Object.keys(subjectsForDay).length > 0) {
+                            logs[entry.date] = subjectsForDay;
                             filledCount++;
                         }
                     });
 
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
 
-                    statusSpan.textContent = `✅ Auto-filled ${filledCount} day(s)!`;
+                    // Build status message
+                    let statusMsg = `✅ Auto-filled ${filledCount} day(s)!`;
+                    if (skippedDates.length > 0) {
+                        console.warn('Skipped dates:', skippedDates);
+                        statusMsg += ` (⚠️ Skipped ${skippedDates.length} date(s))`;
+                    }
+                    statusSpan.textContent = statusMsg;
                     input.value = '';
 
                     // Refresh the view
