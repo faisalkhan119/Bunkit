@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NNWKQ6SSHN"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-NNWKQ6SSHN');
+    </script>
+    <!-- Microsoft Clarity Analytics -->
+    <script type="text/javascript">
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "ujzwruoqtu");
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Support - Bunk it</title>
+    <link rel="icon" type="image/png" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 10px;
+        }
+
+        h2 {
+            color: #667eea;
+            margin: 25px 0 15px;
+            font-size: 1.3rem;
+        }
+
+        p {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .support-options {
+            display: grid;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .support-card {
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .support-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .support-card p {
+            margin: 0;
+            color: #666;
+        }
+
+        .support-card a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .support-card a:hover {
+            text-decoration: underline;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-radius: 12px;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s;
+        }
+
+        .quick-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .quick-link-icon {
+            font-size: 1.5rem;
+        }
+
+        .troubleshoot {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .troubleshoot h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .troubleshoot ol {
+            padding-left: 25px;
+            color: #856404;
+            line-height: 2;
+        }
+
+        .version-info {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .version-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .quick-links {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .card {
+                background: rgba(30, 30, 50, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .logo h1 {
+                background: linear-gradient(135deg, #818cf8, #a78bfa);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+
+            h2 {
+                color: #818cf8;
+            }
+
+            p {
+                color: #c0c0c0;
+            }
+
+            .support-card {
+                background: rgba(255, 255, 255, 0.05);
+                border-left-color: #818cf8;
+            }
+
+            .support-card h3 {
+                color: #e0e0e0;
+            }
+
+            .support-card p {
+                color: #a0a0a0;
+            }
+
+            .support-card a {
+                color: #818cf8;
+            }
+
+            .quick-link {
+                background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(167, 139, 250, 0.1));
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #e0e0e0;
+            }
+
+            .troubleshoot {
+                background: rgba(133, 100, 4, 0.2);
+                border: 1px solid rgba(255, 243, 205, 0.2);
+            }
+
+            .troubleshoot h3 {
+                color: #ffc107;
+            }
+
+            .troubleshoot ol {
+                color: #e0c060;
+            }
+
+            .version-info {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .version-info p {
+                color: #a0a0a0;
+            }
+
+            code {
+                background: rgba(129, 140, 248, 0.2);
+                padding: 2px 6px;
+                border-radius: 4px;
+                color: #818cf8;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <img src="/icon-192x192.png" alt="Bunk it Logo">
+                <h1>Support Center</h1>
+            </div>
+
+            <p class="center">Welcome to Bunk it Support! We're here to help you get the most out of your attendance
+                tracking experience.</p>
+
+            <h2>🚀 Quick Links</h2>
+            <div class="quick-links">
+                <a href="/faq.html" class="quick-link">
+                    <span class="quick-link-icon">❓</span>
+                    <span>FAQ</span>
+                </a>
+                <a href="/contact.html" class="quick-link">
+                    <span class="quick-link-icon">💬</span>
+                    <span>Contact Us</span>
+                </a>
+                <a href="/privacy.html" class="quick-link">
+                    <span class="quick-link-icon">🔒</span>
+                    <span>Privacy Policy</span>
+                </a>
+                <a href="/terms.html" class="quick-link">
+                    <span class="quick-link-icon">📜</span>
+                    <span>Terms of Service</span>
+                </a>
+            </div>
+
+            <h2>🆘 Common Issues</h2>
+            <div class="support-options">
+                <div class="support-card">
+                    <h3>📱 App Not Loading</h3>
+                    <p>Try clearing cache: Add <code>?forceclear</code> to the URL (e.g., bunkitapp.in?forceclear) and
+                        reload. This clears all cached data and should fix loading issues.</p>
+                </div>
+
+                <div class="support-card">
+                    <h3>☁️ Sync Issues</h3>
+                    <p>If Google Drive sync isn't working: Sign out, clear browser cookies for Google, and sign in
+                        again. Make sure you're using the same Google account.</p>
+                </div>
+
+                <div class="support-card">
+                    <h3>🔔 Notifications Not Working</h3>
+                    <p>Enable notifications in: 1) App Settings, 2) Browser settings, 3) System settings. Also try
+                        installing the PWA for better notification reliability.</p>
+                </div>
+
+                <div class="support-card">
+                    <h3>📊 Data Not Saving</h3>
+                    <p>Make sure you're not in private/incognito mode. LocalStorage must be enabled. Try installing the
+                        app to home screen for best experience.</p>
+                </div>
+            </div>
+
+            <div class="troubleshoot">
+                <h3>🔧 General Troubleshooting Steps</h3>
+                <ol>
+                    <li>Try refreshing the page (Ctrl+Shift+R or Cmd+Shift+R)</li>
+                    <li>Clear browser cache and cookies</li>
+                    <li>Use the ?forceclear URL parameter</li>
+                    <li>Try a different browser (Chrome recommended)</li>
+                    <li>Reinstall the PWA if installed</li>
+                    <li>Contact support if issue persists</li>
+                </ol>
+            </div>
+
+            <h2>📞 Get Help</h2>
+            <div class="support-options">
+                <div class="support-card">
+                    <h3>💬 WhatsApp Support</h3>
+                    <p>Fastest response! Chat with us on WhatsApp: <a href="https://wa.me/916386854875">+91
+                            6386854875</a></p>
+                </div>
+
+                <div class="support-card">
+                    <h3>📧 Email Support</h3>
+                    <p>For detailed queries: <a href="mailto:support@bunkitapp.in">support@bunkitapp.in</a></p>
+                </div>
+            </div>
+
+            <div class="version-info">
+                <p><strong>App Version:</strong> 2.0</p>
+                <p><strong>Last Updated:</strong> December 2024</p>
+                <p><strong>Platform:</strong> Progressive Web App (PWA)</p>
+            </div>
+
+            <div class="center">
+                <a href="/" class="back-btn">← Back to App</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

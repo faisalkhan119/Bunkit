@@ -1,0 +1,178 @@
+{
+    "name": "Bunk it - Smart Attendance Manager",
+    "short_name": "Bunk it",
+    "id": "/",
+    "scope": "/",
+    "description": "Manage your college/school attendance like a pro. Track attendance, plan leaves, and never miss the minimum requirement.",
+    "start_url": "/",
+    "display": "standalone",
+    "display_override": [
+        "standalone",
+        "minimal-ui"
+    ],
+    "background_color": "#f0f2f5",
+    "theme_color": "#667eea",
+    "orientation": "portrait",
+    "lang": "en",
+    "dir": "ltr",
+    "prefer_related_applications": false,
+    "categories": [
+        "education",
+        "productivity",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "/icon-48x48.png",
+            "sizes": "48x48",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-256x256.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Bunk it Dashboard"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Bunk it Desktop View"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Mark Attendance",
+            "short_name": "Mark",
+            "description": "Quick mark today's attendance",
+            "url": "/?openLog=true",
+            "icons": [
+                {
+                    "src": "/icon-96x96.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "View Timetable",
+            "short_name": "Timetable",
+            "description": "Check your weekly timetable",
+            "url": "/?showTimetable=true",
+            "icons": [
+                {
+                    "src": "/icon-96x96.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Can I Skip Today?",
+            "short_name": "Skip Check",
+            "description": "Check if you can safely skip today",
+            "url": "/?skipCheck=true",
+            "icons": [
+                {
+                    "src": "/icon-96x96.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "share_target": {
+        "action": "/",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    },
+    "launch_handler": {
+        "client_mode": [
+            "navigate-existing",
+            "auto"
+        ]
+    },
+    "handle_links": "preferred",
+    "related_applications": [],
+    "protocol_handlers": [
+        {
+            "protocol": "web+bunkit",
+            "url": "/?action=%s"
+        }
+    ]
+}
