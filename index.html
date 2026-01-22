@@ -7127,7 +7127,7 @@
                     <div class="modal-header"><h2 id="addClassModalTitle"></h2></div>
                     <div class="modal-tabs">
                         <button id="formTabBtn" class="active" onclick="switchModalTab('form')">Form Entry</button>
-                        <button id="aiImportTabBtn" onclick="switchModalTab('ai-import')">✨ Inbuilt AI Import</button>
+                        <button id="aiImportTabBtn" onclick="switchModalTab('aiImport')">✨ Inbuilt AI Import</button>
                         <button id="jsonTabBtn" onclick="switchModalTab('json')">Import from JSON</button>
                         <button id="scanTabBtn" onclick="switchModalTab('scan')">Scan QR</button>
                         <button id="shareTabBtn" onclick="switchModalTab('share')" style="display: none;">Share Class</button>
@@ -7210,7 +7210,7 @@
                         </div>
                     </div>
 
-                    <div id="aiImportTab" style="display: none;">
+                    <div id="aiImportEntryTab" style="display: none;">
                         <div class="json-instructions">
                             <strong>🤖 Inbuilt AI Import:</strong>
                             <p>Upload your <strong>Timetable</strong>, <strong>Attendance Screenshot</strong>, or any other class details. The AI will read them and fill out the form for you!</p>
@@ -8649,6 +8649,128 @@ CRITICAL RULES:
                 }
                 return total;
             }
+
+            // ==================== TIMETABLE VERSIONING ====================
+
+            /**
+             * Get timetable history for a class
+             * Returns array of { effectiveFrom, effectiveTo, arrangement } sorted by date
+             */
+            function getTimetableHistory(className) {
+                const historyKey = `timetable_history_${className}`;
+                const history = localStorage.getItem(historyKey);
+                return history ? JSON.parse(history) : [];
+            }
+
+            /**
+             * Save a new timetable version to history
+             */
+            function saveTimetableVersion(className, arrangement, effectiveFrom, effectiveTo = null) {
+                const history = getTimetableHistory(className);
+
+                // Add new version
+                history.push({
+                    effectiveFrom: effectiveFrom,
+                    effectiveTo: effectiveTo,
+                    arrangement: arrangement,
+                    savedAt: new Date().toISOString()
+                });
+
+                // Sort by effectiveFrom date (oldest first)
+                history.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+
+                localStorage.setItem(`timetable_history_${className}`, JSON.stringify(history));
+            }
+
+            /**
+             * Archive the current timetable by setting its effectiveTo date
+             */
+            function archiveCurrentTimetable(className, archiveEndDate) {
+                const history = getTimetableHistory(className);
+
+                // Find the current (active) version - one with no effectiveTo
+                const currentIdx = history.findIndex(v => !v.effectiveTo);
+
+                if (currentIdx !== -1) {
+                    history[currentIdx].effectiveTo = archiveEndDate;
+                    localStorage.setItem(`timetable_history_${className}`, JSON.stringify(history));
+                }
+            }
+
+            /**
+             * Get timetable arrangement for a class, optionally for a specific date
+             * @param {string} className - Name of the class
+             * @param {string|null} forDate - Optional date string (YYYY-MM-DD) to get historical timetable
+             * @returns {object} Timetable arrangement object
+             */
+            function getTimetableArrangement(className, forDate = null) {
+                // If forDate is specified, check history
+                if (forDate) {
+                    const history = getTimetableHistory(className);
+
+                    // Find version active on that date
+                    for (const version of history) {
+                        const isAfterStart = forDate >= version.effectiveFrom;
+                        const isBeforeEnd = !version.effectiveTo || forDate <= version.effectiveTo;
+
+                        if (isAfterStart && isBeforeEnd) {
+                            return version.arrangement;
+                        }
+                    }
+                    // If no history matches, fall through to current
+                }
+
+                // Return current/active timetable
+                const stored = localStorage.getItem(`timetable_arrangement_${className}`);
+                return stored ? JSON.parse(stored) : null;
+            }
+
+            /**
+             * Save timetable arrangement (wrapper for consistency)
+             */
+            function saveTimetableArrangement(className, arrangement) {
+                localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(arrangement));
+            }
+
+            /**
+             * Get period times for a class
+             */
+            function getPeriodTimes(className) {
+                const stored = localStorage.getItem(`periodTimes_${className}`);
+                return stored ? JSON.parse(stored) : null;
+            }
+
+            /**
+             * Save period times for a class
+             */
+            function savePeriodTimes(className, periodTimes) {
+                localStorage.setItem(`periodTimes_${className}`, JSON.stringify(periodTimes));
+            }
+
+            /**
+             * Check for attendance log conflicts in a date range
+             * Returns count of days with logged data
+             */
+            function checkLogConflicts(className, startDate, endDate) {
+                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                let conflictCount = 0;
+                const affectedDates = [];
+
+                const start = new Date(startDate + 'T00:00:00');
+                const end = new Date(endDate + 'T00:00:00');
+
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const dateStr = formatLocalDate(d);
+                    if (logs[dateStr] && Object.keys(logs[dateStr]).length > 0) {
+                        conflictCount++;
+                        affectedDates.push(dateStr);
+                    }
+                }
+
+                return { count: conflictCount, dates: affectedDates };
+            }
+
+            // ==================== END TIMETABLE VERSIONING ====================
 
             function showInputMode(mode) { // mode can be 'upload', 'manual', 'json'
                 const uploadSection = document.getElementById('uploadSection');
@@ -10268,6 +10390,42 @@ CRITICAL INSTRUCTIONS:
                     delete classes[editingClassName];
                 }
 
+                // Check if timetable changed in edit mode - show effective date modal
+                const isEditMode = !!editingClassName;
+                const timetableChanged = isEditMode && hasTimetableChanged(editingClassName, timetableArrangement);
+
+                if (timetableChanged) {
+                    // Define the callback for after effective date modal confirms
+                    const completeSave = () => {
+                        // Save class data
+                        const existingClass = classes[editingClassName] || classes[className] || {};
+                        classes[className] = {
+                            ...existingClass,
+                            lastDate,
+                            subjects: wizardSubjectsData,
+                            holidays
+                        };
+
+                        // Update storage and UI
+                        saveToStorage();
+                        closeModal('addClassModal');
+                        populateClassSelector();
+                        document.getElementById('classSelector').value = className;
+                        onClassChange();
+
+                        // Reset wizard state
+                        wizardCurrentStep = 1;
+                        wizardSubjectsData = [];
+                        wizardTimetableData = {};
+                        editingClassName = null;
+                    };
+
+                    // Open the effective date modal
+                    openEffectiveDateModal(className, timetableArrangement, completeSave);
+                    return; // Don't continue - modal will handle save
+                }
+
+                // Normal save (new class or no timetable change)
                 // Save class data
                 const existingClass = classes[editingClassName] || classes[className] || {};
                 classes[className] = {
@@ -10278,10 +10436,10 @@ CRITICAL INSTRUCTIONS:
                 };
 
                 // Save timetable arrangement
-                localStorage.setItem(`timetable_arrangement_${className}`, JSON.stringify(timetableArrangement));
+                saveTimetableArrangement(className, timetableArrangement);
 
                 // Update storage and UI
-                localStorage.setItem('classes', JSON.stringify(classes));
+                saveToStorage();
                 closeModal('addClassModal');
                 populateClassSelector();
                 document.getElementById('classSelector').value = className;
@@ -10295,6 +10453,218 @@ CRITICAL INSTRUCTIONS:
                 editingClassName = null;
             }
             window.submitClassFromWizard = submitClassFromWizard;
+
+            // ==================== EFFECTIVE DATE MODAL ====================
+
+            // Temporary storage for pending save
+            let pendingTimetableSave = null;
+
+            /**
+             * Create the Effective Date Modal dynamically
+             */
+            function createEffectiveDateModal() {
+                if (document.getElementById('effectiveDateModal')) return;
+
+                const modal = document.createElement('div');
+                modal.id = 'effectiveDateModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <button class="modal-close" onclick="closeModal('effectiveDateModal')">&times;</button>
+                    <div class="modal-header">
+                        <h2>📅 When should this timetable apply?</h2>
+                        <p>Choose when the new timetable should take effect</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="effectiveDateOption" value="today" checked onchange="toggleEffectiveDateRange()">
+                            Apply from today onwards
+                        </label>
+                        <p style="font-size: 0.85rem; color: var(--medium-text); margin-left: 24px;">
+                            New timetable will be used for today and all future dates. Past logs remain unchanged.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="effectiveDateOption" value="custom" onchange="toggleEffectiveDateRange()">
+                            Apply to custom date range
+                        </label>
+                    </div>
+                    
+                    <div id="effectiveDateRangeInputs" style="display: none; margin-left: 24px; margin-bottom: 15px;">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label style="font-size: 0.85rem;">Start Date</label>
+                                <input type="date" id="effectiveStartDate">
+                            </div>
+                            <span style="margin-top: 20px;">→</span>
+                            <div class="form-group" style="margin: 0; flex: 1;">
+                                <label style="font-size: 0.85rem;">End Date</label>
+                                <input type="date" id="effectiveEndDate">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="effectiveDateWarning" style="display: none; background: rgba(255, 193, 7, 0.15); padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+                        <strong style="color: #856404;">⚠️ Warning</strong>
+                        <p id="effectiveDateWarningText" style="margin: 5px 0 0; font-size: 0.9rem;"></p>
+                    </div>
+                    
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <button class="btn secondary-btn" onclick="closeModal('effectiveDateModal')">Cancel</button>
+                        <button class="btn success-btn" onclick="confirmEffectiveDateSave()">💾 Confirm & Save</button>
+                    </div>
+                </div>`;
+                document.body.appendChild(modal);
+            }
+
+            /**
+             * Toggle visibility of custom date range inputs
+             */
+            function toggleEffectiveDateRange() {
+                const option = document.querySelector('input[name="effectiveDateOption"]:checked').value;
+                const rangeInputs = document.getElementById('effectiveDateRangeInputs');
+                rangeInputs.style.display = option === 'custom' ? 'block' : 'none';
+
+                if (option === 'custom') {
+                    checkEffectiveDateConflicts();
+                } else {
+                    document.getElementById('effectiveDateWarning').style.display = 'none';
+                }
+            }
+            window.toggleEffectiveDateRange = toggleEffectiveDateRange;
+
+            /**
+             * Check for log conflicts when date range changes
+             */
+            function checkEffectiveDateConflicts() {
+                const startDate = document.getElementById('effectiveStartDate').value;
+                const endDate = document.getElementById('effectiveEndDate').value;
+                const warning = document.getElementById('effectiveDateWarning');
+                const warningText = document.getElementById('effectiveDateWarningText');
+
+                if (!startDate || !endDate || !pendingTimetableSave) {
+                    warning.style.display = 'none';
+                    return;
+                }
+
+                const conflicts = checkLogConflicts(pendingTimetableSave.className, startDate, endDate);
+
+                if (conflicts.count > 0) {
+                    warning.style.display = 'block';
+                    warningText.textContent = `${conflicts.count} day(s) with logged attendance exist in this range. The new timetable will apply to these dates but existing logs will be preserved.`;
+                } else {
+                    warning.style.display = 'none';
+                }
+            }
+            window.checkEffectiveDateConflicts = checkEffectiveDateConflicts;
+
+            /**
+             * Open the Effective Date Modal for timetable versioning
+             */
+            function openEffectiveDateModal(className, newArrangement, saveCallback) {
+                createEffectiveDateModal();
+
+                pendingTimetableSave = {
+                    className: className,
+                    arrangement: newArrangement,
+                    saveCallback: saveCallback
+                };
+
+                // Set default dates
+                const today = formatLocalDate(new Date());
+                document.getElementById('effectiveStartDate').value = today;
+
+                // Set end date to last working date if available
+                const lastDate = selectedClass?.lastDate || '';
+                document.getElementById('effectiveEndDate').value = lastDate || today;
+
+                // Reset to "today" option
+                document.querySelector('input[name="effectiveDateOption"][value="today"]').checked = true;
+                document.getElementById('effectiveDateRangeInputs').style.display = 'none';
+                document.getElementById('effectiveDateWarning').style.display = 'none';
+
+                // Add change listeners for conflict detection
+                document.getElementById('effectiveStartDate').onchange = checkEffectiveDateConflicts;
+                document.getElementById('effectiveEndDate').onchange = checkEffectiveDateConflicts;
+
+                openModal('effectiveDateModal');
+            }
+            window.openEffectiveDateModal = openEffectiveDateModal;
+
+            /**
+             * Confirm save with effective date
+             */
+            function confirmEffectiveDateSave() {
+                if (!pendingTimetableSave) return;
+
+                const option = document.querySelector('input[name="effectiveDateOption"]:checked').value;
+                const today = formatLocalDate(new Date());
+
+                let effectiveFrom = today;
+
+                if (option === 'custom') {
+                    effectiveFrom = document.getElementById('effectiveStartDate').value;
+                    if (!effectiveFrom) {
+                        alert('Please select a start date.');
+                        return;
+                    }
+                }
+
+                const { className, arrangement, saveCallback } = pendingTimetableSave;
+
+                // Get yesterday's date for archiving the old timetable
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const archiveEndDate = formatLocalDate(yesterday);
+
+                // Check if history already has an active version
+                const history = getTimetableHistory(className);
+                const hasActiveVersion = history.some(v => !v.effectiveTo);
+
+                if (hasActiveVersion) {
+                    // Archive the current active version
+                    archiveCurrentTimetable(className, archiveEndDate);
+                } else {
+                    // First time versioning - archive the current timetable to history
+                    const currentArrangement = JSON.parse(localStorage.getItem(`timetable_arrangement_${className}`) || 'null');
+                    if (currentArrangement) {
+                        // Add current as first history entry (ending yesterday)
+                        saveTimetableVersion(className, currentArrangement, '2020-01-01', archiveEndDate);
+                    }
+                }
+
+                // Save new version to history as active (no end date)
+                saveTimetableVersion(className, arrangement, effectiveFrom, null);
+
+                // Also update the current active timetable
+                saveTimetableArrangement(className, arrangement);
+
+                closeModal('effectiveDateModal');
+                pendingTimetableSave = null;
+
+                // Call the original save callback to complete the class save
+                if (saveCallback) {
+                    saveCallback();
+                }
+
+                showToast('✅ Timetable saved with effective date!', 'success');
+            }
+            window.confirmEffectiveDateSave = confirmEffectiveDateSave;
+
+            /**
+             * Check if timetable has changed compared to saved version
+             */
+            function hasTimetableChanged(className, newArrangement) {
+                const oldArrangement = JSON.parse(localStorage.getItem(`timetable_arrangement_${className}`) || '{}');
+
+                // Simple deep comparison via JSON stringify
+                return JSON.stringify(oldArrangement) !== JSON.stringify(newArrangement);
+            }
+
+            // ==================== END EFFECTIVE DATE MODAL ====================
 
             function updateWizardCellDisplay(select) {
                 // Determine day and period
@@ -13401,8 +13771,13 @@ CRITICAL INSTRUCTIONS:
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                 const today = new Date();
                 const semStart = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
+                const baselineDate = parseLocalDate(selectedClass.portalSetup.baselineDate);
+                const holidays = selectedClass.holidays || [];
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
 
                 let lastLogDate = null;
+                let missingDates = [];
 
                 // Find the most recent log date
                 Object.keys(logs).forEach(dateStr => {
@@ -13414,37 +13789,70 @@ CRITICAL INSTRUCTIONS:
                     }
                 });
 
+                // Check for missing logs by iterating through all working days from BASELINE DATE to today
+                // We only need to check from baseline date onwards because baseline already covers before that
+                let currentDate = new Date(baselineDate);
+                currentDate.setDate(currentDate.getDate() + 1); // Start from day AFTER baseline
+
+                while (currentDate <= today) {
+                    const dateStr = formatLocalDate(currentDate);
+
+                    // Skip holidays
+                    if (!holidays.includes(dateStr)) {
+                        const dayOfWeek = currentDate.getDay();
+                        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+                        // Check if this day has classes scheduled
+                        const customSchedule = getCustomScheduleForDate(dateStr);
+                        let hasClasses = false;
+
+                        if (customSchedule && customSchedule._periods) {
+                            hasClasses = customSchedule._periods.some(code => code && code !== 'Free');
+                        } else if (customSchedule && typeof customSchedule === 'object') {
+                            hasClasses = Object.keys(customSchedule).filter(k => k !== '_periods').length > 0;
+                        } else if (arrangement[dayIndex] && arrangement[dayIndex].length > 0) {
+                            hasClasses = arrangement[dayIndex].some(item => {
+                                const code = typeof item === 'object' ? item?.code : item;
+                                return code && code !== 'Free';
+                            });
+                        }
+
+                        // If this day has classes but no log entry, it's missing
+                        if (hasClasses && !logs[dateStr]) {
+                            missingDates.push(dateStr);
+                        }
+                    }
+
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
                 if (!lastLogDate) {
                     // No logs at all
                     return {
                         hasGap: true,
                         lastLogDate: formatLocalDate(semStart),
-                        daysBehind: Math.floor((today - semStart) / (1000 * 60 * 60 * 24)),
-                        allComplete: false
+                        daysBehind: missingDates.length,
+                        allComplete: false,
+                        missingDates: missingDates.slice(0, 10) // First 10 for reference
                     };
                 }
 
                 const lastLog = parseLocalDate(lastLogDate);
                 const todayStr = formatLocalDate(today);
 
-                // If last log is today, all complete
-                if (lastLogDate === todayStr) {
+                // All complete only if there are NO missing dates with classes
+                if (missingDates.length === 0) {
                     return { hasGap: false, allComplete: true };
                 }
 
-                // Calculate days behind (excluding today)
-                const daysBehind = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24)) - 1;
-
-                if (daysBehind > 0) {
-                    return {
-                        hasGap: true,
-                        lastLogDate,
-                        daysBehind,
-                        allComplete: false
-                    };
-                }
-
-                return { hasGap: false, allComplete: true };
+                // There are missing dates
+                return {
+                    hasGap: true,
+                    lastLogDate,
+                    daysBehind: missingDates.length,
+                    allComplete: false,
+                    missingDates: missingDates.slice(0, 10) // First 10 for reference
+                };
             }
 
             function openStandardCalculation() {
@@ -15666,7 +16074,7 @@ CRITICAL INSTRUCTIONS:
 
                                 // Check period-specific key first, then fallback to legacy key
                                 let status = dayLog[specificKey];
-                                if (!status && instance === 1) {
+                                if (!status) {
                                     status = dayLog[period.code];
                                 }
 
@@ -15797,7 +16205,7 @@ CRITICAL INSTRUCTIONS:
                                     const specificKey = `${p.code}_p${instance}`;
                                     let status = dayLog[specificKey];
 
-                                    if (!status && instance === 1) {
+                                    if (!status) {
                                         status = dayLog[p.code];
                                     }
 
@@ -15837,7 +16245,7 @@ CRITICAL INSTRUCTIONS:
                                     const specificKey = `${p.code}_p${instance}`;
                                     let status = dayLog[specificKey];
 
-                                    if (!status && instance === 1) {
+                                    if (!status) {
                                         status = dayLog[p.code];
                                     }
 
@@ -16046,6 +16454,12 @@ CRITICAL INSTRUCTIONS:
                 if (status === 'Medical Leave (ML)') {
                     allSubjectCodes.forEach(subCode => {
                         logs[dateStr][subCode] = 'Medical Leave (ML)';
+                        // Clear specific period instances to ensure ML applies globally
+                        Object.keys(logs[dateStr]).forEach(key => {
+                            if (key.startsWith(`${subCode}_p`)) {
+                                delete logs[dateStr][key];
+                            }
+                        });
                     });
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
                     alert("Medical Leave (ML) selected.\n\nAll subjects for this day have been marked as ML.");
