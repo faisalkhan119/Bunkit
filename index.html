@@ -10220,6 +10220,7 @@ CRITICAL INSTRUCTIONS:
 
                 // Calculate schedule counts from timetable grid
                 wizardSubjectsData.forEach(sub => {
+                    sub.shortName = sub.shortName || getSubjectShortName(sub.name);
                     sub.schedule = [0, 0, 0, 0, 0, 0, 0];
                     for (let d = 0; d < 7; d++) {
                         (wizardTimetableData[d] || []).forEach(code => {
@@ -10234,7 +10235,7 @@ CRITICAL INSTRUCTIONS:
                     timetableArrangement[d] = (wizardTimetableData[d] || []).map(code => {
                         if (!code) return null;
                         const sub = wizardSubjectsData.find(s => s.code === code);
-                        return sub ? { code: sub.code, name: sub.name } : null;
+                        return sub ? { code: sub.code, name: sub.name, shortName: getSubjectShortName(sub.name) } : null;
                     });
                 }
 
@@ -13963,26 +13964,7 @@ CRITICAL INSTRUCTIONS:
             window.calculateWithPreviewDates = calculateWithPreviewDates;
 
             function resetPreviewDates() {
-                previewModeActive = false;
-                const indicator = document.getElementById('previewModeIndicator');
-                if (indicator) indicator.style.display = 'none';
-
-                // Reset preview date inputs to actual values
-                initializePreviewDates();
-
-                if (selectedClass?.portalSetup?.active) {
-                    // Portal Mode - recalculate without overrides
-                    calculateFromPortal();
-                } else {
-                    // Standard Mode - reset to saved class dates
-                    if (selectedClass) {
-                        document.getElementById('currentDate').value = formatLocalDate(new Date());
-                        document.getElementById('lastDate').value = selectedClass.lastDate || '';
-                        triggerRecalculation();
-                    }
-                }
-
-                showToast('↩️ Reset to actual dates', 'info');
+                window.location.reload();
             }
             window.resetPreviewDates = resetPreviewDates;
             // ==================== END TIMELINE PREVIEW ====================
