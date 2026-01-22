@@ -11021,16 +11021,35 @@ CRITICAL INSTRUCTIONS:
                     const shouldVerify = confirm(verifyMessage);
 
                     if (shouldVerify) {
-                        // Store arrangement in temp variable for submitClassFromForm to pick up
-                        tempTimetableArrangement = arrangement;
-
                         // Populate form for verification
                         document.getElementById('newClassName').value = className;
                         document.getElementById('newClassLastDate').value = classData.lastDate;
 
-                        // Clear and populate subjects
-                        document.getElementById('subjectsContainer').innerHTML = '';
-                        classData.subjects.forEach(subject => addSubjectEntry(subject));
+                        // Populate Wizard Data
+                        document.getElementById('wizSubjectCount').value = classData.subjects.length;
+                        wizardSubjectsData = classData.subjects.map(s => ({
+                            name: s.name,
+                            code: s.code,
+                            schedule: s.schedule || [0, 0, 0, 0, 0, 0, 0]
+                        }));
+
+                        // Populate Wizard Timetable from Arrangement
+                        wizardTimetableData = {};
+                        for (let d = 0; d < 7; d++) {
+                            const dayPlan = arrangement ? arrangement[d] : [];
+                            wizardTimetableData[d] = (dayPlan || []).map(item => {
+                                if (!item) return '';
+                                return (typeof item === 'object') ? item.code : item;
+                            });
+                        }
+
+                        // Switch Wizard to Step 2
+                        wizardCurrentStep = 2;
+                        document.getElementById('wizardStep1').style.display = 'none';
+                        document.getElementById('wizardStep2').style.display = 'block';
+                        document.getElementById('wizardStep3').style.display = 'none';
+                        updateWizardIndicators(2);
+                        generateWizardSubjectsForm();
 
                         // Clear and populate holidays
                         const holidayList = document.getElementById('holidayList');
@@ -11078,6 +11097,139 @@ CRITICAL INSTRUCTIONS:
             }
 
             // Duplicate function deleted to prevent conflict with updated version at line 15925
+            // RE-IMPLEMENTED: Inbuilt AI Import Logic
+            async function handleAIClassImport() {
+                const fileInput = document.getElementById('aiImportFiles');
+                const textInput = document.getElementById('aiImportText');
+                const loadingDiv = document.getElementById('aiImportLoading');
+
+                if (!fileInput.files.length && !textInput.value.trim()) {
+                    alert('Please upload a file or enter some text details.');
+                    return;
+                }
+
+                // Show loading
+                if (loadingDiv) loadingDiv.style.display = 'block';
+
+                try {
+                    // 1. Prepare Images
+                    const imageParts = [];
+                    for (const file of fileInput.files) {
+                        const base64 = await fileToBase64(file);
+                        imageParts.push({
+                            inlineData: {
+                                data: base64.split(',')[1],
+                                mimeType: file.type
+                            }
+                        });
+                    }
+
+                    // 2. Prepare Prompt
+                    const userNotes = textInput.value.trim();
+                    const prompt = `You are a Data Entry Assistant for a college attendance app.
+Your task is to extract CLASS TIMETABLE and DETAILS from the user's images (screenshots of timetable, calendar, etc.) and text notes.
+
+USER NOTES: "${userNotes}"
+
+OUTPUT FORMAT:
+Return a valid JSON object matching this structure EXACTLY:
+{
+  "ClassName": {
+    "lastDate": "YYYY-MM-DD",
+    "holidays": ["YYYY-MM-DD", "YYYY-MM-DD"],
+    "subjects": [
+      {
+        "name": "Subject Name",
+        "code": "SUB101",
+        "shortName": "SUB",
+        "schedule": ["1,2", "0", "3", "0", "0", "0", "0"]
+      }
+    ],
+    "timetableArrangement": {} 
+  }
+}
+
+RULES:
+1. "ClassName": Use a short, descriptive name (e.g., "Semester 4").
+2. "lastDate": The last working day of the semester. If unknown, estimate 4 months from now.
+3. "holidays": List of holiday dates (YYYY-MM-DD). Use the user's notes and any visible calendar info.
+4. "subjects": Extract all subjects.
+   - "schedule": An array of 7 strings (Index 0 = Monday, ..., 6 = Sunday).
+   - "0" means no class.
+   - "1,2" means class is in Period 1 and Period 2.
+   - "1" means class is in Period 1 only.
+   - If exact period numbers are not visible, just use "1" for 1 hour, "1,2" for 2 hours, etc.
+5. If the image is unclear, do your best to guess based on standard college patterns.
+6. RETURN ONLY JSON. NO MARKDOWN FORMATTING. NO EXPLANATIONS.`;
+
+                    // 3. Call API (Reuse logic from handleLogScreenshot)
+                    const personalKey = localStorage.getItem('personalGeminiKey');
+                    let response;
+
+                    if (personalKey) {
+                        response = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        parts: [{ text: prompt }, ...imageParts]
+                                    }]
+                                })
+                            }
+                        );
+                    } else {
+                        // Use backend proxy (Limited to 1 image for safety if using simple proxy)
+                        // If multiple images are selected, we perform best-effort with the first one + text
+                        const imageData = imageParts.length > 0 ? imageParts[0].inlineData.data : null;
+
+                        response = await fetch('/api/gemini', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'vision',
+                                prompt: prompt,
+                                imageData: imageData, // Proxy usually expects single image
+                                mimeType: imageParts.length > 0 ? fileInput.files[0].type : null
+                            })
+                        });
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    let generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                    // Clean JSON
+                    if (generatedText.includes('```json')) {
+                        generatedText = generatedText.split('```json')[1].split('```')[0].trim();
+                    } else if (generatedText.includes('```')) {
+                        generatedText = generatedText.split('```')[1].split('```')[0].trim();
+                    }
+
+                    // 4. Fill and Submit
+                    const jsonDetailsArea = document.getElementById('jsonPasteArea');
+                    if (jsonDetailsArea) {
+                        jsonDetailsArea.value = generatedText;
+                        // Determine if submitClassFromJson exists
+                        if (typeof submitClassFromJson === 'function') {
+                            submitClassFromJson();
+                        } else {
+                            alert("Error: Verification function missing. JSON pasted below for manual checking.");
+                        }
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert('AI Error: ' + error.message + '\n\nPlease try again or use manual entry.');
+                } finally {
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    // Reset input? No, keep it in case of retry.
+                }
+            }
 
             // Helper function to convert file to base64
             function fileToBase64(file) {
