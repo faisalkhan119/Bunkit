@@ -13117,7 +13117,9 @@ RULES:
                                 };
                             });
 
-                            const newBaselineDate = new Date().toISOString().split('T')[0];
+                            // FIX: Use local date for baseline to prevent timezone issues (e.g., UTC vs IST)
+                            // This ensures the baseline date matches the "Today" used in calculations
+                            const newBaselineDate = formatLocalDate(new Date());
 
                             // Update portal setup
                             selectedClass.portalSetup.baselineDate = newBaselineDate;
