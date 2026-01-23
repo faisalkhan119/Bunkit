@@ -13545,7 +13545,8 @@ RULES:
                     populateClassSelector();
                     onClassChange();
 
-                    alert("✅ Complete data restore successful!\\n\\nAll your classes, logs, notification settings, timetable arrangements, and preferences have been restored.");
+                    alert("✅ Complete data restore successful!\n\nAll your classes, logs, notification settings, timetable arrangements, and preferences have been restored.\n\nThe app will now refresh.");
+                    location.reload();
 
                 } else {
                     // Old backup format (classes only)
@@ -13561,7 +13562,8 @@ RULES:
                     loadFromStorage();
                     populateClassSelector();
                     onClassChange();
-                    alert("✅ Data restored successfully!");
+                    alert("✅ Data restored successfully!\n\nThe app will now refresh.");
+                    location.reload();
                 }
             }
 
