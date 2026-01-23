@@ -10204,6 +10204,16 @@ CRITICAL INSTRUCTIONS:
                 // Remove timetableArrangement from export (not part of new format)
                 delete classData.timetableArrangement;
 
+                // === INCLUDE EXTERNAL DATA (Period Times, Custom Schedules, Notifications) ===
+                const periodTimes = localStorage.getItem(`periodTimes_${className}`);
+                if (periodTimes) classData.periodTimes = JSON.parse(periodTimes);
+
+                const customSchedules = localStorage.getItem(`custom_schedules_${className}`);
+                if (customSchedules) classData.customSchedules = JSON.parse(customSchedules);
+
+                const notificationSettings = localStorage.getItem(`notificationSettings_${className}`);
+                if (notificationSettings) classData.notificationSettings = JSON.parse(notificationSettings);
+
                 const exportObject = { [className]: classData };
                 const jsonString = JSON.stringify(exportObject, null, 2);
                 document.getElementById('exportJsonTextarea').value = jsonString;
@@ -11173,6 +11183,21 @@ CRITICAL INSTRUCTIONS:
                     } else {
                         // Save directly without verification
                         const existingClass = classes[className] || {};
+
+                        // === EXTRACT AND SAVE EXTERNAL DATA (MATCHING EXPORT LOGIC) ===
+                        if (classData.periodTimes) {
+                            localStorage.setItem(`periodTimes_${className}`, JSON.stringify(classData.periodTimes));
+                            // We don't delete it because having it in class object acts as a fallback/cache in some places
+                        }
+                        if (classData.customSchedules) {
+                            localStorage.setItem(`custom_schedules_${className}`, JSON.stringify(classData.customSchedules));
+                            delete classData.customSchedules; // Cleanup
+                        }
+                        if (classData.notificationSettings) {
+                            localStorage.setItem(`notificationSettings_${className}`, JSON.stringify(classData.notificationSettings));
+                            delete classData.notificationSettings; // Cleanup
+                        }
+
                         classes[className] = { ...existingClass, ...classData };
 
                         // Save timetable arrangement
