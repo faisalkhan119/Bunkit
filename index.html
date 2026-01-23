@@ -13276,6 +13276,12 @@ RULES:
                     // Default view preference (cards/subjects)
                     defaultView: localStorage.getItem('defaultView') || 'cards',
 
+                    // User Profile Name (Guest mode)
+                    userProfileName: localStorage.getItem('userProfileName') || '',
+
+                    // Personal Gemini API Key
+                    personalGeminiKey: localStorage.getItem('personalGeminiKey') || '',
+
                     // Statistics
                     stats: {
                         totalClasses: Object.keys(classesData).length,
@@ -13522,6 +13528,16 @@ RULES:
                     // Restore default view preference
                     if (backupData.defaultView) {
                         localStorage.setItem('defaultView', backupData.defaultView);
+                    }
+
+                    // Restore User Profile Name
+                    if (backupData.userProfileName) {
+                        localStorage.setItem('userProfileName', backupData.userProfileName);
+                    }
+
+                    // Restore Personal Gemini API Key
+                    if (backupData.personalGeminiKey) {
+                        localStorage.setItem('personalGeminiKey', backupData.personalGeminiKey);
                     }
 
                     // Reload application state
