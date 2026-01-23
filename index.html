@@ -12994,6 +12994,47 @@ RULES:
                 if (selectedClass.portalSetup && selectedClass.portalSetup.active) {
                     renderPortalDashboard(); // Refresh notification
                     calculateFromPortal();
+
+                    // ---------------------------------------------------------
+                    // ROLLING BASELINE LOGIC
+                    // If logs are 100% complete up to today, automatically
+                    // advance the baseline to maximize accuracy.
+                    // ---------------------------------------------------------
+                    try {
+                        const logStatus = checkIncompleteLogs();
+                        if (logStatus.allComplete && currentAnalysisData && currentAnalysisData.length > 0) {
+
+                            const updatedBaseline = {};
+                            currentAnalysisData.forEach(subject => {
+                                updatedBaseline[subject.code] = {
+                                    attended: subject.attended,
+                                    total: subject.totalHeld
+                                };
+                            });
+
+                            const newBaselineDate = new Date().toISOString().split('T')[0];
+
+                            // Update portal setup
+                            selectedClass.portalSetup.baselineDate = newBaselineDate;
+                            selectedClass.portalSetup.baselineData = updatedBaseline;
+
+                            // Save persistent
+                            const classes = JSON.parse(localStorage.getItem('attendanceClasses_v2')) || {};
+                            classes[selectedClass.name] = selectedClass;
+                            localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+
+                            // Notify user
+                            if (typeof showToast === 'function') {
+                                showToast(
+                                    'Baseline Updated',
+                                    `Portal baseline moved to ${newBaselineDate}.`,
+                                    { icon: '📅', duration: 4000 }
+                                );
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Auto-baseline update failed', e);
+                    }
                 } else {
                     triggerRecalculation();
                 }
@@ -14154,16 +14195,17 @@ RULES:
                     };
                 });
 
-                // Update portal setup - UPDATE BASELINE DATA, KEEP BASELINE DATE
+                // Update portal setup - UPDATE BASELINE DATA AND DATE (Rolling Baseline)
                 if (!selectedClass.portalSetup) {
                     selectedClass.portalSetup = { active: true };
                 }
 
-                // Keep the original baseline date
-                const originalBaselineDate = selectedClass.portalSetup.baselineDate || new Date().toISOString().split('T')[0];
+                // UPDATE: User requested "reset logic" - so we update the baseline date to NOW.
+                // This makes the current state the new anchor point.
+                const newBaselineDate = new Date().toISOString().split('T')[0];
 
-                // Update only the baseline data
-                selectedClass.portalSetup.baselineDate = originalBaselineDate;
+                // Update both data and date
+                selectedClass.portalSetup.baselineDate = newBaselineDate;
                 selectedClass.portalSetup.baselineData = updatedBaseline;
 
                 // Save class data
@@ -14173,7 +14215,7 @@ RULES:
 
                 alert(
                     `✅ Portal Baseline Updated!\n\n` +
-                    `Baseline Date: ${originalBaselineDate}\n` +
+                    `Baseline Date: ${newBaselineDate}\n` +
                     `Baseline Data Updated: ${Object.keys(updatedBaseline).length} subjects\n\n` +
                     `Note: The portal will use the maximum of baseline data and your logged attendance (from baseline date to semester start) as per portal logic.`
                 );
