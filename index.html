@@ -1460,6 +1460,104 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
+        /* --- PWA Install Sheet --- */
+        .pwa-install-sheet {
+            position: fixed;
+            bottom: -100%;
+            /* Hidden by default */
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+            z-index: 2147483647;
+            /* Max safe integer to ensure top visibility */
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            /* Center on desktop */
+        }
+
+        .pwa-install-sheet.active {
+            bottom: 0;
+        }
+
+        .pwa-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pwa-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .pwa-details h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--dark-text);
+        }
+
+        .pwa-details p {
+            margin: 4px 0 0 0;
+            font-size: 0.9rem;
+            color: var(--medium-text);
+        }
+
+        .pwa-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .pwa-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pwa-btn.secondary {
+            background: transparent;
+            color: var(--medium-text);
+        }
+
+        .pwa-btn.primary {
+            background: var(--dark-text);
+            /* Black on light, White on dark */
+            color: var(--card-bg);
+        }
+
+        /* iOS Specifics */
+        .ios-instruction {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: var(--dark-text);
+            background: var(--light-bg);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+
         .main-content {
             padding: 40px;
         }
@@ -19244,6 +19342,93 @@ Answer helpfully using this context.`;
                             }
                         }, 1000); // Delay to ensure DOM is fully ready
                     });
+                </script>
+                <script>
+                    // --- PWA INSTALL PROMPT LOGIC ---
+                    function setupPwaInstall() {
+                        // Add HTML Container
+                        const pwaContainer = document.createElement('div');
+                        pwaContainer.id = 'pwaInstallSheet';
+                        pwaContainer.className = 'pwa-install-sheet';
+                        pwaContainer.innerHTML = `
+            <div class="pwa-content">
+                <div class="pwa-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="pwa-details">
+                    <h3 id="pwaTitle">Install Bunkit</h3>
+                    <p id="pwaDesc">Add to home screen for the best experience.</p>
+                </div>
+            </div>
+            <div id="iosInstruction" class="ios-instruction" style="display: none;">
+                <span>Tap <i class="fas fa-share-square"></i> then "Add to Home Screen" <i class="far fa-plus-square"></i></span>
+            </div>
+            <div class="pwa-actions">
+                <button class="pwa-btn secondary" onclick="dismissPwaPrompt()">Not Now</button>
+                <button id="pwaInstallBtn" class="pwa-btn primary">Install App</button>
+            </div>
+        `;
+                        document.body.appendChild(pwaContainer);
+
+                        let deferredPrompt;
+                        const sheet = document.getElementById('pwaInstallSheet');
+                        const installBtn = document.getElementById('pwaInstallBtn');
+                        const iosInstruction = document.getElementById('iosInstruction');
+                        const pwaTitle = document.getElementById('pwaTitle');
+                        const pwaDesc = document.getElementById('pwaDesc');
+
+                        // Check if dismissed recently (e.g., within 7 days)
+                        const dismissedTime = localStorage.getItem('pwaPromptDismissed');
+                        if (dismissedTime) {
+                            const daysSince = (new Date() - new Date(dismissedTime)) / (1000 * 60 * 60 * 24);
+                            if (daysSince < 7) return;
+                        }
+
+                        // ANDROID / DESKTOP (Native Prompt)
+                        window.addEventListener('beforeinstallprompt', (e) => {
+                            e.preventDefault();
+                            deferredPrompt = e;
+
+                            // Show custom sheet
+                            sheet.classList.add('active');
+
+                            installBtn.onclick = async () => {
+                                sheet.classList.remove('active');
+                                if (deferredPrompt) {
+                                    deferredPrompt.prompt();
+                                    const { outcome } = await deferredPrompt.userChoice;
+                                    console.log(`User response to install prompt: ${outcome}`);
+                                    deferredPrompt = null;
+                                }
+                            };
+                        });
+
+                        // iOS DETECTION
+                        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+                        const isStandalone = ('standalone' in navigator) && navigator.standalone;
+
+                        if (isIOS && !isStandalone) {
+                            // Customize for iOS
+                            pwaTitle.textContent = "Install on iOS";
+                            pwaDesc.textContent = "Install Bunkit for offline access.";
+                            iosInstruction.style.display = 'flex';
+                            installBtn.style.display = 'none'; // IOS doesn't support programmatic install
+
+                            // Show sheet (maybe with a slight delay)
+                            setTimeout(() => {
+                                sheet.classList.add('active');
+                            }, 3000);
+                        }
+                    }
+
+                    function dismissPwaPrompt() {
+                        const sheet = document.getElementById('pwaInstallSheet');
+                        if (sheet) sheet.classList.remove('active');
+                        localStorage.setItem('pwaPromptDismissed', new Date().toISOString());
+                    }
+
+                    // Initialize PWA logic
+                    window.addEventListener('load', setupPwaInstall);
                 </script>
 </body>
 
