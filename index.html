@@ -5872,7 +5872,7 @@
                     // STRICT DUPLICATE CHECK (Now passes full classData)
                     let dupResult = { status: 'ok' };
                     try {
-                        dupResult = checkClassDuplicate(inputName, classData.subjects, classData.timetable || {});
+                        dupResult = checkClassDuplicate(inputName, classData);
                     } catch (e) {
                         console.error("Strict duplicate check crashed:", e);
                         // USER REQUEST: Strict error, no copy creation
