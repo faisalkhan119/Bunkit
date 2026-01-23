@@ -17652,7 +17652,8 @@ RULES:
 
                     // Gemini API Key - Uses personal key or backend proxy
                     // Get your own key from: https://aistudio.google.com/app/apikey
-                    const GEMINI_API_KEY = localStorage.getItem('personalGeminiKey') || '';
+                    // FIX: Include Shared Key fallback directly
+                    const GEMINI_API_KEY = localStorage.getItem('personalGeminiKey') || window.SHARED_CHATBOT_KEY || 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
                     const GEMINI_DAILY_LIMIT = 10000;
 
 
@@ -17909,6 +17910,8 @@ RULES:
                     }
 
                     // === HYBRID PROCESSOR (Main Entry Point) - 3-Tier Fallback ===
+
+
                     async function processAttendanceImage(imageFile, showProgress = true) {
                         try {
                             // TIER 1: Try Personal Gemini API Key (if available)
