@@ -5843,7 +5843,9 @@
                     // Decode class data (Support for v2 compressed and v1 base64)
                     let jsonString;
                     if (encodedData.startsWith('v2_')) {
-                        jsonString = LZString.decompressFromEncodedURIComponent(encodedData.substring(3));
+                        // FIX: URLSearchParams converts '+' to spaces, restore them before decompression
+                        const fixedData = encodedData.substring(3).replace(/ /g, '+');
+                        jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
                     } else {
                         jsonString = atob(encodedData);
                     }
