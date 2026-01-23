@@ -5856,6 +5856,13 @@
                         throw new Error("Invalid class data structure");
                     }
 
+                    // FIX: Ensure all subjects have a shortName (fallback to code if missing)
+                    classData.subjects.forEach(sub => {
+                        if (!sub.shortName || sub.shortName === 'undefined') {
+                            sub.shortName = sub.code || sub.name.substring(0, 3).toUpperCase();
+                        }
+                    });
+
                     const inputName = classData.name;
                     let finalName = inputName;
                     let shouldImport = true;
@@ -19352,8 +19359,8 @@ Answer helpfully using this context.`;
                         pwaContainer.className = 'pwa-install-sheet';
                         pwaContainer.innerHTML = `
             <div class="pwa-content">
-                <div class="pwa-icon">
-                    <i class="fas fa-graduation-cap"></i>
+                <div class="pwa-icon" style="background: none;">
+                    <img src="icon-192x192.png" alt="Bunkit" style="width: 100%; height: 100%; border-radius: 12px;">
                 </div>
                 <div class="pwa-details">
                     <h3 id="pwaTitle">Install Bunkit</h3>
