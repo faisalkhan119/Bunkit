@@ -13099,8 +13099,17 @@ RULES:
 
                 // Immediate update without refresh
                 if (selectedClass.portalSetup && selectedClass.portalSetup.active) {
-                    renderPortalDashboard(); // Refresh notification
-                    calculateFromPortal();
+                    calculateFromPortal(); // Calculate FIRST to update currentAnalysisData
+                    renderPortalDashboard(); // Then refresh notification
+
+                    // FIX: Ensure results section is visible and scrolled into view
+                    const resultsSection = document.getElementById('resultsSection');
+                    if (resultsSection) {
+                        resultsSection.style.display = 'block';
+                        setTimeout(() => {
+                            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 300);
+                    }
 
                     // ---------------------------------------------------------
                     // ROLLING BASELINE LOGIC
