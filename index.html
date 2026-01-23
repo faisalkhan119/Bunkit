@@ -18838,18 +18838,9 @@ Answer helpfully using this context.`;
                                 console.log('🤖 Chatbot: Using Injected Shared Keys');
                             } else {
                                 // Priority 3: Fallback Shared Keys (Obfuscated)
-                                // Decode base64 obfuscated keys
-                                const obfuscatedKeys = [
-                                    'QUl6YVN5Q1F6ck9yVG5NUjFlbGFlZUNNcmxubUttSzdnaGtxZXRv',
-                                    'QUl6YVN5QjFxQk8xMzNHMnBoWVgwOVBTMFdPSjZ4WnFxY1Bydlo0',
-                                    'QUl6YVN5QzQxVnZJbFVoR1FwcjJ5eDB3SzNacHVFVkV6STJDSkNB'
-                                ];
-                                try {
-                                    keysToUse.push(...obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza')));
-                                    console.log('🤖 Chatbot: Using Fallback Shared Keys');
-                                } catch (e) {
-                                    console.error('Failed to decode fallback keys:', e);
-                                }
+                                // Use centralized helper
+                                keysToUse.push(...getFallbackSharedKeys());
+                                console.log('🤖 Chatbot: Using Fallback Shared Keys');
                             }
 
                             if (keysToUse.length > 0) {
