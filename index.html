@@ -5904,7 +5904,7 @@
                     // We simply add it to the 'classes' object and saveToStorage
                     // Ensure we preserve all fields
                     classes[finalName] = {
-                        lastDate: classData.lastDate || new Date().toISOString().split('T')[0],
+                        lastDate: classData.lastDate || formatLocalDate(new Date()),
                         subjects: classData.subjects,
                         holidays: classData.holidays || [],
                         periodTimes: classData.periodTimes || {}, // Import period times if available
@@ -13261,8 +13261,13 @@ RULES:
                     const blob = new Blob([jsonString], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
 
-                    // Create download with timestamp
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                    // Create download with timestamp (Local Time)
+                    const now = new Date();
+                    const timestamp = now.getFullYear() + '-' +
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(now.getDate()).padStart(2, '0') + '_' +
+                        String(now.getHours()).padStart(2, '0') + '-' +
+                        String(now.getMinutes()).padStart(2, '0');
                     const filename = `bunkit_complete_backup_${timestamp}.json`;
 
                     const a = document.createElement('a');
@@ -13287,7 +13292,12 @@ RULES:
                 try {
                     const backupData = getBackupDataObj();
                     const jsonString = JSON.stringify(backupData, null, 2);
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                    const now = new Date();
+                    const timestamp = now.getFullYear() + '-' +
+                        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(now.getDate()).padStart(2, '0') + '_' +
+                        String(now.getHours()).padStart(2, '0') + '-' +
+                        String(now.getMinutes()).padStart(2, '0');
                     const filename = `bunkit_complete_backup_${timestamp}.json`;
 
                     const file = new File([jsonString], filename, { type: 'application/json' });
@@ -14171,7 +14181,7 @@ RULES:
                 // Reset date inputs to current date (today)
                 const currentDateInput = document.getElementById('currentDate');
                 if (currentDateInput) {
-                    currentDateInput.value = new Date().toISOString().split('T')[0];
+                    currentDateInput.value = formatLocalDate(new Date());
                 }
 
                 // Hide any existing results or input sections
