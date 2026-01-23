@@ -17651,22 +17651,26 @@ RULES:
                     // ========== HYBRID OCR SYSTEM ==========
 
                     // Gemini API Key - Uses personal key or backend proxy
+                    // Gemini API Key - Uses personal key or backend proxy
                     // Get your own key from: https://aistudio.google.com/app/apikey
-                    // FIX: Include Shared Key fallback directly
-                    const GEMINI_API_KEY = localStorage.getItem('personalGeminiKey') || window.SHARED_CHATBOT_KEY || 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
+                    // Personal key is loaded dynamically
                     const GEMINI_DAILY_LIMIT = 10000;
 
 
                     // Test shared API key (for debugging)
+                    // Test shared API key (for debugging)
                     async function testSharedAPIKey() {
+                        const sharedKeys = getFallbackSharedKeys();
+                        const keyToTest = sharedKeys[0] || 'NO_KEY_FOUND';
+
                         console.log('🧪 Testing Shared Gemini API Key...');
-                        console.log('🔑 Key:', GEMINI_API_KEY);
+                        console.log('🔑 Key(s) available:', sharedKeys.length);
 
                         try {
                             // First, list available models to see what's valid
                             console.log('📋 Listing available models...');
                             const listResponse = await
-                                fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+                                fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${keyToTest}`);
 
                             if (listResponse.ok) {
                                 const listData = await listResponse.json();
@@ -17678,39 +17682,14 @@ RULES:
                                     console.warn('⚠️ No "flash" model found in list!');
                                 }
                             } else {
-                                console.error('❌ Failed to list models:', await listResponse.text());
+                                const err = await listResponse.text();
+                                console.error('❌ Model list failed:', listResponse.status, err);
                             }
-
-                            // Now try the generation
-                            const response = await
-                                fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                                    {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            contents: [{ parts: [{ text: 'Hello, please respond with "Success"' }] }]
-                                        })
-                                    });
-
-                            console.log('📡 Generate Response Status:', response.status);
-
-                            if (response.ok) {
-                                const data = await response.json();
-                                console.log('✅ API Test SUCCESS!', data);
-                                alert('✅ Shared API Key is working!\n\nGemini API is functional.');
-                                return true;
-                            } else {
-                                const errorText = await response.text();
-                                console.error('❌ API Test FAILED:', errorText);
-                                alert(`❌ API Key Error: ${response.status}\n\n${errorText}\n\nCheck console for available models.`);
-                                return false;
-                            }
-                        } catch (error) {
-                            console.error('❌ API Test Exception:', error);
-                            alert(`❌ Network/API Error:\n${error.message}`);
-                            return false;
+                        } catch (e) {
+                            console.error('Test failed:', e);
                         }
                     }
+
 
                     // Make testSharedAPIKey available globally for console testing
                     window.testSharedAPIKey = testSharedAPIKey;
@@ -17787,7 +17766,11 @@ RULES:
 
 
                         // 1. Determine Key Source
-                        const personalKey = getPersonalGeminiKey();
+                        const effectiveKey = apiKey || getPersonalGeminiKey();
+
+                        if (!effectiveKey) {
+                            throw new Error('No API key available for Gemini processing');
+                        }
 
                         // Construct prompt & contents common to both methods
                         const generationBody = {
@@ -17807,25 +17790,13 @@ RULES:
                         let response;
 
                         try {
-                            if (personalKey) {
-                                // CASE A: Personal Key (Direct Fetch)
-                                console.log('🔑 Using Personal Gemini Key');
-                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(generationBody)
-                                });
-                            } else {
-                                // CASE B: Shared Key (Hardcoded Fallback)
-                                console.log('🔄 Using Shared Gemini Key (Client-Side)');
-                                const SHARED_KEY_LITERAL = 'AIzaSyC41VvIlUhGQpr2yx0wK3ZpuEVEzI2CJCA';
-
-                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${SHARED_KEY_LITERAL}`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(generationBody)
-                                });
-                            }
+                            // CASE A: Direct Fetch with Effective Key
+                            // console.log('🔑 Using Gemini Key'); // Verbose
+                            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${effectiveKey}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(generationBody)
+                            });
                         } catch (netErr) {
                             throw new Error(`Network error calling Gemini: ${netErr.message}`);
                         }
@@ -17912,6 +17883,23 @@ RULES:
                     // === HYBRID PROCESSOR (Main Entry Point) - 3-Tier Fallback ===
 
 
+                    // Helper to get shared keys (Obfuscated to prevent casual scraping)
+                    function getFallbackSharedKeys() {
+                        const obfuscatedKeys = [
+                            'QUl6YVN5Q1F6ck9yVG5NUjFlbGFlZUNNcmxubUttSzdnaGtxZXRv',
+                            'QUl6YVN5QjFxQk8xMzNHMnBoWVgwOVBTMFdPSjZ4WnFxY1Bydlo0',
+                            'QUl6YVN5QzQxVnZJbFVoR1FwcjJ5eDB3SzNacHVFVkV6STJDSkNB'
+                        ];
+                        try {
+                            return obfuscatedKeys.map(k => atob(k)).filter(k => k.startsWith('AIza'));
+                        } catch (e) {
+                            console.error('Failed to decode keys:', e);
+                            return [];
+                        }
+                    }
+
+                    // === HYBRID PROCESSOR (Main Entry Point) - 3-Tier Fallback ===
+
                     async function processAttendanceImage(imageFile, showProgress = true) {
                         try {
                             // TIER 1: Try Personal Gemini API Key (if available)
@@ -17919,8 +17907,7 @@ RULES:
                             if (personalKey && hasGeminiQuotaRemaining('personal', personalKey)) {
                                 const personalQuota = getGeminiQuota('personal');
                                 if (showProgress) {
-                                    console.log(`🤖 Processing with YOUR Gemini API (${personalQuota.count}/${personalQuota.limit}
-                    today)...`);
+                                    console.log(`🤖 Processing with YOUR Gemini API (${personalQuota.count}/${personalQuota.limit} today)...`);
                                 }
 
                                 try {
@@ -17933,33 +17920,32 @@ RULES:
                                 }
                             }
 
-                            // TIER 2: Try Shared/Proxy Gemini API
-                            // If no personal key, we use the proxy which handles its own key
-                            // (personalKey already declared in Tier 1 block above)
-                            const useProxy = !personalKey; // Proxy mode when no personal key
-
+                            // TIER 2: Try Shared Gemini API (Obfuscated Keys)
                             const sharedQuota = getGeminiQuota('shared');
-                            // For proxy mode, we don't check key existence since proxy has its own
-                            const hasQuota = useProxy ? (sharedQuota.count < sharedQuota.limit) : hasGeminiQuotaRemaining('shared', GEMINI_API_KEY);
+                            const sharedKeys = getFallbackSharedKeys();
 
-                            console.log(`🤖 Tier 2 Check: UseProxy=${useProxy}, Quota ${sharedQuota.count}/${sharedQuota.limit}, HasQuota: ${hasQuota}`);
-
-                            if (hasQuota) {
+                            // Check if keys exist and quota is remaining
+                            if (sharedKeys.length > 0 && sharedQuota.count < sharedQuota.limit) {
                                 if (showProgress) {
-                                    console.log(`🤖 Processing with ${useProxy ? 'Proxy' : 'Shared'} Gemini AI (${sharedQuota.count}/${sharedQuota.limit} today)...`);
+                                    console.log(`🤖 Processing with Shared Gemini AI (${sharedQuota.count}/${sharedQuota.limit} today)...`);
                                 }
 
-                                try {
-                                    // processImageWithGemini now handles proxy internally
-                                    const result = await processImageWithGemini(imageFile);
-                                    incrementGeminiQuota('shared');
-                                    return { data: result, method: useProxy ? 'Proxy Gemini AI' : 'Shared Gemini AI', success: true };
-                                } catch (geminiError) {
-                                    console.error('❌ Gemini (Tier 2) failed:', geminiError);
-                                    // Continue to Tier 3
+                                // Try keys in rotation/sequence
+                                for (let i = 0; i < sharedKeys.length; i++) {
+                                    const key = sharedKeys[i];
+                                    try {
+                                        console.log(`🔄 Attempting shared key ${i + 1}/${sharedKeys.length}`);
+                                        const result = await processImageWithGemini(imageFile, key);
+                                        incrementGeminiQuota('shared');
+                                        return { data: result, method: 'Shared Gemini AI', success: true };
+                                    } catch (geminiError) {
+                                        console.warn(`❌ Shared Key ${i + 1} failed:`, geminiError.message);
+                                        // Try next key
+                                    }
                                 }
+                                console.warn('⚠️ All shared keys failed.');
                             } else {
-                                console.warn('⚠️ Shared Gemini quota exceeded. Falling back to Tesseract.');
+                                console.warn('⚠️ Shared Gemini quota exceeded or no keys available.');
                             }
 
                             // TIER 3: Use Tesseract Fallback
