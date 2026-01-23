@@ -18109,10 +18109,7 @@ RULES:
                     9. Provide ONLY the JSON code block in your response, with no extra text.
                     `;
 
-                            // 3. Call Gemini API (Direct or Proxy)
-                            const personalKey = localStorage.getItem('personalGeminiKey');
-                            let response;
-
+                            // 3. Call Gemini API (Secure Rotation)
                             const requestBody = {
                                 contents: [{
                                     parts: [
@@ -18122,33 +18119,55 @@ RULES:
                                 }]
                             };
 
+                            let response;
+                            let lastError;
+
+                            // Determine API Keys to use
+                            const keysToUse = [];
+                            const personalKey = localStorage.getItem('personalGeminiKey');
+
                             if (personalKey) {
-                                // CASE A: Personal Key (Direct Fetch)
-                                console.log('🔑 Using Personal Gemini Key for Import');
-                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${personalKey}`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(requestBody)
-                                });
+                                // Priority 1: Personal Key
+                                keysToUse.push(personalKey);
+                                console.log('🔑 Using Personal Gemini Key');
                             } else {
-                                // CASE B: Use Backend Proxy (Shared Key)
-                                console.log('🔄 Using Backend Proxy for AI Import');
+                                // Priority 2: Shared Keys (Obfuscated)
+                                keysToUse.push(...getFallbackSharedKeys());
+                                console.log('🔄 Using Shared Keys');
+                            }
 
-                                // Convert imageParts to format backend can handle
-                                const imageDataArray = imageParts.map(part => ({
-                                    data: part.inlineData.data,
-                                    mimeType: part.inlineData.mimeType
-                                }));
+                            if (keysToUse.length === 0) {
+                                throw new Error("No API keys available.");
+                            }
 
-                                response = await fetch('/api/gemini', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        action: 'vision-multi',
-                                        prompt: promptText,
-                                        images: imageDataArray
-                                    })
-                                });
+                            // Try keys in rotation
+                            for (let i = 0; i < keysToUse.length; i++) {
+                                const currentKey = keysToUse[i];
+                                try {
+                                    console.log(`Attempting Key ${i + 1}/${keysToUse.length}`);
+                                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey}`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(requestBody)
+                                    });
+
+                                    // If Quota Exceeded (429), try next key
+                                    if (response.status === 429) {
+                                        console.warn(`Key ${i + 1} exhausted (429). Rotating...`);
+                                        lastError = `Quota exceeded for key ${i + 1}`;
+                                        continue;
+                                    }
+
+                                    if (response.ok) break; // Success!
+
+                                } catch (e) {
+                                    console.error(`Key ${i + 1} failed:`, e);
+                                    lastError = e.message;
+                                }
+                            }
+
+                            if (!response || !response.ok) {
+                                throw new Error('All API keys failed. ' + (lastError || ''));
                             }
 
                             const data = await response.json();
