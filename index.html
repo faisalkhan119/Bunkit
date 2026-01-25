@@ -6287,7 +6287,7 @@
             }
 
             // Update sidebar account section UI
-            function updateSidebarAccountUI() {
+            window.updateSidebarAccountUI = function () {
                 const signInBtn = document.getElementById('sidebarSignInBtn');
                 const syncBtn = document.getElementById('sidebarSyncBtn');
                 const signOutBtn = document.getElementById('sidebarSignOutBtn');
@@ -6299,13 +6299,20 @@
 
                 if (!userName) return;
 
-                const isGuest = localStorage.getItem('isGuest') === 'true';
+                // Check BOTH Google OAuth user AND Supabase AuthManager user
+                const authManagerUser = window.AuthManager && window.AuthManager.user;
                 const savedUser = localStorage.getItem('googleUser');
+
+                // FORCE: If AuthManager user exists, we are DEFINITELY not a guest.
+                if (authManagerUser) {
+                    localStorage.removeItem('isGuest');
+                    localStorage.removeItem('guest_mode_active');
+                }
+
+                const isGuest = localStorage.getItem('isGuest') === 'true';
                 const profileName = localStorage.getItem('userProfileName');
                 const lastSyncTime = localStorage.getItem('lastSyncTime');
 
-                // Check BOTH Google OAuth user AND Supabase AuthManager user
-                const authManagerUser = window.AuthManager && window.AuthManager.user;
                 const isSignedIn = (!isGuest && savedUser) || authManagerUser;
 
                 if (isSignedIn) {
