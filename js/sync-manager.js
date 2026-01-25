@@ -550,13 +550,28 @@ const SyncManager = {
         const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
 
         if (eventType === 'INSERT' || eventType === 'UPDATE') {
-            localClasses[newRow.name] = newRow.data;
-            // Restore side-loaded
-            if (newRow.data.timetableArrangement) {
-                localStorage.setItem(`timetable_arrangement_${newRow.name}`, JSON.stringify(newRow.data.timetableArrangement));
-            }
-            if (newRow.data.periodTimes) {
-                localStorage.setItem(`periodTimes_${newRow.name}`, JSON.stringify(newRow.data.periodTimes));
+            const cloudData = newRow.data;
+            const localData = localClasses[newRow.name];
+
+            // TIMESTAMP CHECK: Only overwrite if cloud is actually newer
+            const cloudTime = cloudData?.updatedAt || 0;
+            const localTime = localData?.updatedAt || 0;
+
+            if (cloudTime > localTime) {
+                console.log(`🔄 Realtime: Cloud update for "${newRow.name}" is newer. Applying.`);
+                localClasses[newRow.name] = cloudData;
+
+                // Restore side-loaded ONLY if cloud is newer
+                if (cloudData.timetableArrangement) {
+                    localStorage.setItem(`timetable_arrangement_${newRow.name}`, JSON.stringify(cloudData.timetableArrangement));
+                }
+                if (cloudData.periodTimes) {
+                    localStorage.setItem(`periodTimes_${newRow.name}`, JSON.stringify(cloudData.periodTimes));
+                }
+            } else {
+                console.log(`🛡️ Realtime: Ignoring cloud update for "${newRow.name}" (Local is same or newer).`);
+                // DON'T overwrite local data or timetable arrangement
+                return; // Exit early - no need to save
             }
         } else if (eventType === 'DELETE') {
             delete localClasses[oldRow.name];
