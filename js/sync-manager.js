@@ -112,8 +112,25 @@ const SyncManager = {
                 });
 
                 // Step 3b: Process Remaining Local Classes (No ID match in Cloud)
+                const droppedLocalClasses = new Set();
+
                 for (const [lName, lData] of Object.entries(localClasses)) {
                     if (lData.id && localProcessedIds.has(lData.id)) continue; // Already processed
+
+                    // STRICT SINGLE CLASS POLICY (Sync Conflict)
+                    // If we *already* have a finalized class (from Cloud), any *remaining* local class is a conflict.
+                    // Cloud Authority Rule: Cloud class wins. Local class is dropped.
+                    const existingSurvivors = Object.keys(finalClasses);
+                    if (existingSurvivors.length > 0) {
+                        const survivor = existingSurvivors[0];
+                        console.warn(`🔒 Single Class Policy: Conflict detected.`);
+                        console.warn(`   Cloud/Survivor: "${survivor}"`);
+                        console.warn(`   Local Victim:   "${lName}"`);
+                        console.warn(`   ACTION: Dropping local class "${lName}" to enforce limit.`);
+
+                        droppedLocalClasses.add(lName);
+                        continue; // Skip processing/adding this class
+                    }
 
                     // Content Check against existing final classes to prevent "Name (Local)" duplicates of same functionality
                     // (e.g. User logged out, then logged in, local became anonymous but is same as cloud)
@@ -190,8 +207,34 @@ const SyncManager = {
                 localStorage.setItem('attendanceClasses_v2', JSON.stringify(finalClasses));
                 window.classes = finalClasses;
 
-                // Step 4: Merge Logs & Migrate Renamed Logs
+                // Merge Logs & Migrate Renamed Logs
                 const finalLogs = { ...localLogs };
+
+                // CLEANUP: Remove logs for dropped classes (Single Class Policy Victims)
+                if (droppedLocalClasses && droppedLocalClasses.size > 0) {
+                    for (const date in finalLogs) {
+                        const dayLogs = finalLogs[date];
+                        if (!dayLogs) continue;
+
+                        droppedLocalClasses.forEach(droppedName => {
+                            // 1. Check Legacy Direct Key (e.g. "Mech-B")
+                            if (dayLogs[droppedName] !== undefined) {
+                                delete dayLogs[droppedName];
+                            }
+                            // 2. Check Namespaced Keys (e.g. "Mech-B_Math")
+                            Object.keys(dayLogs).forEach(key => {
+                                if (key.startsWith(`${droppedName}_`)) {
+                                    delete dayLogs[key];
+                                }
+                            });
+                        });
+
+                        // Clean up empty days
+                        if (Object.keys(dayLogs).length === 0) {
+                            delete finalLogs[date];
+                        }
+                    }
+                }
 
                 // Apply Renames to Local Logs FIRST
                 Object.keys(renames).forEach(oldName => {

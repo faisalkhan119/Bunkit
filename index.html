@@ -4818,7 +4818,26 @@
                             </div>
                             <div class="form-group">
                                 <label>Password</label>
-                                <input type="password" id="authPassword" placeholder="••••••••" required minlength="6">
+                                <div style="position: relative;">
+                                    <input type="password" id="authPassword" placeholder="••••••••" required
+                                        minlength="6" style="padding-right: 35px;">
+                                    <span onclick="togglePasswordVisibility('authPassword', this)"
+                                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.6;">
+                                        👁️
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="confirmPasswordGroup" style="display:none;">
+                                <label>Confirm Password</label>
+                                <div style="position: relative;">
+                                    <input type="password" id="authConfirmPassword" placeholder="••••••••" minlength="6"
+                                        style="padding-right: 35px;">
+                                    <span onclick="togglePasswordVisibility('authConfirmPassword', this)"
+                                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.6;">
+                                        👁️
+                                    </span>
+                                </div>
                             </div>
 
                             <button type="submit" class="btn primary-btn" id="authSubmitBtn" style="width: 100%;">Sign
@@ -4856,6 +4875,7 @@
                     const title = document.getElementById('authModalTitle');
                     const submitBtn = document.getElementById('authSubmitBtn');
                     const nameGroup = document.getElementById('fullNameGroup');
+                    const confirmGroup = document.getElementById('confirmPasswordGroup'); // New Field
                     const switchText = document.getElementById('authSwitchText');
                     const forgotText = document.getElementById('authForgotText');
 
@@ -4865,16 +4885,36 @@
                         title.textContent = 'Create Account';
                         submitBtn.textContent = 'Sign Up';
                         nameGroup.style.display = 'block';
+                        confirmGroup.style.display = 'block'; // Show Confirm
                         document.getElementById('authName').required = true;
+                        document.getElementById('authConfirmPassword').required = true; // Required
+
                         switchText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuthMode(\'signin\')">Sign In</a>';
                         forgotText.style.display = 'none';
                     } else {
                         title.textContent = 'Sign In';
                         submitBtn.textContent = 'Sign In';
                         nameGroup.style.display = 'none';
+                        confirmGroup.style.display = 'none'; // Hide Confirm
                         document.getElementById('authName').required = false;
+                        document.getElementById('authConfirmPassword').required = false; // Not required
+
                         switchText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuthMode(\'signup\')">Sign Up</a>';
                         forgotText.style.display = 'block';
+                    }
+                }
+
+                // New Helper: Toggle Password Visibility
+                function togglePasswordVisibility(inputId, icon) {
+                    const input = document.getElementById(inputId);
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.textContent = '🔓'; // Open lock/eye
+                        icon.style.opacity = '1';
+                    } else {
+                        input.type = 'password';
+                        icon.textContent = '👁️'; // Closed/Normal eye
+                        icon.style.opacity = '0.6';
                     }
                 }
 
@@ -4882,9 +4922,19 @@
                     e.preventDefault();
                     const email = document.getElementById('authEmail').value;
                     const password = document.getElementById('authPassword').value;
+                    const confirmPassword = document.getElementById('authConfirmPassword').value;
                     const name = document.getElementById('authName').value;
                     const btn = document.getElementById('authSubmitBtn');
                     const errorDiv = document.getElementById('authError');
+
+                    // PASSWORD MATCH CHECK
+                    if (currentAuthMode === 'signup') {
+                        if (password !== confirmPassword) {
+                            errorDiv.textContent = "Passwords do not match!";
+                            errorDiv.style.display = 'block';
+                            return; // Stop submission
+                        }
+                    }
 
                     btn.disabled = true;
                     btn.innerHTML = 'Processing...';
@@ -4905,7 +4955,15 @@
 
                         // Success
                         closeAuthModal();
-                        showToast(currentAuthMode === 'signup' ? 'Account created! Welcome.' : 'Signed in successfully!', 'success');
+
+                        // EMAIL CONFIRMATION CHECK
+                        // If signup successful but no session, it means email confirmation is ON.
+                        if (currentAuthMode === 'signup' && result.data && result.data.user && !result.data.session) {
+                            alert(`✅ Account created successfully!\n\n📧 A confirmation link has been sent to ${email}.\n\nPlease check your inbox (and spam folder) and click the link to verify your email before logging in.`);
+                        } else {
+                            // Normal Login or Signup (if confirmation off)
+                            showToast(currentAuthMode === 'signup' ? 'Account created! Welcome.' : 'Signed in successfully!', 'success');
+                        }
 
                     } catch (err) {
                         console.error(err);
@@ -6737,6 +6795,43 @@
                     console.log('🔄 Data Migration: Assigned UUIDs to existing classes.');
                     localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
                 }
+
+                // STRICT SINGLE CLASS POLICY (Legacy Cleanup)
+                // If user has multiple classes, delete all except the most relevant one.
+                const classNames = Object.keys(classes);
+                if (classNames.length > 1) {
+                    console.warn(`⚠️ Multiple classes detected (${classNames.length}). Enforcing Single Class Policy.`);
+
+                    let survivorName = localStorage.getItem('lastOpenedClass');
+
+                    // If lastOpened is invalid or missing, pick the one with latest timestamp
+                    if (!survivorName || !classes[survivorName]) {
+                        survivorName = classNames.sort((a, b) => {
+                            const timeA = new Date(classes[a].updatedAt || 0).getTime();
+                            const timeB = new Date(classes[b].updatedAt || 0).getTime();
+                            return timeB - timeA; // Descending (Newest first)
+                        })[0];
+                    }
+
+                    console.log(`🏆 Keeping "${survivorName}", deleting others...`);
+
+                    // Delete others
+                    classNames.forEach(name => {
+                        if (name !== survivorName) {
+                            console.log(`🗑️ Deleting extra class: "${name}"`);
+                            if (window.SyncManager && window.SyncManager.deleteClass) {
+                                SyncManager.deleteClass(name); // Cloud delete (async)
+                            }
+                            // Always clean local immediately
+                            delete classes[name];
+                            localStorage.removeItem(`notificationSettings_${name}`);
+                        }
+                    });
+
+                    // Force save local state ensuring only survivor remains
+                    localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+                    if (survivorName) localStorage.setItem('lastOpenedClass', survivorName);
+                }
             }
 
             // Auto-remove Example Class when user has their own classes
@@ -7616,10 +7711,25 @@
                 const datalist = document.getElementById('class-suggestions');
                 selector.innerHTML = '<option value="">-- Select a Class --</option>';
                 datalist.innerHTML = '';
-                Object.keys(classes).sort().forEach(className => {
+
+                const classNames = Object.keys(classes).sort();
+                classNames.forEach(className => {
                     selector.innerHTML += `<option value="${className}">${className}</option>`;
                     datalist.innerHTML += `<option value="${className}"></option>`;
                 });
+
+                // SINGLE CLASS POLICY:
+                // Only show "Add Class" if:
+                // 1. No classes exist
+                // 2. The ONLY existing class is one of the defaults (Example/Example Class)
+                const isExampleOnly = classNames.length === 1 && (classNames[0] === 'Example Class' || classNames[0] === 'Example');
+
+                if (classNames.length === 0 || isExampleOnly) {
+                    // Add separator
+                    selector.innerHTML += '<option disabled>──────────</option>';
+                    // Add "Add Class" option
+                    selector.innerHTML += '<option value="add_new_class">➕ Add Class</option>';
+                }
             }
 
             function handleSearchInput() {
@@ -11254,6 +11364,23 @@ CRITICAL INSTRUCTIONS:
                         semesterStartDate
                     }
                 };
+
+                // SINGLE CLASS POLICY: Auto-delete "Example Class" or "Example" if a new class is created
+                // This ensures the user is left with ONLY the new class.
+                if (!editingClassName) {
+                    const examples = ['Example Class', 'Example'];
+                    examples.forEach(ex => {
+                        if (classes[ex] && className !== ex) {
+                            console.log(`🧹 Auto-deleting "${ex}" to enforce Single Class Policy.`);
+                            // Use SyncManager if available for clean cloud removal
+                            if (window.SyncManager) {
+                                SyncManager.deleteClass(ex);
+                            } else {
+                                delete classes[ex]; // Fallback
+                            }
+                        }
+                    });
+                }
 
                 // === Handle Pending Imported Timetable ===
                 if (tempTimetableArrangement) {
