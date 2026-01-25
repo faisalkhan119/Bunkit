@@ -20100,6 +20100,13 @@ Answer helpfully using this context.`;
                                 // Capture class name BEFORE deletion attempt
                                 const classToDelete = selectedClass && selectedClass.name ? selectedClass.name : null;
 
+                                // CONFIRMATION DIALOG (Requested by User)
+                                if (classToDelete) {
+                                    if (!confirm(`Are you sure you want to delete "${classToDelete}"? This will remove all associated data and cannot be undone.`)) {
+                                        return; // User cancelled
+                                    }
+                                }
+
                                 // Call original function (handles confirmation prompts etc.)
                                 originalDeleteSelectedClass();
 
