@@ -6315,9 +6315,13 @@
                 const profileName = localStorage.getItem('userProfileName');
                 const lastSyncTime = localStorage.getItem('lastSyncTime');
 
-                if (!isGuest && savedUser) {
-                    // Google user
-                    const user = JSON.parse(savedUser);
+                // Check BOTH Google OAuth user AND Supabase AuthManager user
+                const authManagerUser = window.AuthManager && window.AuthManager.user;
+                const isSignedIn = (!isGuest && savedUser) || authManagerUser;
+
+                if (isSignedIn) {
+                    // Signed in user (either Google OAuth or Supabase)
+                    const user = savedUser ? JSON.parse(savedUser) : (authManagerUser?.user_metadata || {});
                     signInBtn.style.display = 'none';
                     syncBtn.style.display = 'block';
                     signOutBtn.style.display = 'block';
@@ -6336,13 +6340,17 @@
                         }
                     }
 
-                    userName.textContent = profileName || user.name || 'User';
-                    userEmail.textContent = user.email || '';
+                    // Get display name from various sources
+                    const displayName = profileName || user.name || user.full_name || authManagerUser?.email?.split('@')[0] || 'User';
+                    const displayEmail = user.email || authManagerUser?.email || '';
+
+                    userName.textContent = displayName;
+                    userEmail.textContent = displayEmail;
 
                     if (user.picture && userAvatar) {
                         userAvatar.innerHTML = `<img src="${user.picture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
                     } else if (userAvatar) {
-                        const initial = (profileName || user.name || 'U').charAt(0).toUpperCase();
+                        const initial = displayName.charAt(0).toUpperCase();
                         userAvatar.innerHTML = initial;
                     }
                 } else {
