@@ -420,120 +420,184 @@ const SyncManager = {
         window.location.reload();
     },
 
+    // --- EDGE CASE HELPERS ---
+
+    // Helper: Safe JSON Parse to prevent crashes
+    safeParse(key, defaultVal = {}) {
+        try {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : defaultVal;
+        } catch (e) {
+            console.error(`⚠️ Corrupted data in ${key}. Resetting to default.`, e);
+            return defaultVal;
+        }
+    },
+
+    // Helper: Safe Set Item (Quota Handling)
+    safeSetItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                console.error(`⚠️ LocalStorage Limit Exceeded for ${key}!`);
+                alert("Storage Full: Your device storage is full. Data is saved to the Cloud, but offline access might be limited.");
+            } else {
+                console.error(`Error saving ${key}:`, e);
+            }
+        }
+    },
+
+    // Helper: Retry operation for Auth errors
+    async retryOperation(operation) {
+        try {
+            return await operation();
+        } catch (e) {
+            // Check for Auth Supabase Error (401/403 or 'JWT expired')
+            if (e.code === 'PGRST301' || e.message?.includes('JWT') || e.code === 401) {
+                console.warn('🔄 Auth token issue detected. Retrying once...', e);
+                // Attempt to refresh session
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (data.session) {
+                    return await operation();
+                } else {
+                    console.error('❌ Retry failed: Session lost.');
+                    throw new Error("Session expired. Please login again.");
+                }
+            }
+            throw e;
+        }
+    },
+
     async saveClass(name, data) {
         if (!AuthManager.user) return;
-        if (this.syncing) return; // Prevent conflicts
-        this.syncing = true;
-        this.updateSyncStatus('Saving...');
-        try {
-            await supabaseClient.from('classes').upsert({
-                user_id: AuthManager.user.id,
-                name,
-                data,
-                updated_at: new Date()
-            }, { onConflict: 'user_id, name' }); // Name must be unique per user
-            this.updateSyncStatus('Saved');
-        } catch (e) {
-            console.error(e);
-            this.updateSyncStatus('Offline (Saved Locally)');
-        } finally {
-            this.syncing = false;
-        }
+
+        this.syncPromise = (this.syncPromise || Promise.resolve()).then(async () => {
+            this.syncing = true;
+            this.updateSyncStatus('Saving...');
+            try {
+                await this.retryOperation(async () => {
+                    await supabaseClient.from('classes').upsert({
+                        user_id: AuthManager.user.id,
+                        name,
+                        data,
+                        updated_at: new Date()
+                    }, { onConflict: 'user_id, name' });
+                });
+                this.updateSyncStatus('Saved');
+            } catch (e) {
+                console.error('Save failed:', e);
+                this.updateSyncStatus('Offline (Saved Locally)');
+            } finally {
+                this.syncing = false;
+            }
+        });
+
+        return this.syncPromise;
     },
 
     async saveLog(date, logs) {
         if (!AuthManager.user) return;
-        // Don't block UI for logs, but prevent polling
-        this.syncing = true;
-        this.updateSyncStatus('Saving...');
-        try {
-            await supabaseClient.from('attendance_logs').upsert({
-                user_id: AuthManager.user.id,
-                date,
-                logs,
-                updated_at: new Date()
-            }, { onConflict: 'user_id, date' });
-            this.updateSyncStatus('Saved');
-        } catch (e) {
-            console.error(e);
-            this.updateSyncStatus('Offline (Saved Locally)');
-        } finally {
-            this.syncing = false;
-        }
+
+        this.syncPromise = (this.syncPromise || Promise.resolve()).then(async () => {
+            this.syncing = true;
+            this.updateSyncStatus('Saving...');
+            try {
+                await this.retryOperation(async () => {
+                    await supabaseClient.from('attendance_logs').upsert({
+                        user_id: AuthManager.user.id,
+                        date,
+                        logs,
+                        updated_at: new Date()
+                    }, { onConflict: 'user_id, date' });
+                });
+                this.updateSyncStatus('Saved');
+            } catch (e) {
+                console.error('Log save failed:', e);
+                this.updateSyncStatus('Offline (Saved Locally)');
+            } finally {
+                this.syncing = false;
+            }
+        });
+
+        return this.syncPromise;
     },
 
     async saveSettings() {
         if (!AuthManager.user) return;
-        this.syncing = true;
-        this.updateSyncStatus('Saving settings...');
 
-        const theme = localStorage.getItem('theme') || 'light';
-        const lastOpenedClass = localStorage.getItem('lastOpenedClass');
-        const userProfileName = localStorage.getItem('userProfileName');
+        this.syncPromise = (this.syncPromise || Promise.resolve()).then(async () => {
+            this.syncing = true;
+            this.updateSyncStatus('Saving settings...');
 
-        // Gather Notifications
-        const notifications = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('notificationSettings_')) {
-                notifications[key] = JSON.parse(localStorage.getItem(key));
+            const theme = localStorage.getItem('theme') || 'light';
+            const lastOpenedClass = localStorage.getItem('lastOpenedClass');
+            const userProfileName = localStorage.getItem('userProfileName');
+
+            const notifications = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('notificationSettings_')) {
+                    notifications[key] = this.safeParse(key, null);
+                }
             }
-        }
 
-        try {
-            await supabaseClient.from('user_settings').upsert({
-                user_id: AuthManager.user.id,
-                theme,
-                preferences: {
-                    lastOpenedClass,
-                    userProfileName,
-                    notifications,
-                    minAttendance: localStorage.getItem('calcSettings_minAttendance'),
-                    minMedical: localStorage.getItem('calcSettings_minMedical'),
-                    isOverall: localStorage.getItem('calcSettings_isOverall'),
-                    personalGeminiKey: localStorage.getItem('personalGeminiKey')
-                },
-                updated_at: new Date()
-            });
-            this.updateSyncStatus('Saved');
-        } catch (e) {
-            console.error('Settings save failed:', e);
-            this.updateSyncStatus('Offline (Saved Locally)');
-        } finally {
-            this.syncing = false;
-        }
+            try {
+                await this.retryOperation(async () => {
+                    await supabaseClient.from('user_settings').upsert({
+                        user_id: AuthManager.user.id,
+                        theme,
+                        preferences: {
+                            lastOpenedClass,
+                            userProfileName,
+                            notifications,
+                            minAttendance: localStorage.getItem('calcSettings_minAttendance'),
+                            minMedical: localStorage.getItem('calcSettings_minMedical'),
+                            isOverall: localStorage.getItem('calcSettings_isOverall'),
+                            personalGeminiKey: localStorage.getItem('personalGeminiKey')
+                        },
+                        updated_at: new Date()
+                    });
+                });
+                this.updateSyncStatus('Saved');
+            } catch (e) {
+                console.error('Settings save failed:', e);
+                this.updateSyncStatus('Offline (Saved Locally)');
+            } finally {
+                this.syncing = false;
+            }
+        });
+
+        return this.syncPromise;
     },
 
     async deleteClass(name) {
         if (!AuthManager.user) return;
-        this.syncing = true;
-        this.updateSyncStatus('Deleting...');
-        try {
-            await supabaseClient.from('classes').delete()
-                .eq('user_id', AuthManager.user.id)
-                .eq('name', name);
 
-            // Also clean up logs for this class? 
-            // The logs are stored by date { "CLASS_NAME": "Status" }. 
-            // It's hard to clean up logs efficiently without a dedicated structure.
-            // For now, we leave logs as they are (orphaned).
+        this.syncPromise = (this.syncPromise || Promise.resolve()).then(async () => {
+            this.syncing = true;
+            this.updateSyncStatus('Deleting...');
+            try {
+                await this.retryOperation(async () => {
+                    await supabaseClient.from('classes').delete()
+                        .eq('user_id', AuthManager.user.id)
+                        .eq('name', name);
+                });
 
-            // CLEANUP GHOST NOTIFICATIONS
-            // Notification settings are stored as 'notificationSettings_CLASSNAME'
-            const notifKey = `notificationSettings_${name}`;
-            if (localStorage.getItem(notifKey)) {
-                localStorage.removeItem(notifKey);
-                // Also update Cloud Settings immediately to sync deletion
-                await this.saveSettings();
+                const notifKey = `notificationSettings_${name}`;
+                if (localStorage.getItem(notifKey)) {
+                    localStorage.removeItem(notifKey);
+                }
+
+                this.updateSyncStatus('Deleted');
+            } catch (e) {
+                console.error('Delete failed:', e);
+                this.updateSyncStatus('Error deleting');
+            } finally {
+                this.syncing = false;
             }
+        });
 
-            this.updateSyncStatus('Deleted');
-        } catch (e) {
-            console.error('Delete failed:', e);
-            this.updateSyncStatus('Error deleting');
-        } finally {
-            this.syncing = false;
-        }
+        return this.syncPromise;
     },
 
     async subscribeToChanges() {
@@ -570,7 +634,7 @@ const SyncManager = {
 
     handleClassChange(payload) {
         const { eventType, new: newRow, old: oldRow } = payload;
-        const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
+        const localClasses = this.safeParse('attendanceClasses_v2');
 
         if (eventType === 'INSERT' || eventType === 'UPDATE') {
             const cloudData = newRow.data;
@@ -586,10 +650,10 @@ const SyncManager = {
 
                 // Restore side-loaded ONLY if cloud is newer
                 if (cloudData.timetableArrangement) {
-                    localStorage.setItem(`timetable_arrangement_${newRow.name}`, JSON.stringify(cloudData.timetableArrangement));
+                    this.safeSetItem(`timetable_arrangement_${newRow.name}`, JSON.stringify(cloudData.timetableArrangement));
                 }
                 if (cloudData.periodTimes) {
-                    localStorage.setItem(`periodTimes_${newRow.name}`, JSON.stringify(cloudData.periodTimes));
+                    this.safeSetItem(`periodTimes_${newRow.name}`, JSON.stringify(cloudData.periodTimes));
                 }
             } else {
                 console.log(`🛡️ Realtime: Ignoring cloud update for "${newRow.name}" (Local is same or newer).`);
@@ -600,18 +664,17 @@ const SyncManager = {
             delete localClasses[oldRow.name];
         }
 
-        localStorage.setItem('attendanceClasses_v2', JSON.stringify(localClasses));
+        this.safeSetItem('attendanceClasses_v2', JSON.stringify(localClasses));
         if (window.loadFromStorage) window.loadFromStorage();
     },
 
     handleLogChange(payload) {
         const { eventType, new: newRow } = payload;
         if (eventType === 'INSERT' || eventType === 'UPDATE') {
-            const localLogs = JSON.parse(localStorage.getItem('attendance_logs') || '{}');
-            // payload.new.date, payload.new.logs
+            const localLogs = this.safeParse('attendance_logs');
             if (!localLogs[newRow.date]) localLogs[newRow.date] = {};
             Object.assign(localLogs[newRow.date], newRow.logs);
-            localStorage.setItem('attendance_logs', JSON.stringify(localLogs));
+            this.safeSetItem('attendance_logs', JSON.stringify(localLogs));
             if (window.loadFromStorage) window.loadFromStorage();
         }
     },
@@ -620,7 +683,7 @@ const SyncManager = {
         const { eventType, new: newRow } = payload;
         if (eventType === 'INSERT' || eventType === 'UPDATE') {
             if (newRow.theme) {
-                localStorage.setItem('theme', newRow.theme);
+                this.safeSetItem('theme', newRow.theme);
                 if (newRow.theme === 'dark') document.body.classList.add('dark-mode');
                 else document.body.classList.remove('dark-mode');
             }
@@ -629,6 +692,41 @@ const SyncManager = {
                 // Partial update logic matching syncOnLogin...
             }
         }
+    },
+
+    initListeners() {
+        // Robust Online/Offline Listeners
+        window.addEventListener('online', () => {
+            console.log('🌐 Network restored. Attempting global sync...');
+            this.updateSyncStatus('Online - Syncing...');
+            this.uploadAll();
+            this.startPolling();
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('🔌 Network lost. Switching to offline mode.');
+            this.updateSyncStatus('Offline');
+            this.stopPolling();
+        });
+
+        // Multi-Tab Sync (Cross-Tab Communication)
+        window.addEventListener('storage', (event) => {
+            if (document.hidden) { // Only update if not strictly focused (or always? usually good to always update)
+                console.log(`🔄 Cross-Tab Sync: Detected change in ${event.key}`);
+
+                if (event.key === 'attendanceClasses_v2' || event.key === 'attendance_logs') {
+                    if (window.loadFromStorage) window.loadFromStorage();
+                    if (window.renderDashboard) window.renderDashboard();
+                }
+                else if (event.key === 'theme') {
+                    if (event.newValue === 'dark') document.body.classList.add('dark-mode');
+                    else document.body.classList.remove('dark-mode');
+                }
+                else if (event.key === 'userProfileName') {
+                    if (window.updateSidebarAccountUI) window.updateSidebarAccountUI();
+                }
+            }
+        });
     },
 
     // Refresh Calculation Settings UI from localStorage values
@@ -677,8 +775,8 @@ const SyncManager = {
                 return;
             }
 
-            const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
-            const localLogs = JSON.parse(localStorage.getItem('attendance_logs') || '{}');
+            const localClasses = this.safeParse('attendanceClasses_v2');
+            const localLogs = this.safeParse('attendance_logs');
             let hasUpdates = false;
 
             // Check classes for updates
@@ -695,10 +793,10 @@ const SyncManager = {
 
                     // Restore side-loaded data
                     if (cloudData.timetableArrangement) {
-                        localStorage.setItem(`timetable_arrangement_${row.name}`, JSON.stringify(cloudData.timetableArrangement));
+                        this.safeSetItem(`timetable_arrangement_${row.name}`, JSON.stringify(cloudData.timetableArrangement));
                     }
                     if (cloudData.periodTimes) {
-                        localStorage.setItem(`periodTimes_${row.name}`, JSON.stringify(cloudData.periodTimes));
+                        this.safeSetItem(`periodTimes_${row.name}`, JSON.stringify(cloudData.periodTimes));
                     }
                     hasUpdates = true;
                 }
@@ -724,15 +822,15 @@ const SyncManager = {
             });
 
             if (hasUpdates) {
-                localStorage.setItem('attendanceClasses_v2', JSON.stringify(localClasses));
-                localStorage.setItem('attendance_logs', JSON.stringify(localLogs));
+                this.safeSetItem('attendanceClasses_v2', JSON.stringify(localClasses));
+                this.safeSetItem('attendance_logs', JSON.stringify(localLogs));
                 window.classes = localClasses;
                 window.attendanceLogs = localLogs;
 
                 // Refresh UI
                 if (window.loadFromStorage) window.loadFromStorage();
                 if (window.populateClassSelector) window.populateClassSelector();
-                if (window.updateSidebarAccountUI) window.updateSidebarAccountUI(); // Update sidebar user info
+                if (window.updateSidebarAccountUI) window.updateSidebarAccountUI();
 
                 this.updateSyncStatus('Synced');
                 console.log('✅ Polling: Updates applied from cloud');
@@ -772,3 +870,6 @@ const SyncManager = {
 };
 
 window.SyncManager = SyncManager;
+
+// Init listeners immediately
+if (typeof SyncManager !== 'undefined') SyncManager.initListeners();

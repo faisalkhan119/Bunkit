@@ -24,6 +24,10 @@
     <script src="js/env-config.js"></script>
     <!-- Supabase Client -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome for Professional Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="js/supabase-config.js"></script>
     <script src="js/auth-manager.js"></script>
     <script src="js/sync-manager.js"></script>
@@ -4543,6 +4547,38 @@
             letter-spacing: 0.5px;
             font-weight: 600;
         }
+
+        /* Password Input Wrapper with Eye Icon */
+        .password-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-input-wrapper .auth-input {
+            padding-right: 45px;
+            /* Space for eye icon */
+        }
+
+        .password-toggle-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle-icon:hover {
+            color: var(--text-primary);
+        }
+
+        .password-toggle-icon i {
+            font-size: 1rem;
+        }
     </style>
 </head>
 
@@ -4572,7 +4608,23 @@
             <div id="emailAuthSection" style="width: 100%; margin-bottom: 20px;">
                 <input type="text" id="signupName" class="auth-input" placeholder="Full Name" style="display: none;">
                 <input type="email" id="loginEmail" class="auth-input" placeholder="Email Address">
-                <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+
+                <!-- Password with Eye Icon -->
+                <div class="password-input-wrapper">
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+                    <span class="password-toggle-icon" onclick="togglePasswordVisibility('loginPassword', this)">
+                        <i class="fa-regular fa-eye"></i>
+                    </span>
+                </div>
+
+                <!-- Confirm Password (Signup Only) with Eye Icon -->
+                <div class="password-input-wrapper" id="confirmPasswordWrapper" style="display: none;">
+                    <input type="password" id="signupConfirmPassword" class="auth-input" placeholder="Confirm Password">
+                    <span class="password-toggle-icon"
+                        onclick="togglePasswordVisibility('signupConfirmPassword', this)">
+                        <i class="fa-regular fa-eye"></i>
+                    </span>
+                </div>
 
                 <button class="primary-auth-btn" id="emailAuthBtn" onclick="handleEmailSubmit()">Sign In</button>
 
@@ -20590,18 +20642,38 @@ Answer helpfully using this context.`;
                     // --- AUTH UI LOGIC ---
                     let isSignup = false;
 
+
+                    // Password visibility toggle function
+                    function togglePasswordVisibility(inputId, iconSpan) {
+                        const inputEl = document.getElementById(inputId);
+                        const icon = iconSpan.querySelector('i');
+
+                        if (inputEl.type === 'password') {
+                            inputEl.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            inputEl.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    }
+
                     function toggleAuthMode() {
                         isSignup = !isSignup;
                         const nameInput = document.getElementById('signupName');
+                        const confirmPasswordWrapper = document.getElementById('confirmPasswordWrapper');
                         const btn = document.getElementById('emailAuthBtn');
                         const toggle = document.getElementById('authModeToggle');
 
                         if (isSignup) {
                             nameInput.style.display = 'block';
+                            confirmPasswordWrapper.style.display = 'block';
                             btn.textContent = 'Create Account';
                             toggle.textContent = 'Already have an account? Sign In';
                         } else {
                             nameInput.style.display = 'none';
+                            confirmPasswordWrapper.style.display = 'none';
                             btn.textContent = 'Sign In';
                             toggle.textContent = 'New here? Create an account';
                         }
@@ -20624,6 +20696,16 @@ Answer helpfully using this context.`;
                         try {
                             if (isSignup) {
                                 if (!name) { alert('Please enter your name'); btn.disabled = false; btn.textContent = 'Create Account'; return; }
+
+                                // Validate password confirmation
+                                const confirmPassword = document.getElementById('signupConfirmPassword').value;
+                                if (password !== confirmPassword) {
+                                    alert('Passwords do not match!');
+                                    btn.disabled = false;
+                                    btn.textContent = 'Create Account';
+                                    return;
+                                }
+
                                 const { error } = await AuthManager.signUp(email, password, name);
                                 if (error) throw error;
                                 alert('Signup successful! Please check your email to verify.');

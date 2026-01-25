@@ -198,6 +198,33 @@ const AuthManager = {
     async signOut() {
         if (!window.supabaseClient) return;
 
+        // Sync before logout to prevent data loss
+        if (window.SyncManager && this.user) {
+            console.log('🔄 Syncing before logout...');
+
+            // Show a visual indicator since this might take a second
+            const logoutBtn = document.getElementById('sidebarSignOutBtn');
+            if (logoutBtn) logoutBtn.textContent = 'Syncing...';
+
+            try {
+                // Wait for any pending saves in queue first
+                if (window.SyncManager.syncPromise) {
+                    await Promise.race([
+                        window.SyncManager.syncPromise,
+                        new Promise(resolve => setTimeout(resolve, 2000)) // 2s timeout for pending
+                    ]);
+                }
+
+                // Force a final upload check with timeout
+                await Promise.race([
+                    window.SyncManager.uploadAll(),
+                    new Promise(resolve => setTimeout(resolve, 5000)) // 5s max timeout for final sync
+                ]);
+            } catch (e) {
+                console.warn('Logout sync warning:', e);
+            }
+        }
+
         // Remove guest mode flag just in case
         localStorage.removeItem('guest_mode_active');
 
