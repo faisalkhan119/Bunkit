@@ -23,6 +23,8 @@ const SyncManager = {
                 if (classError || logError) throw new Error("Fetch failed");
 
                 // 2. Load Local Data
+                // FORCE PRUNE DUPLICATES before loading to clean up existing mess
+                this.pruneDuplicates();
                 const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
                 const localLogs = JSON.parse(localStorage.getItem('attendance_logs') || '{}');
 
