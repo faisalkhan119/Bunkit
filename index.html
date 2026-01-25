@@ -13297,31 +13297,20 @@ RULES:
                             // Case 1: Specific Periods (String with comma "1,3" or Single Number String "3")
                             if (typeof rawSchedule === 'string' && (rawSchedule.includes(',') || !isNaN(parseInt(rawSchedule)))) {
                                 const parts = rawSchedule.split(',');
-                                // Check if parts look like period numbers (1-based index)
+                                // Parse all parts as period numbers (1-based)
                                 const parsed = parts.map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
 
-                                // If valid period numbers found that aren't just a simple count "1" (heuristic)
-                                // Actually, if "1,2,3" provided, we trust it. If "3", it means Period 3. 
-                                // But legacy might use "2" to mean "2 periods".
-                                // HYBRID CHECK: If it contains commas, assume POSITIONS.
-                                // If single number > 0 and <= maxPeriods... assume COUNT for now to be safe for legacy?
-                                // User Issue: "schedule": "1,2,3" -> Treated as 1.
-                                // Let's trust comma-separated as POSITIONS.
-                                if (rawSchedule.includes(',')) {
+                                if (parsed.length > 0) {
+                                    // ALL numbers are treated as POSITIONS now (Period 1, Period 5, etc.)
+                                    // "1,2,3" → Periods 1, 2, 3
+                                    // "5" → Period 5
                                     periods = parsed;
-                                } else {
-                                    // Single Value: Treat as count for backward compatibility unless we have a flag?
-                                    // But wait, user's export had "1" "0" "1".
-                                    // If we switch to position, "1" means Period 1. "2" means Period 2.
-                                    // If it was count "2", it meant "Any 2 periods".
-                                    // Safer bet: Commas = Positions. Single Int = Count.
-                                    const count = parseInt(rawSchedule) || 0;
-                                    for (let k = 0; k < count; k++) freeSubjects.push(subject);
                                 }
-                            } else {
-                                // Case 2: Numeric Count (Old Format)
-                                const count = rawSchedule || 0;
-                                for (let k = 0; k < count; k++) freeSubjects.push(subject);
+                                // If parsed is empty (e.g., "0" or invalid), periods stays empty
+                            } else if (typeof rawSchedule === 'number' && rawSchedule > 0) {
+                                // Case 2: Numeric Count (Legacy Format - rare)
+                                // If schedule is an actual NUMBER (not string), treat as count
+                                for (let k = 0; k < rawSchedule; k++) freeSubjects.push(subject);
                             }
 
                             // Place Fixed Periods
