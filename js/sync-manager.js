@@ -4,6 +4,8 @@
 const SyncManager = {
     pendingUploads: false,
     syncing: false,
+    pollingInterval: null, // For polling-based sync (alternative to Realtime)
+    POLLING_INTERVAL_MS: 45000, // 45 seconds
 
     pruneDuplicates() {
         // Placeholder for future strict deduplication logic
@@ -312,7 +314,8 @@ const SyncManager = {
 
                 // Refresh specific UI parts
                 this.refreshCalculationSettingsUI();
-                this.subscribeToChanges(); // Subscribe to real-time
+                this.subscribeToChanges(); // Subscribe to real-time (if available)
+                this.startPolling(); // Start polling-based sync (fallback/alternative)
 
                 return { success: true, count: Object.keys(finalClasses).length };
 
@@ -631,6 +634,114 @@ const SyncManager = {
         if (window.updateMedicalMax) window.updateMedicalMax();
 
         console.log('🔄 Calculation Settings UI refreshed from localStorage');
+    },
+
+    // ===== POLLING-BASED SYNC (Alternative to Supabase Realtime) =====
+    // Checks cloud for updates every POLLING_INTERVAL_MS milliseconds
+
+    async checkForUpdates() {
+        if (!AuthManager.user || this.syncing) return;
+
+        try {
+            // Fetch cloud data timestamps
+            const { data: cloudClasses, error: classError } = await supabaseClient
+                .from('classes')
+                .select('name, data, updated_at');
+
+            const { data: cloudLogs, error: logError } = await supabaseClient
+                .from('attendance_logs')
+                .select('date, logs, updated_at');
+
+            if (classError || logError) {
+                console.warn('⚠️ Polling: Failed to fetch cloud data');
+                return;
+            }
+
+            const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
+            const localLogs = JSON.parse(localStorage.getItem('attendance_logs') || '{}');
+            let hasUpdates = false;
+
+            // Check classes for updates
+            cloudClasses.forEach(row => {
+                const cloudData = row.data;
+                const localData = localClasses[row.name];
+
+                const cloudTime = new Date(cloudData?.updatedAt || row.updated_at || 0).getTime();
+                const localTime = new Date(localData?.updatedAt || 0).getTime();
+
+                if (cloudTime > localTime) {
+                    console.log(`🔄 Polling: Cloud update detected for "${row.name}"`);
+                    localClasses[row.name] = cloudData;
+
+                    // Restore side-loaded data
+                    if (cloudData.timetableArrangement) {
+                        localStorage.setItem(`timetable_arrangement_${row.name}`, JSON.stringify(cloudData.timetableArrangement));
+                    }
+                    if (cloudData.periodTimes) {
+                        localStorage.setItem(`periodTimes_${row.name}`, JSON.stringify(cloudData.periodTimes));
+                    }
+                    hasUpdates = true;
+                }
+            });
+
+            // Check logs for updates (simpler: just merge newer ones)
+            cloudLogs.forEach(row => {
+                const localDayLogs = localLogs[row.date] || {};
+                const cloudDayLogs = row.logs || {};
+
+                // Simple merge: cloud wins for each key
+                let dayUpdated = false;
+                Object.keys(cloudDayLogs).forEach(key => {
+                    if (JSON.stringify(localDayLogs[key]) !== JSON.stringify(cloudDayLogs[key])) {
+                        localDayLogs[key] = cloudDayLogs[key];
+                        dayUpdated = true;
+                    }
+                });
+                if (dayUpdated) {
+                    localLogs[row.date] = localDayLogs;
+                    hasUpdates = true;
+                }
+            });
+
+            if (hasUpdates) {
+                localStorage.setItem('attendanceClasses_v2', JSON.stringify(localClasses));
+                localStorage.setItem('attendance_logs', JSON.stringify(localLogs));
+                window.classes = localClasses;
+                window.attendanceLogs = localLogs;
+
+                // Refresh UI
+                if (window.loadFromStorage) window.loadFromStorage();
+                if (window.populateClassSelector) window.populateClassSelector();
+
+                this.updateSyncStatus('Synced');
+                console.log('✅ Polling: Updates applied from cloud');
+            }
+        } catch (e) {
+            console.warn('⚠️ Polling check failed:', e);
+        }
+    },
+
+    startPolling() {
+        if (this.pollingInterval) return; // Already running
+        if (!AuthManager.user) return; // Not logged in
+
+        console.log(`🔄 Starting polling sync (every ${this.POLLING_INTERVAL_MS / 1000}s)...`);
+
+        // Initial check
+        this.checkForUpdates();
+
+        // Set up interval
+        this.pollingInterval = setInterval(() => {
+            this.checkForUpdates();
+        }, this.POLLING_INTERVAL_MS);
+    },
+
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('🛑 Polling sync stopped.');
+        }
     },
 
     updateSyncStatus(msg) {
