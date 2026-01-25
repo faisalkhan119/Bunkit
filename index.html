@@ -13266,6 +13266,7 @@ RULES:
 
                 // Fallback to at least 1 if nothing found
                 if (maxPeriods === 0) maxPeriods = Math.max(...Object.values(maxPeriodsPerDay), 1);
+                console.log('🔍 DEBUG maxPeriods:', maxPeriods, 'from subjects:', selectedClass.subjects.map(s => s.schedule));
 
                 // Get period times
                 const periodTimes = getPeriodTimes(className) || {};
