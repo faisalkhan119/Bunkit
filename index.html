@@ -16204,14 +16204,24 @@ RULES:
 
             function addLogForDate(dateStr) {
                 closeModal('historyLogModal');
-                document.getElementById('logDate').value = dateStr;
+                const logDateEl = document.getElementById('logDate');
+                if (!logDateEl) {
+                    console.warn('logDate element not found - modal may not be initialized yet');
+                    return;
+                }
+                logDateEl.value = dateStr;
                 populateDailyLog();
                 document.getElementById('dailyLogModal').classList.add('active');
             }
 
             function openDailyLog() {
                 const today = formatLocalDate(new Date());
-                document.getElementById('logDate').value = today;
+                const logDateEl = document.getElementById('logDate');
+                if (!logDateEl) {
+                    console.warn('logDate element not found - modal may not be initialized yet');
+                    return;
+                }
+                logDateEl.value = today;
                 populateDailyLog();
                 document.getElementById('dailyLogModal').classList.add('active');
             }
