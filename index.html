@@ -4765,6 +4765,159 @@
         .forgot-password-link i {
             font-size: 0.75rem;
         }
+
+        /* Reset Password Modal Styles (After Email Link Click) */
+        .rp-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999999 !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .rp-modal-overlay.rp-visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .rp-modal {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .rp-modal-overlay.rp-visible .rp-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .rp-modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .rp-modal-header i {
+            font-size: 3rem;
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .rp-modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .rp-modal-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .rp-password-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .rp-password-wrapper input {
+            width: 100%;
+            padding: 14px 48px 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+
+        .rp-password-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .rp-password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .rp-requirements {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            padding: 12px;
+            background: rgba(var(--accent-primary-rgb), 0.1);
+            border-radius: 8px;
+        }
+
+        .rp-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .rp-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .rp-btn-cancel {
+            background: var(--button-secondary-bg);
+            color: var(--text-primary);
+        }
+
+        .rp-btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, var(--accent-primary)));
+            color: white;
+        }
+
+        .rp-btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .rp-status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+        }
+
+        .rp-status.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .rp-status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
     </style>
 </head>
 
@@ -4833,7 +4986,160 @@
         </div>
     </div>
 
-    <!-- Forgot Password Modal moved to end of body for z-index fix -->
+    <!-- Forgot Password Modal Functions - Defined Early for Immediate Availability -->
+    <script>
+        // These functions must be available as soon as the login screen renders
+        window.promptPasswordReset = function (e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            console.log("🔑 Forgot Password Clicked");
+
+            const modal = document.getElementById('forgotPasswordModal');
+            if (!modal) {
+                // Modal might not be loaded yet, retry after a short delay
+                console.warn("Modal not found, retrying...");
+                setTimeout(() => window.promptPasswordReset(), 500);
+                return;
+            }
+
+            const emailInput = document.getElementById('fpEmailInput');
+            const loginEmail = document.getElementById('loginEmail');
+            const status = document.getElementById('fpStatus');
+
+            // Pre-fill email if available
+            if (emailInput && loginEmail && loginEmail.value) {
+                emailInput.value = loginEmail.value;
+            }
+
+            // Reset status
+            if (status) {
+                status.className = 'fp-status';
+                status.textContent = '';
+            }
+
+            // Show modal with forced styles
+            modal.classList.add('fp-visible');
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            modal.style.display = 'flex';
+            modal.style.zIndex = '99999999';
+
+            // Focus email input
+            if (emailInput) {
+                setTimeout(() => emailInput.focus(), 100);
+            }
+
+            console.log("✅ Forgot Password Modal Opened");
+        };
+
+        window.closeForgotPasswordModal = function () {
+            const modal = document.getElementById('forgotPasswordModal');
+            if (modal) {
+                modal.classList.remove('fp-visible');
+                modal.style.opacity = '';
+                modal.style.visibility = '';
+                modal.style.display = '';
+                modal.style.zIndex = '';
+            }
+        };
+
+        window.submitPasswordReset = async function () {
+            const emailInput = document.getElementById('fpEmailInput');
+            const submitBtn = document.getElementById('fpSubmitBtn');
+            const status = document.getElementById('fpStatus');
+            const email = emailInput ? emailInput.value.trim() : '';
+
+            if (!email) {
+                if (status) {
+                    status.className = 'fp-status error';
+                    status.textContent = 'Please enter your email address.';
+                }
+                if (emailInput) emailInput.focus();
+                return;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                if (status) {
+                    status.className = 'fp-status error';
+                    status.textContent = 'Please enter a valid email address.';
+                }
+                if (emailInput) emailInput.focus();
+                return;
+            }
+
+            // Disable button and show loading
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            }
+
+            try {
+                if (!window.AuthManager) {
+                    throw new Error("AuthManager not loaded. Please refresh the page.");
+                }
+
+                const { error } = await AuthManager.sendPasswordReset(email);
+                if (error) {
+                    if (status) {
+                        status.className = 'fp-status error';
+                        status.textContent = error.message || 'Failed to send reset link.';
+                    }
+                } else {
+                    if (status) {
+                        status.className = 'fp-status success';
+                        status.innerHTML = '<i class="fa-solid fa-check-circle"></i> Password reset link sent! Check your email.';
+                    }
+
+                    // Auto close after 3 seconds
+                    setTimeout(() => {
+                        window.closeForgotPasswordModal();
+                    }, 3000);
+                }
+            } catch (e) {
+                if (status) {
+                    status.className = 'fp-status error';
+                    status.textContent = e.message || 'Something went wrong.';
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Link';
+                }
+            }
+        };
+
+        // Close on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                window.closeForgotPasswordModal();
+            }
+        });
+    </script>
+
+    <!-- Forgot Password Modal (Moved Here for Early Availability) -->
+    <div class="fp-modal-overlay" id="forgotPasswordModal">
+        <div class="fp-modal">
+            <div class="fp-modal-header">
+                <i class="fa-solid fa-key"></i>
+                <h3>Reset Password</h3>
+            </div>
+            <div class="fp-modal-body">
+                <p>Enter your email address and we'll send you a link to reset your password.</p>
+                <input type="email" class="fp-modal-input" id="fpEmailInput" placeholder="Enter your email address">
+                <div class="fp-status" id="fpStatus"></div>
+            </div>
+            <div class="fp-modal-buttons">
+                <button class="fp-btn fp-btn-cancel" onclick="closeForgotPasswordModal()">Cancel</button>
+                <button class="fp-btn fp-btn-primary" id="fpSubmitBtn" onclick="submitPasswordReset()">
+                    <i class="fa-solid fa-paper-plane"></i> Send Link
+                </button>
+            </div>
+        </div>
+    </div>
 
     <button class="hamburger-btn-fixed fixed-ui-button" onclick="openNav()">&#9776;</button>
     <div class="theme-switch-wrapper fixed-ui-button">
@@ -20914,128 +21220,6 @@ Answer helpfully using this context.`;
                         }
                     }
 
-                    // Forgot Password Modal Functions - Must be global for onclick handlers
-                    window.promptPasswordReset = function (e) {
-                        if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                        console.log("Forgot Password Clicked", e);
-                        try {
-                            const modal = document.getElementById('forgotPasswordModal');
-                            if (!modal) {
-                                console.error("FATAL: forgotPasswordModal not found!");
-                                alert("Error: Modal not found. Please refresh.");
-                                return;
-                            }
-
-                            const emailInput = document.getElementById('fpEmailInput');
-                            const loginEmail = document.getElementById('loginEmail'); // Might be null if on different screen
-                            const status = document.getElementById('fpStatus');
-
-                            // Pre-fill email if available, otherwise empty
-                            const currentEmail = (loginEmail && loginEmail.value) ? loginEmail.value : '';
-                            if (emailInput) {
-                                emailInput.value = currentEmail;
-                                emailInput.focus();
-                            }
-
-                            if (status) {
-                                status.className = 'fp-status';
-                                status.textContent = '';
-                            }
-
-                            // Use specific class AND force styles for debugging
-                            modal.classList.add('fp-visible');
-                            modal.style.opacity = '1';
-                            modal.style.visibility = 'visible';
-                            modal.style.display = 'flex'; // Ensure flex
-                            modal.style.zIndex = '99999999';
-                            console.log("Modal activated with .fp-visible and inline styles");
-                        } catch (e) {
-                            console.error("Error in promptPasswordReset:", e);
-                            alert("Something went wrong: " + e.message);
-                        }
-                    };
-
-                    window.closeForgotPasswordModal = function () {
-                        const modal = document.getElementById('forgotPasswordModal');
-                        if (modal) modal.classList.remove('fp-visible');
-                    };
-
-                    window.submitPasswordReset = async function () {
-                        const emailInput = document.getElementById('fpEmailInput');
-                        const submitBtn = document.getElementById('fpSubmitBtn');
-                        const status = document.getElementById('fpStatus');
-                        const email = emailInput.value.trim();
-
-                        if (!email) {
-                            status.className = 'fp-status error';
-                            status.textContent = 'Please enter your email address.';
-                            emailInput.focus();
-                            return;
-                        }
-
-                        // Email validation
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(email)) {
-                            status.className = 'fp-status error';
-                            status.textContent = 'Please enter a valid email address.';
-                            emailInput.focus();
-                            return;
-                        }
-
-                        // Disable button and show loading
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-
-                        try {
-                            const { error } = await AuthManager.sendPasswordReset(email);
-                            if (error) {
-                                status.className = 'fp-status error';
-                                status.textContent = error.message || 'Failed to send reset link.';
-                            } else {
-                                status.className = 'fp-status success';
-                                status.innerHTML = '<i class="fa-solid fa-check-circle"></i> Password reset link sent! Check your email.';
-
-                                // Auto close after 3 seconds
-                                setTimeout(() => {
-                                    window.closeForgotPasswordModal();
-                                }, 3000);
-                            }
-                        } catch (e) {
-                            status.className = 'fp-status error';
-                            status.textContent = e.message || 'Something went wrong.';
-                        } finally {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Link';
-                        }
-                    };
-
-                    // Close modal on backdrop click
-                    // Close modal on backdrop click
-                    // Wrapped in try-catch/defer to prevent blocking
-                    setTimeout(() => {
-                        try {
-                            const modal = document.getElementById('forgotPasswordModal');
-                            if (modal) {
-                                modal.addEventListener('click', function (e) {
-                                    if (e.target === this) {
-                                        window.closeForgotPasswordModal();
-                                    }
-                                });
-                            }
-
-                            document.addEventListener('keydown', function (e) {
-                                if (e.key === 'Escape') {
-                                    window.closeForgotPasswordModal();
-                                }
-                            });
-                        } catch (err) {
-                            console.error("Error initializing modal listeners:", err);
-                        }
-                    }, 500);
-
                     // --- ONBOARDING AUTOMATION ---
                     window.activeUserCheck = null;
 
@@ -21192,27 +21376,179 @@ Answer helpfully using this context.`;
                         }, 500); // Check every 500ms
                     })();
                 </script>
-                <!-- Forgot Password Modal (Moved to End for Z-Index Fix) -->
-                <div class="fp-modal-overlay" id="forgotPasswordModal">
-                    <div class="fp-modal">
-                        <div class="fp-modal-header">
-                            <i class="fa-solid fa-key"></i>
-                            <h3>Reset Password</h3>
+
+                <!-- Reset Password Modal (New Password Entry - After Email Link Click) -->
+                <div class="rp-modal-overlay" id="resetPasswordModal">
+                    <div class="rp-modal">
+                        <div class="rp-modal-header">
+                            <i class="fa-solid fa-lock-open"></i>
+                            <h3>Set New Password</h3>
+                            <p>Enter your new password below</p>
                         </div>
-                        <div class="fp-modal-body">
-                            <p>Enter your email address and we'll send you a link to reset your password.</p>
-                            <input type="email" class="fp-modal-input" id="fpEmailInput"
-                                placeholder="Enter your email address">
-                            <div class="fp-status" id="fpStatus"></div>
+                        <div class="rp-modal-body">
+                            <div class="rp-password-wrapper">
+                                <input type="password" id="rpNewPassword" placeholder="New Password">
+                                <span class="rp-password-toggle" onclick="toggleRpPassword('rpNewPassword', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </span>
+                            </div>
+                            <div class="rp-password-wrapper">
+                                <input type="password" id="rpConfirmPassword" placeholder="Confirm New Password">
+                                <span class="rp-password-toggle" onclick="toggleRpPassword('rpConfirmPassword', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </span>
+                            </div>
+                            <div class="rp-requirements">
+                                ℹ️ Password must be at least 6 characters long
+                            </div>
+                            <div class="rp-status" id="rpStatus"></div>
                         </div>
-                        <div class="fp-modal-buttons">
-                            <button class="fp-btn fp-btn-cancel" onclick="closeForgotPasswordModal()">Cancel</button>
-                            <button class="fp-btn fp-btn-primary" id="fpSubmitBtn" onclick="submitPasswordReset()">
-                                <i class="fa-solid fa-paper-plane"></i> Send Link
+                        <div class="rp-modal-buttons">
+                            <button class="rp-btn rp-btn-cancel" onclick="closeResetPasswordModal()">Cancel</button>
+                            <button class="rp-btn rp-btn-primary" id="rpSubmitBtn" onclick="submitNewPassword()">
+                                <i class="fa-solid fa-check"></i> Update Password
                             </button>
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    // --- RESET PASSWORD (NEW PASSWORD ENTRY) FUNCTIONS ---
+                    window.toggleRpPassword = function (inputId, iconSpan) {
+                        const inputEl = document.getElementById(inputId);
+                        const icon = iconSpan.querySelector('i');
+                        if (inputEl.type === 'password') {
+                            inputEl.type = 'text';
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        } else {
+                            inputEl.type = 'password';
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                    };
+
+                    window.showResetPasswordModal = function () {
+                        const modal = document.getElementById('resetPasswordModal');
+                        if (modal) {
+                            modal.classList.add('rp-visible');
+                            setTimeout(() => {
+                                const input = document.getElementById('rpNewPassword');
+                                if (input) input.focus();
+                            }, 300);
+                        }
+                    };
+
+                    window.closeResetPasswordModal = function () {
+                        const modal = document.getElementById('resetPasswordModal');
+                        if (modal) {
+                            modal.classList.remove('rp-visible');
+                            // Clear inputs
+                            const newPwd = document.getElementById('rpNewPassword');
+                            const confirmPwd = document.getElementById('rpConfirmPassword');
+                            const status = document.getElementById('rpStatus');
+                            if (newPwd) newPwd.value = '';
+                            if (confirmPwd) confirmPwd.value = '';
+                            if (status) {
+                                status.className = 'rp-status';
+                                status.textContent = '';
+                            }
+                        }
+                        // Clear URL params after handling
+                        if (window.history.replaceState) {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    };
+
+                    window.submitNewPassword = async function () {
+                        const newPassword = document.getElementById('rpNewPassword').value;
+                        const confirmPassword = document.getElementById('rpConfirmPassword').value;
+                        const submitBtn = document.getElementById('rpSubmitBtn');
+                        const status = document.getElementById('rpStatus');
+
+                        // Validation
+                        if (!newPassword || !confirmPassword) {
+                            status.className = 'rp-status error';
+                            status.textContent = 'Please fill in both fields.';
+                            return;
+                        }
+
+                        if (newPassword.length < 6) {
+                            status.className = 'rp-status error';
+                            status.textContent = 'Password must be at least 6 characters.';
+                            return;
+                        }
+
+                        if (newPassword !== confirmPassword) {
+                            status.className = 'rp-status error';
+                            status.textContent = 'Passwords do not match.';
+                            return;
+                        }
+
+                        // Disable button
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+                        try {
+                            const { data, error } = await AuthManager.updatePassword(newPassword);
+                            if (error) {
+                                status.className = 'rp-status error';
+                                status.textContent = error.message || 'Failed to update password.';
+                            } else {
+                                status.className = 'rp-status success';
+                                status.innerHTML = '<i class="fa-solid fa-check-circle"></i> Password updated successfully!';
+
+                                // Auto close and show toast after 2 seconds
+                                setTimeout(() => {
+                                    window.closeResetPasswordModal();
+                                    if (window.showToast) {
+                                        window.showToast('Password updated! You can now sign in.', 'success');
+                                    }
+                                    // Reload to clear any stale session state
+                                    setTimeout(() => location.reload(), 1000);
+                                }, 2000);
+                            }
+                        } catch (e) {
+                            status.className = 'rp-status error';
+                            status.textContent = e.message || 'Something went wrong.';
+                        } finally {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Update Password';
+                        }
+                    };
+
+                    // Check for password reset URL on page load
+                    window.addEventListener('DOMContentLoaded', function () {
+                        // Supabase sends recovery tokens via URL hash or query params
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+                        // Check for reset=true (our custom param) or Supabase's type=recovery
+                        const isReset = urlParams.get('reset') === 'true';
+                        const isRecovery = hashParams.get('type') === 'recovery';
+
+                        if (isReset || isRecovery) {
+                            console.log('🔑 Password reset/recovery detected. Showing reset modal...');
+
+                            // Wait a bit for Supabase to process the token and page to load
+                            setTimeout(() => {
+                                window.showResetPasswordModal();
+                            }, 1500);
+                        }
+                    });
+
+                    // Close on backdrop click
+                    setTimeout(() => {
+                        const modal = document.getElementById('resetPasswordModal');
+                        if (modal) {
+                            modal.addEventListener('click', function (e) {
+                                if (e.target === this) {
+                                    window.closeResetPasswordModal();
+                                }
+                            });
+                        }
+                    }, 500);
+                </script>
 </body>
 
 </html>

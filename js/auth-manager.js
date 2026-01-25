@@ -245,6 +245,11 @@ const AuthManager = {
         });
     },
 
+    async updatePassword(newPassword) {
+        if (!window.supabaseClient) return { error: { message: "Supabase not initialized" } };
+        return await supabaseClient.auth.updateUser({ password: newPassword });
+    },
+
     async deleteAccount() {
         if (!window.supabaseClient || !this.user) return;
 
