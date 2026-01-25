@@ -4579,6 +4579,173 @@
         .password-toggle-icon i {
             font-size: 1rem;
         }
+
+        /* Forgot Password Modal Styles */
+        .fp-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .fp-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .fp-modal {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .fp-modal-overlay.active .fp-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .fp-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .fp-modal-header i {
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .fp-modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .fp-modal-body p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .fp-modal-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .fp-modal-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.15);
+        }
+
+        .fp-modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .fp-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .fp-btn-cancel {
+            background: var(--button-secondary-bg);
+            color: var(--text-primary);
+        }
+
+        .fp-btn-cancel:hover {
+            background: var(--button-secondary-hover);
+        }
+
+        .fp-btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, var(--accent-primary)));
+            color: white;
+        }
+
+        .fp-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(var(--accent-primary-rgb), 0.3);
+        }
+
+        .fp-btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .fp-status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .fp-status.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .fp-status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Forgot Password Link */
+        .forgot-password-link {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .forgot-password-link:hover {
+            color: var(--accent-primary);
+            background: rgba(var(--accent-primary-rgb), 0.1);
+        }
+
+        .forgot-password-link i {
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 
@@ -4631,10 +4798,10 @@
                 <div class="toggle-auth-mode" onclick="toggleAuthMode()" id="authModeToggle">
                     New here? Create an account
                 </div>
-                <div style="text-align: center; margin-top: 8px;">
-                    <span
-                        style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; text-decoration: underline;"
-                        onclick="promptPasswordReset()">Forgot Password?</span>
+                <div style="text-align: center; margin-top: 12px;">
+                    <span class="forgot-password-link" onclick="promptPasswordReset()">
+                        <i class="fa-solid fa-key"></i> Forgot Password?
+                    </span>
                 </div>
             </div>
 
@@ -4644,6 +4811,27 @@
                 👤 Continue as Guest
             </button>
             <p class="login-feature">📱 Data stays on this device</p>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="fp-modal-overlay" id="forgotPasswordModal">
+        <div class="fp-modal">
+            <div class="fp-modal-header">
+                <i class="fa-solid fa-key"></i>
+                <h3>Reset Password</h3>
+            </div>
+            <div class="fp-modal-body">
+                <p>Enter your email address and we'll send you a link to reset your password.</p>
+                <input type="email" class="fp-modal-input" id="fpEmailInput" placeholder="Enter your email address">
+                <div class="fp-status" id="fpStatus"></div>
+            </div>
+            <div class="fp-modal-buttons">
+                <button class="fp-btn fp-btn-cancel" onclick="closeForgotPasswordModal()">Cancel</button>
+                <button class="fp-btn fp-btn-primary" id="fpSubmitBtn" onclick="submitPasswordReset()">
+                    <i class="fa-solid fa-paper-plane"></i> Send Link
+                </button>
+            </div>
         </div>
     </div>
 
@@ -20726,25 +20914,118 @@ Answer helpfully using this context.`;
                         }
                     }
 
-                    async function promptPasswordReset() {
-                        const emailComp = document.getElementById('loginEmail');
-                        let email = emailComp.value;
+                    // Forgot Password Modal Functions - Must be global for onclick handlers
+                    window.promptPasswordReset = function () {
+                        console.log("Forgot Password Clicked");
+                        try {
+                            const modal = document.getElementById('forgotPasswordModal');
+                            if (!modal) {
+                                console.error("FATAL: forgotPasswordModal not found!");
+                                alert("Error: Modal not found. Please refresh.");
+                                return;
+                            }
+
+                            const emailInput = document.getElementById('fpEmailInput');
+                            const loginEmail = document.getElementById('loginEmail'); // Might be null if on different screen
+                            const status = document.getElementById('fpStatus');
+
+                            // Pre-fill email if available, otherwise empty
+                            const currentEmail = (loginEmail && loginEmail.value) ? loginEmail.value : '';
+                            if (emailInput) {
+                                emailInput.value = currentEmail;
+                                emailInput.focus();
+                            }
+
+                            if (status) {
+                                status.className = 'fp-status';
+                                status.textContent = '';
+                            }
+
+                            modal.classList.add('active');
+                            console.log("Modal activated");
+                        } catch (e) {
+                            console.error("Error in promptPasswordReset:", e);
+                            alert("Something went wrong: " + e.message);
+                        }
+                    };
+
+                    window.closeForgotPasswordModal = function () {
+                        const modal = document.getElementById('forgotPasswordModal');
+                        modal.classList.remove('active');
+                    };
+
+                    window.submitPasswordReset = async function () {
+                        const emailInput = document.getElementById('fpEmailInput');
+                        const submitBtn = document.getElementById('fpSubmitBtn');
+                        const status = document.getElementById('fpStatus');
+                        const email = emailInput.value.trim();
 
                         if (!email) {
-                            email = prompt("Please enter your email address for password reset:");
-                        } else {
-                            if (!confirm(`Send password reset link to ${email}?`)) return;
+                            status.className = 'fp-status error';
+                            status.textContent = 'Please enter your email address.';
+                            emailInput.focus();
+                            return;
                         }
 
-                        if (email) {
+                        // Email validation
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(email)) {
+                            status.className = 'fp-status error';
+                            status.textContent = 'Please enter a valid email address.';
+                            emailInput.focus();
+                            return;
+                        }
+
+                        // Disable button and show loading
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+
+                        try {
                             const { error } = await AuthManager.sendPasswordReset(email);
                             if (error) {
-                                alert("Failed: " + error.message);
+                                status.className = 'fp-status error';
+                                status.textContent = error.message || 'Failed to send reset link.';
                             } else {
-                                alert("📧 Password reset link sent! Check your email.");
+                                status.className = 'fp-status success';
+                                status.innerHTML = '<i class="fa-solid fa-check-circle"></i> Password reset link sent! Check your email.';
+
+                                // Auto close after 3 seconds
+                                setTimeout(() => {
+                                    window.closeForgotPasswordModal();
+                                }, 3000);
                             }
+                        } catch (e) {
+                            status.className = 'fp-status error';
+                            status.textContent = e.message || 'Something went wrong.';
+                        } finally {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Link';
                         }
-                    }
+                    };
+
+                    // Close modal on backdrop click
+                    // Close modal on backdrop click
+                    // Wrapped in try-catch/defer to prevent blocking
+                    setTimeout(() => {
+                        try {
+                            const modal = document.getElementById('forgotPasswordModal');
+                            if (modal) {
+                                modal.addEventListener('click', function (e) {
+                                    if (e.target === this) {
+                                        window.closeForgotPasswordModal();
+                                    }
+                                });
+                            }
+
+                            document.addEventListener('keydown', function (e) {
+                                if (e.key === 'Escape') {
+                                    window.closeForgotPasswordModal();
+                                }
+                            });
+                        } catch (err) {
+                            console.error("Error initializing modal listeners:", err);
+                        }
+                    }, 500);
 
                     // --- ONBOARDING AUTOMATION ---
                     window.activeUserCheck = null;
