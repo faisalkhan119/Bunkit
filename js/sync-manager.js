@@ -312,6 +312,8 @@ const SyncManager = {
                     if (window.populateClassSelector) window.populateClassSelector();
                 }
 
+                if (window.updateSidebarAccountUI) window.updateSidebarAccountUI();
+
                 // Refresh specific UI parts
                 this.refreshCalculationSettingsUI();
                 this.subscribeToChanges(); // Subscribe to real-time (if available)
@@ -712,6 +714,7 @@ const SyncManager = {
                 // Refresh UI
                 if (window.loadFromStorage) window.loadFromStorage();
                 if (window.populateClassSelector) window.populateClassSelector();
+                if (window.updateSidebarAccountUI) window.updateSidebarAccountUI(); // Update sidebar user info
 
                 this.updateSyncStatus('Synced');
                 console.log('✅ Polling: Updates applied from cloud');
