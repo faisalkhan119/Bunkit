@@ -4580,6 +4580,25 @@
             font-size: 1rem;
         }
 
+        .forgot-password-link {
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 10;
+            padding: 5px;
+            /* Increase click area */
+        }
+
+        .forgot-password-link:hover {
+            color: var(--primary-grad-start);
+            text-decoration: underline;
+        }
+
         /* Forgot Password Modal Styles */
         .fp-modal-overlay {
             position: fixed;
@@ -20926,9 +20945,13 @@ Answer helpfully using this context.`;
                                 status.textContent = '';
                             }
 
-                            // Use specific class to avoid conflicts
+                            // Use specific class AND force styles for debugging
                             modal.classList.add('fp-visible');
-                            console.log("Modal activated with .fp-visible");
+                            modal.style.opacity = '1';
+                            modal.style.visibility = 'visible';
+                            modal.style.display = 'flex'; // Ensure flex
+                            modal.style.zIndex = '99999999';
+                            console.log("Modal activated with .fp-visible and inline styles");
                         } catch (e) {
                             console.error("Error in promptPasswordReset:", e);
                             alert("Something went wrong: " + e.message);
