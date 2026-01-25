@@ -16099,6 +16099,11 @@ RULES:
                 customSchedules[dateStr] = scheduleData;
                 localStorage.setItem(`custom_schedules_${className}`, JSON.stringify(customSchedules));
 
+                // Sync with Cloud
+                if (window.SyncManager) {
+                    SyncManager.uploadAll();
+                }
+
                 closeModal('customScheduleModal');
                 populateDailyLog(); // Refresh the daily log form
 
@@ -16142,6 +16147,11 @@ RULES:
                 customSchedules[dateStr] = scheduleData;
                 localStorage.setItem(`custom_schedules_${className}`, JSON.stringify(customSchedules));
 
+                // Sync with Cloud
+                if (window.SyncManager) {
+                    SyncManager.uploadAll();
+                }
+
                 closeModal('customScheduleModal');
                 populateDailyLog(); // Refresh the daily log form
 
@@ -16155,6 +16165,11 @@ RULES:
                 const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${className}`) || '{}');
                 delete customSchedules[dateStr];
                 localStorage.setItem(`custom_schedules_${className}`, JSON.stringify(customSchedules));
+
+                // Sync with Cloud
+                if (window.SyncManager) {
+                    SyncManager.uploadAll();
+                }
 
                 closeModal('customScheduleModal');
                 populateDailyLog(); // Refresh the daily log form

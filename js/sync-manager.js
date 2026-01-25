@@ -99,9 +99,9 @@ const SyncManager = {
                             if (cloudHash !== localHash) {
                                 console.log(`☁️ Cloud version newer for "${cloudName}". Overwriting Local.`);
 
-                                // Restore side-loaded items ONLY IF cloud content is ACTUALLY DIFFERENT
                                 if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
                                 if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
+                                if (cloudData.customSchedules) localStorage.setItem(`custom_schedules_${cloudName}`, JSON.stringify(cloudData.customSchedules));
                             } else {
                                 console.log(`✨ Content identical for "${cloudName}". Preserving local arrangement.`);
                                 // DON'T overwrite local timetableArrangement when content is identical
@@ -121,6 +121,7 @@ const SyncManager = {
                         // Restore side-loaded items for NEW Cloud class (Always safe)
                         if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
                         if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
+                        if (cloudData.customSchedules) localStorage.setItem(`custom_schedules_${cloudName}`, JSON.stringify(cloudData.customSchedules));
                     }
                 });
 
@@ -364,6 +365,9 @@ const SyncManager = {
                 const pTimes = localStorage.getItem(`periodTimes_${name}`);
                 if (pTimes) data.periodTimes = JSON.parse(pTimes);
 
+                const cSched = localStorage.getItem(`custom_schedules_${name}`);
+                if (cSched) data.customSchedules = JSON.parse(cSched);
+
                 await supabaseClient.from('classes').upsert({
                     user_id,
                     name,
@@ -418,6 +422,8 @@ const SyncManager = {
 
     async saveClass(name, data) {
         if (!AuthManager.user) return;
+        if (this.syncing) return; // Prevent conflicts
+        this.syncing = true;
         this.updateSyncStatus('Saving...');
         try {
             await supabaseClient.from('classes').upsert({
@@ -430,11 +436,15 @@ const SyncManager = {
         } catch (e) {
             console.error(e);
             this.updateSyncStatus('Offline (Saved Locally)');
+        } finally {
+            this.syncing = false;
         }
     },
 
     async saveLog(date, logs) {
         if (!AuthManager.user) return;
+        // Don't block UI for logs, but prevent polling
+        this.syncing = true;
         this.updateSyncStatus('Saving...');
         try {
             await supabaseClient.from('attendance_logs').upsert({
@@ -447,11 +457,14 @@ const SyncManager = {
         } catch (e) {
             console.error(e);
             this.updateSyncStatus('Offline (Saved Locally)');
+        } finally {
+            this.syncing = false;
         }
     },
 
     async saveSettings() {
         if (!AuthManager.user) return;
+        this.syncing = true;
         this.updateSyncStatus('Saving settings...');
 
         const theme = localStorage.getItem('theme') || 'light';
@@ -486,11 +499,14 @@ const SyncManager = {
         } catch (e) {
             console.error('Settings save failed:', e);
             this.updateSyncStatus('Offline (Saved Locally)');
+        } finally {
+            this.syncing = false;
         }
     },
 
     async deleteClass(name) {
         if (!AuthManager.user) return;
+        this.syncing = true;
         this.updateSyncStatus('Deleting...');
         try {
             await supabaseClient.from('classes').delete()
@@ -515,6 +531,8 @@ const SyncManager = {
         } catch (e) {
             console.error('Delete failed:', e);
             this.updateSyncStatus('Error deleting');
+        } finally {
+            this.syncing = false;
         }
     },
 
