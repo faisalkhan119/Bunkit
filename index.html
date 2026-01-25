@@ -4635,7 +4635,8 @@
         <a href="#" onclick="openProfileNameModal(); closeNav();">✏️ Edit Profile Name</a>
 
         <!-- Auth Buttons -->
-        <a href="#" id="sidebarSignInBtn" onclick="openAuthModal(); closeNav();">🔐 Sign In / Sign Up</a>
+        <a href="#" id="sidebarSignInBtn" onclick="AuthManager.toggleLoginScreen(true); closeNav();">🔐 Sign In / Sign
+            Up</a>
 
         <div id="sidebarSyncStatus"
             style="display:none; padding: 5px 22px; font-size: 0.75rem; color: var(--medium-text);">
@@ -4940,7 +4941,8 @@
                     <button class="btn warning-btn" onclick="editSelectedClass()">Edit/Share (Class)</button>
                     <button class="btn danger-btn" onclick="deleteSelectedClass()">Delete Class</button>
                     <button class="btn info-btn" onclick="openPortalSetup()" id="portalBtn">Student Portal</button>
-                    <button class="btn primary-btn" onclick="SocialManager.openCommunityDashboard()"
+                    <button class="btn primary-btn"
+                        onclick="if(window.SocialManager) SocialManager.openCommunityDashboard(); else alert('Community features are initializing or unavailable offline.');"
                         style="background: linear-gradient(135deg, #1abc9c, #16a085); border: none;">👥
                         Community</button>
                     <input type="file" id="restoreInput" onchange="restoreData(event)" accept=".json"
@@ -20393,16 +20395,24 @@ Answer helpfully using this context.`;
 
                     // Hook into AuthManager to trigger onboarding
                     // We use a polling check for the user state change or rely on the fact that AuthManager calls updateUser
-                    const originalUpdateUser = AuthManager.updateUser;
-                    AuthManager.updateUser = function (user) {
-                        originalUpdateUser.call(this, user);
-
-                        // Only trigger if we are now logged in (or guest mode confirmed)
-                        // And prevent double triggering
-                        if (document.body.classList.contains('logged-in') || document.body.classList.contains('guest-mode')) {
-                            triggerOnboardingCheck(user);
-                        }
-                    };
+                    // Hook into AuthManager to trigger onboarding safely
+                    if (window.AuthManager) {
+                        const originalUpdateUser = AuthManager.updateUser;
+                        AuthManager.updateUser = function (user) {
+                            originalUpdateUser.call(this, user);
+                            // Only trigger if we are now logged in (or guest mode confirmed)
+                            if (document.body.classList.contains('logged-in') || document.body.classList.contains('guest-mode')) {
+                                triggerOnboardingCheck(user);
+                            }
+                        };
+                    } else {
+                        // Fallback: Listen for auth-initialized event (defined in AuthManager.init)
+                        window.addEventListener('auth-initialized', (e) => {
+                            if (document.body.classList.contains('logged-in') || document.body.classList.contains('guest-mode')) {
+                                triggerOnboardingCheck(e.detail.user);
+                            }
+                        });
+                    }
 
                     // Also fix the toggleLoginScreen to actually work with our new ID and layout
                     AuthManager.toggleLoginScreen = function (show) {
