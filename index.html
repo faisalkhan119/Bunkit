@@ -4592,13 +4592,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10000;
+            z-index: 9999999 !important;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
         }
 
-        .fp-modal-overlay.active {
+        .fp-modal-overlay.fp-visible {
             opacity: 1;
             visibility: visible;
         }
@@ -4614,7 +4614,7 @@
             transition: transform 0.3s ease;
         }
 
-        .fp-modal-overlay.active .fp-modal {
+        .fp-modal-overlay.fp-visible .fp-modal {
             transform: scale(1) translateY(0);
         }
 
@@ -4799,7 +4799,7 @@
                     New here? Create an account
                 </div>
                 <div style="text-align: center; margin-top: 12px;">
-                    <span class="forgot-password-link" onclick="promptPasswordReset()">
+                    <span class="forgot-password-link" onclick="window.promptPasswordReset(event)">
                         <i class="fa-solid fa-key"></i> Forgot Password?
                     </span>
                 </div>
@@ -4814,26 +4814,7 @@
         </div>
     </div>
 
-    <!-- Forgot Password Modal -->
-    <div class="fp-modal-overlay" id="forgotPasswordModal">
-        <div class="fp-modal">
-            <div class="fp-modal-header">
-                <i class="fa-solid fa-key"></i>
-                <h3>Reset Password</h3>
-            </div>
-            <div class="fp-modal-body">
-                <p>Enter your email address and we'll send you a link to reset your password.</p>
-                <input type="email" class="fp-modal-input" id="fpEmailInput" placeholder="Enter your email address">
-                <div class="fp-status" id="fpStatus"></div>
-            </div>
-            <div class="fp-modal-buttons">
-                <button class="fp-btn fp-btn-cancel" onclick="closeForgotPasswordModal()">Cancel</button>
-                <button class="fp-btn fp-btn-primary" id="fpSubmitBtn" onclick="submitPasswordReset()">
-                    <i class="fa-solid fa-paper-plane"></i> Send Link
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Forgot Password Modal moved to end of body for z-index fix -->
 
     <button class="hamburger-btn-fixed fixed-ui-button" onclick="openNav()">&#9776;</button>
     <div class="theme-switch-wrapper fixed-ui-button">
@@ -20915,8 +20896,12 @@ Answer helpfully using this context.`;
                     }
 
                     // Forgot Password Modal Functions - Must be global for onclick handlers
-                    window.promptPasswordReset = function () {
-                        console.log("Forgot Password Clicked");
+                    window.promptPasswordReset = function (e) {
+                        if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                        console.log("Forgot Password Clicked", e);
                         try {
                             const modal = document.getElementById('forgotPasswordModal');
                             if (!modal) {
@@ -20941,8 +20926,9 @@ Answer helpfully using this context.`;
                                 status.textContent = '';
                             }
 
-                            modal.classList.add('active');
-                            console.log("Modal activated");
+                            // Use specific class to avoid conflicts
+                            modal.classList.add('fp-visible');
+                            console.log("Modal activated with .fp-visible");
                         } catch (e) {
                             console.error("Error in promptPasswordReset:", e);
                             alert("Something went wrong: " + e.message);
@@ -20951,7 +20937,7 @@ Answer helpfully using this context.`;
 
                     window.closeForgotPasswordModal = function () {
                         const modal = document.getElementById('forgotPasswordModal');
-                        modal.classList.remove('active');
+                        if (modal) modal.classList.remove('fp-visible');
                     };
 
                     window.submitPasswordReset = async function () {
@@ -21183,6 +21169,27 @@ Answer helpfully using this context.`;
                         }, 500); // Check every 500ms
                     })();
                 </script>
+                <!-- Forgot Password Modal (Moved to End for Z-Index Fix) -->
+                <div class="fp-modal-overlay" id="forgotPasswordModal">
+                    <div class="fp-modal">
+                        <div class="fp-modal-header">
+                            <i class="fa-solid fa-key"></i>
+                            <h3>Reset Password</h3>
+                        </div>
+                        <div class="fp-modal-body">
+                            <p>Enter your email address and we'll send you a link to reset your password.</p>
+                            <input type="email" class="fp-modal-input" id="fpEmailInput"
+                                placeholder="Enter your email address">
+                            <div class="fp-status" id="fpStatus"></div>
+                        </div>
+                        <div class="fp-modal-buttons">
+                            <button class="fp-btn fp-btn-cancel" onclick="closeForgotPasswordModal()">Cancel</button>
+                            <button class="fp-btn fp-btn-primary" id="fpSubmitBtn" onclick="submitPasswordReset()">
+                                <i class="fa-solid fa-paper-plane"></i> Send Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
 </body>
 
 </html>
