@@ -6834,6 +6834,33 @@
                 }
             }
 
+            // GLOBAL: Reload Classes Logic (Exposed for AuthManager/SyncManager)
+            window.loadClasses = function () {
+                loadFromStorage();
+                populateClassSelector();
+
+                // Auto-restore last opened class
+                const lastClass = localStorage.getItem('lastOpenedClass');
+                const selector = document.getElementById('classSelector');
+
+                if (selector) {
+                    if (lastClass && selector.querySelector(`option[value="${lastClass}"]`)) {
+                        selector.value = lastClass;
+                        // Only trigger change if meaningful, avoids double-fetch
+                        if (window.selectedClass && window.selectedClass.name === lastClass) {
+                            console.log('🔄 UI refreshed for current class');
+                        } else {
+                            onClassChange();
+                        }
+                    } else if (selector.options.length > 1 && !selector.value) {
+                        // Fallback: select first REAL class if nothing selected
+                        selector.selectedIndex = 1;
+                        onClassChange();
+                    }
+                }
+                console.log('✅ Classes reloaded from storage.');
+            };
+
             // Auto-remove Example Class when user has their own classes
             function autoRemoveExampleClass() {
                 const exampleClassName = 'CSE Core - H (Example)';
@@ -7060,31 +7087,12 @@
 
                 if (hasData) {
                     console.log('⚡ Fast Load: Data exists, skipping restoration delay.');
-                    loadFromStorage();
+                    window.loadClasses();
 
                     // AUTO-REMOVE Example Class if user has their own classes
                     autoRemoveExampleClass();
 
                     document.getElementById('currentDate').value = formatLocalDate(new Date());
-                    populateClassSelector();
-
-                    // Auto-restore last opened class
-                    const lastClass = localStorage.getItem('lastOpenedClass');
-                    const selector = document.getElementById('classSelector');
-                    if (lastClass && selector) {
-                        if (selector.querySelector(`option[value="${lastClass}"]`)) {
-                            selector.value = lastClass;
-                            onClassChange();
-                        } else if (selector.options.length > 1) {
-                            // If last class not found, select first REAL class (not placeholder)
-                            selector.selectedIndex = 1;
-                            onClassChange();
-                        }
-                    } else if (selector && selector.options.length > 1) {
-                        // Default to first REAL class
-                        selector.selectedIndex = 1;
-                        onClassChange();
-                    }
                     return;
                 }
 
@@ -13230,17 +13238,75 @@ RULES:
                     // Create default arrangement from schedule
                     arrangement = {};
                     daysWithClasses.forEach(day => {
-                        arrangement[day.index] = [];
+                        // Initialize array with maxPeriods null slots
+                        const dayArrangement = new Array(maxPeriods).fill(null);
+                        const freeSubjects = []; // For subjects without fixed positions
+
                         selectedClass.subjects.forEach(subject => {
-                            const classCount = subject.schedule[day.index] || 0;
-                            for (let i = 0; i < classCount; i++) {
-                                arrangement[day.index].push({
+                            let periods = [];
+                            const rawSchedule = subject.schedule[day.index];
+
+                            // Case 1: Specific Periods (String with comma "1,3" or Single Number String "3")
+                            if (typeof rawSchedule === 'string' && (rawSchedule.includes(',') || !isNaN(parseInt(rawSchedule)))) {
+                                const parts = rawSchedule.split(',');
+                                // Check if parts look like period numbers (1-based index)
+                                const parsed = parts.map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
+
+                                // If valid period numbers found that aren't just a simple count "1" (heuristic)
+                                // Actually, if "1,2,3" provided, we trust it. If "3", it means Period 3. 
+                                // But legacy might use "2" to mean "2 periods".
+                                // HYBRID CHECK: If it contains commas, assume POSITIONS.
+                                // If single number > 0 and <= maxPeriods... assume COUNT for now to be safe for legacy?
+                                // User Issue: "schedule": "1,2,3" -> Treated as 1.
+                                // Let's trust comma-separated as POSITIONS.
+                                if (rawSchedule.includes(',')) {
+                                    periods = parsed;
+                                } else {
+                                    // Single Value: Treat as count for backward compatibility unless we have a flag?
+                                    // But wait, user's export had "1" "0" "1".
+                                    // If we switch to position, "1" means Period 1. "2" means Period 2.
+                                    // If it was count "2", it meant "Any 2 periods".
+                                    // Safer bet: Commas = Positions. Single Int = Count.
+                                    const count = parseInt(rawSchedule) || 0;
+                                    for (let k = 0; k < count; k++) freeSubjects.push(subject);
+                                }
+                            } else {
+                                // Case 2: Numeric Count (Old Format)
+                                const count = rawSchedule || 0;
+                                for (let k = 0; k < count; k++) freeSubjects.push(subject);
+                            }
+
+                            // Place Fixed Periods
+                            periods.forEach(p => {
+                                // p is 1-based period index
+                                if (p <= maxPeriods) {
+                                    dayArrangement[p - 1] = {
+                                        code: subject.code,
+                                        name: subject.name,
+                                        shortName: subject.shortName || getSubjectShortName(subject.name)
+                                    };
+                                }
+                            });
+                        });
+
+                        // Place Free (Count-based) Subjects in empty slots
+                        freeSubjects.forEach(subject => {
+                            const emptyIndex = dayArrangement.indexOf(null);
+                            if (emptyIndex !== -1) {
+                                dayArrangement[emptyIndex] = {
                                     code: subject.code,
                                     name: subject.name,
                                     shortName: subject.shortName || getSubjectShortName(subject.name)
-                                });
+                                };
                             }
                         });
+
+                        // Remove strict nulls if simple array? 
+                        // No, UI renders by index. Keep explicit structure, but filter holes if UI expects packed?
+                        // UI Loop (inferred): Iterates 0..maxPeriods. Using array index.
+                        // So dayArrangement[0] = Period 1.
+                        // We must store it exactly like this.
+                        arrangement[day.index] = dayArrangement;
                     });
                     saveTimetableArrangement(className, arrangement);
                 }
@@ -20455,7 +20521,7 @@ Answer helpfully using this context.`;
 
                         try {
                             if (isSignup) {
-                                if (!name) { alert('Please enter your name'); btn.disabled = false; return; }
+                                if (!name) { alert('Please enter your name'); btn.disabled = false; btn.textContent = 'Create Account'; return; }
                                 const { error } = await AuthManager.signUp(email, password, name);
                                 if (error) throw error;
                                 alert('Signup successful! Please check your email to verify.');
@@ -20470,6 +20536,7 @@ Answer helpfully using this context.`;
                             }
                         } catch (e) {
                             alert(e.message);
+                        } finally {
                             btn.disabled = false;
                             btn.textContent = isSignup ? 'Create Account' : 'Sign In';
                         }

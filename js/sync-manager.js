@@ -46,8 +46,7 @@ const SyncManager = {
                     const cloudName = row.name;
 
                     // Restore side-loaded items for cloud class
-                    if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
-                    if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
+                    // REDUNDANT REMOVED: Moved below to conditionally apply only if adopting cloud version
 
                     // Find matching local class by ID
                     let matchingLocalName = null;
@@ -100,6 +99,10 @@ const SyncManager = {
 
                             finalClasses[cloudName] = cloudData;
 
+                            // Restore side-loaded items ONLY IF adopting Cloud version
+                            if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
+                            if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
+
                             // If name changed in cloud, we might need to handle that, but for now assume cloud name wins
                             if (matchingLocalName !== cloudName) {
                                 renames[matchingLocalName] = cloudName;
@@ -108,6 +111,10 @@ const SyncManager = {
                     } else {
                         // New from Cloud
                         finalClasses[cloudName] = cloudData;
+
+                        // Restore side-loaded items for NEW Cloud class (Always safe)
+                        if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
+                        if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
                     }
                 });
 
@@ -292,8 +299,12 @@ const SyncManager = {
                 this.updateSyncStatus('Synced');
 
                 // Reload App UI
-                if (window.loadFromStorage) window.loadFromStorage();
-                if (window.populateClassSelector) window.populateClassSelector();
+                if (window.loadClasses) {
+                    window.loadClasses();
+                } else {
+                    if (window.loadFromStorage) window.loadFromStorage();
+                    if (window.populateClassSelector) window.populateClassSelector();
+                }
 
                 // Refresh specific UI parts
                 this.refreshCalculationSettingsUI();
