@@ -170,6 +170,11 @@ const AuthManager = {
 
         const deleteBtn = document.getElementById('sidebarDeleteBtn');
         if (deleteBtn) deleteBtn.style.display = isLoggedIn ? 'block' : 'none';
+
+        // FORCE Global Sidebar Update (fixes Mobile Guest User issue)
+        if (window.updateSidebarAccountUI) {
+            window.updateSidebarAccountUI();
+        }
     },
 
     async signIn(email, password) {

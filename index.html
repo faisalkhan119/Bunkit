@@ -16201,36 +16201,65 @@ RULES:
 
             function addLogForDate(dateStr) {
                 closeModal('historyLogModal');
-                const logDateEl = document.getElementById('logDate');
-                if (!logDateEl) {
-                    console.warn('logDate element not found - modal may not be initialized yet');
-                    return;
+
+                // Ensure modal exists
+                const logDateEl = window.ensureDailyLogModal ? window.ensureDailyLogModal() : document.getElementById('logDate');
+                if (!logDateEl && window.ensureDailyLogModal) {
+                    // Double check if helper wasn't ready? It should be.
                 }
-                logDateEl.value = dateStr;
+
+                if (!logDateEl) {
+                    console.warn('logDate element not found - attempting lazy init');
+                    if (window.ensureDailyLogModal) window.ensureDailyLogModal();
+                    // Retry
+                    if (!document.getElementById('logDate')) {
+                        alert("Error: Could not initialize Daily Log Modal. Please refresh.");
+                        return;
+                    }
+                }
+                document.getElementById('logDate').value = dateStr;
                 populateDailyLog();
                 document.getElementById('dailyLogModal').classList.add('active');
             }
 
-            function openDailyLog() {
-                const today = formatLocalDate(new Date());
-                let logDateEl = document.getElementById('logDate');
-
-                // Lazily initialize modal if missing
-                if (!logDateEl) {
-                    console.warn('logDate element not found - attempting to initialize Daily Log Modal');
+            // Helper to lazily initialize modal
+            window.ensureDailyLogModal = function () {
+                if (!document.getElementById('logDate')) {
+                    console.log('Lazy-initializing Daily Log Modal...');
                     const modal = document.getElementById('dailyLogModal');
                     if (modal) {
                         modal.innerHTML = `<div class="modal-content"><button class="modal-close" onclick="closeModal('dailyLogModal')">&times;</button><div class="modal-header"><h2>Daily Attendance Log</h2></div><div class="form-group"><label for="logDate">Current Date:</label><input type="date" id="logDate" onchange="populateDailyLog()"></div><div id="dailyLogSubjects"></div><div class="form-actions"><button class="btn primary-btn" onclick="saveDailyLog()">Save Log</button></div><p style="font-size: 0.8rem; text-align: center; margin-top: 15px;"><strong>Note:</strong> For past dates, 'Duty Leave (OD)' must be manually reflected by adding 1 to both 'Attended' and 'Held' values in the results.</p></div>`;
-                        logDateEl = document.getElementById('logDate');
                     }
                 }
+                return document.getElementById('logDate');
+            };
 
+            function openDailyLog() {
+                const today = formatLocalDate(new Date());
+
+                // Ensure modal exists
+                const logDateEl = window.ensureDailyLogModal();
                 if (!logDateEl) {
                     alert("Error: Could not initialize Daily Log Modal. Please refresh.");
                     return;
                 }
 
                 logDateEl.value = today;
+                populateDailyLog();
+                document.getElementById('dailyLogModal').classList.add('active');
+            }
+
+            function editLogDate(dateStr) {
+                closeModal('historyLogModal');
+
+                // Ensure modal exists
+                const logDateEl = window.ensureDailyLogModal();
+                if (!logDateEl) {
+                    alert("Error: Could not initialize Daily Log Modal. Please refresh.");
+                    return;
+                }
+
+                logDateEl.value = dateStr;
                 populateDailyLog();
                 document.getElementById('dailyLogModal').classList.add('active');
             }
@@ -17825,12 +17854,7 @@ RULES:
 
 
 
-            function editLogDate(dateStr) {
-                closeModal('historyLogModal');
-                document.getElementById('logDate').value = dateStr;
-                populateDailyLog();
-                document.getElementById('dailyLogModal').classList.add('active');
-            }
+
 
 
 
