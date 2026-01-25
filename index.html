@@ -4653,14 +4653,6 @@
             style="display: none; color: #c0392b; font-size: 0.9rem; margin-top: 5px;">🗑️ Delete
             Account</a>
 
-        <div style="height: 1px; background: var(--border-color); margin: 10px 15px;"></div>
-
-        <a href="#" id="sidebarCommunityBtn" onclick="SocialManager.openCommunityDashboard(); closeNav();"
-            style="color: var(--primary-grad-start); font-weight: 600;">👥 Community Hub <span
-                style="font-size: 0.7em; background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">NEW</span></a>
-
-        <div style="height: 1px; background: var(--border-color); margin: 10px 15px;"></div>
-
         <!-- File Options -->
         <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📁 File <span>▾</span></a>
         <div class="sidenav-dropdown-content">
@@ -4999,10 +4991,7 @@
                     <button class="btn warning-btn" onclick="editSelectedClass()">Edit/Share (Class)</button>
                     <button class="btn danger-btn" onclick="deleteSelectedClass()">Delete Class</button>
                     <button class="btn info-btn" onclick="openPortalSetup()" id="portalBtn">Student Portal</button>
-                    <button class="btn primary-btn"
-                        onclick="if(window.SocialManager) SocialManager.openCommunityDashboard(); else alert('Community features are initializing or unavailable offline.');"
-                        style="background: linear-gradient(135deg, #1abc9c, #16a085); border: none;">👥
-                        Community</button>
+
                     <input type="file" id="restoreInput" onchange="restoreData(event)" accept=".json"
                         style="display: none;">
                 </div>
@@ -6306,7 +6295,7 @@
                 const userName = document.getElementById('sidebarUserName');
                 const userEmail = document.getElementById('sidebarUserEmail');
                 const userAvatar = document.getElementById('sidebarUserAvatar');
-                const communityBtn = document.getElementById('sidebarCommunityBtn'); // NEW
+
 
                 if (!userName) return;
 
@@ -6325,7 +6314,7 @@
                     signInBtn.style.display = 'none';
                     syncBtn.style.display = 'block';
                     signOutBtn.style.display = 'block';
-                    if (communityBtn) communityBtn.style.display = 'block'; // Show Community
+
 
                     // Show last synced time
                     if (lastSyncedDiv) {
@@ -6358,7 +6347,7 @@
                     signInBtn.style.display = 'block';
                     syncBtn.style.display = 'none';
                     signOutBtn.style.display = 'none';
-                    if (communityBtn) communityBtn.style.display = 'none'; // Hide Community
+
                     if (lastSyncedDiv) lastSyncedDiv.style.display = 'none';
 
                     userName.textContent = profileName || 'Guest User';
