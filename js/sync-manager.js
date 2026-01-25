@@ -122,40 +122,28 @@ const SyncManager = {
                     if (isDuplicateContent) continue; // Skip adding this local duplicate
 
                     // Check for Name Collision in Final Set
+                    // Check for Name Collision in Final Set
                     if (finalClasses[lName]) {
-                        // COLLISION: Same Name, Different ID
-                        // SMART RENAME: Avoid "(Local) (Local)" recursion
-                        let baseName = lName.replace(/ \(Local\)+$/, ''); // Strip existing suffixes
-                        let newName = `${baseName} (Local)`;
+                        // USER REQUEST: STRICT MERGE (No Duplicates)
+                        console.log(`⚠️ STRICT MERGE: Name Collision for "${lName}". Merging...`);
 
-                        // Ensure unique if multiple locals exist
-                        let counter = 2;
-                        while (finalClasses[newName]) {
-                            newName = `${baseName} (Local ${counter})`;
-                            counter++;
-                        }
+                        const fData = finalClasses[lName];
+                        const lTime = new Date(lData.updatedAt || 0).getTime();
+                        const fTime = new Date(fData.updatedAt || 0).getTime();
 
-                        console.warn(`⚠️ Name Collision for "${lName}". Renaming to "${newName}"`);
-
-                        finalClasses[newName] = lData;
-                        renames[lName] = newName; // Track for log migration
-
-                        // Also migrate side-loaded items immediately
-                        const arr = localStorage.getItem(`timetable_arrangement_${lName}`);
-                        if (arr) {
-                            localStorage.setItem(`timetable_arrangement_${newName}`, arr);
-                            localStorage.removeItem(`timetable_arrangement_${lName}`);
-                        }
-                        const pts = localStorage.getItem(`periodTimes_${lName}`);
-                        if (pts) {
-                            localStorage.setItem(`periodTimes_${newName}`, pts);
-                            localStorage.removeItem(`periodTimes_${lName}`);
+                        if (lTime > fTime) {
+                            console.log(`🏠 Local "${lName}" is newer (${lTime} > ${fTime}). Overwriting cloud entry locally.`);
+                            lData.id = fData.id; // Keep Cloud ID (Critical for Sync)
+                            finalClasses[lName] = lData;
+                            this.pendingUploads = true;
+                        } else {
+                            console.log(`☁️ Cloud "${lName}" is newer/same. Local changes discarded.`);
                         }
                     } else {
                         // No Collision -> Safe to add
                         finalClasses[lName] = lData;
+                        this.pendingUploads = true; // New local data needs upload
                     }
-                    this.pendingUploads = true; // New local data needs upload
                 }
 
                 // Step 3c: Commit Classes
