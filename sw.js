@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bunkit-v112';
+const CACHE_NAME = 'bunkit-v2-merged';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -15,7 +15,10 @@ const ASSETS_TO_CACHE = [
     './icon-192x192.png',
     './icon-512x512.png',
     './badge-icon.png',
-    './notification-icon.png'
+    './notification-icon.png',
+    './js/auth-manager.js',
+    './js/sync-manager.js',
+    './js/social-manager.js'
 ];
 
 // External assets to cache at runtime
@@ -31,6 +34,7 @@ const EXTERNAL_ASSETS = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
+            console.log('[Service Worker] Caching all: app shell and content');
             // Cache local assets
             cache.addAll(ASSETS_TO_CACHE);
 
@@ -50,6 +54,7 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
+                        console.log('[Service Worker] Removing old cache', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -61,6 +66,14 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event: Stale-While-Revalidate Strategy
 self.addEventListener('fetch', (event) => {
+    // Network First for API calls (if any local API), Cache First for static
+    if (event.request.url.includes('/api/')) {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
     // Handle external scripts with Stale-While-Revalidate
     if (EXTERNAL_ASSETS.some(url => event.request.url.includes(url))) {
         event.respondWith(
