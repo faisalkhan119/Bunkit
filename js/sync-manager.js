@@ -94,14 +94,18 @@ const SyncManager = {
                             this.pendingUploads = true;
                         } else {
                             // Cloud is newer OR identical -> Keep Cloud
-                            if (cloudHash !== localHash) console.log(`☁️ Cloud version newer for "${cloudName}". Overwriting Local.`);
-                            else console.log(`✨ Content identical for "${cloudName}". updates synced.`);
+                            if (cloudHash !== localHash) {
+                                console.log(`☁️ Cloud version newer for "${cloudName}". Overwriting Local.`);
+
+                                // Restore side-loaded items ONLY IF cloud content is ACTUALLY DIFFERENT
+                                if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
+                                if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
+                            } else {
+                                console.log(`✨ Content identical for "${cloudName}". Preserving local arrangement.`);
+                                // DON'T overwrite local timetableArrangement when content is identical
+                            }
 
                             finalClasses[cloudName] = cloudData;
-
-                            // Restore side-loaded items ONLY IF adopting Cloud version
-                            if (cloudData.timetableArrangement) localStorage.setItem(`timetable_arrangement_${cloudName}`, JSON.stringify(cloudData.timetableArrangement));
-                            if (cloudData.periodTimes) localStorage.setItem(`periodTimes_${cloudName}`, JSON.stringify(cloudData.periodTimes));
 
                             // If name changed in cloud, we might need to handle that, but for now assume cloud name wins
                             if (matchingLocalName !== cloudName) {
