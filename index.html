@@ -13198,7 +13198,23 @@ RULES:
                 dayNames.forEach((day, dayIndex) => {
                     let totalClassesOnDay = 0;
                     selectedClass.subjects.forEach(subject => {
-                        totalClassesOnDay += subject.schedule[dayIndex] || 0;
+                        const rawSchedule = subject.schedule[dayIndex];
+
+                        // Handle both formats: string ("1,2,3" or "3") and number (2)
+                        if (typeof rawSchedule === 'string') {
+                            if (rawSchedule.includes(',')) {
+                                // "1,2,3" format - count positions
+                                totalClassesOnDay += rawSchedule.split(',').filter(p => p.trim() && p.trim() !== '0').length;
+                            } else {
+                                // Single string like "3" or "0" - could be count OR position
+                                // If > 0, treat as 1 class (position), else 0
+                                const num = parseInt(rawSchedule) || 0;
+                                totalClassesOnDay += num > 0 ? 1 : 0;
+                            }
+                        } else {
+                            // Numeric count (legacy format)
+                            totalClassesOnDay += rawSchedule || 0;
+                        }
                     });
                     if (totalClassesOnDay > 0) {
                         daysWithClasses.push({ index: dayIndex, name: day });
@@ -13217,8 +13233,39 @@ RULES:
                     subjectColorMap[subject.code] = subjectColors[index % subjectColors.length];
                 });
 
-                const maxPeriods = Math.max(...Object.values(maxPeriodsPerDay));
+                // Calculate maxPeriods from BOTH schedule data AND existing arrangement
+                let maxPeriods = 0;
+
+                // 1. From schedule strings (find highest period number)
+                selectedClass.subjects.forEach(subject => {
+                    if (subject.schedule) {
+                        subject.schedule.forEach(daySchedule => {
+                            if (typeof daySchedule === 'string' && daySchedule !== '0') {
+                                const periods = daySchedule.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p > 0);
+                                if (periods.length > 0) {
+                                    maxPeriods = Math.max(maxPeriods, ...periods);
+                                }
+                            } else if (typeof daySchedule === 'number') {
+                                // Legacy count-based: assume periods 1 to N
+                                maxPeriods = Math.max(maxPeriods, daySchedule);
+                            }
+                        });
+                    }
+                });
+
+                // 2. Also check existing arrangement for max length
                 const className = document.getElementById('classSelector').value;
+                const existingArrangement = getTimetableArrangement(className);
+                if (existingArrangement) {
+                    Object.values(existingArrangement).forEach(dayArr => {
+                        if (Array.isArray(dayArr)) {
+                            maxPeriods = Math.max(maxPeriods, dayArr.length);
+                        }
+                    });
+                }
+
+                // Fallback to at least 1 if nothing found
+                if (maxPeriods === 0) maxPeriods = Math.max(...Object.values(maxPeriodsPerDay), 1);
 
                 // Get period times
                 const periodTimes = getPeriodTimes(className) || {};
