@@ -72,18 +72,24 @@ const SyncManager = {
                     if (localData) {
                         localProcessedIds.add(cloudId);
 
+                        // Content-Based Deduplication (Check if basically identical)
+                        const cloudHash = JSON.stringify({ s: cloudData.subjects, h: cloudData.holidays, sd: cloudData.startDate });
+                        const localHash = JSON.stringify({ s: localData.subjects, h: localData.holidays, sd: localData.startDate });
+
                         // Compare Timestamps (Default to Cloud if missing)
                         const cloudTime = cloudData.updatedAt || 0;
                         const localTime = localData.updatedAt || 0;
 
-                        if (localTime > cloudTime) {
-                            // Local is newer -> Keep Local (and mark for upload)
+                        if (localTime > cloudTime && cloudHash !== localHash) {
+                            // Local is newer AND different -> Keep Local (and mark for upload)
                             console.log(`🏠 Local version newer for "${cloudName}". Keeping Local.`);
                             finalClasses[matchingLocalName] = localData; // Keep local name/data
                             this.pendingUploads = true;
                         } else {
-                            // Cloud is newer -> Keep Cloud
-                            console.log(`☁️ Cloud version newer for "${cloudName}". Overwriting Local.`);
+                            // Cloud is newer OR identical -> Keep Cloud
+                            if (cloudHash !== localHash) console.log(`☁️ Cloud version newer for "${cloudName}". Overwriting Local.`);
+                            else console.log(`✨ Content identical for "${cloudName}". updates synced.`);
+
                             finalClasses[cloudName] = cloudData;
 
                             // If name changed in cloud, we might need to handle that, but for now assume cloud name wins
@@ -101,10 +107,34 @@ const SyncManager = {
                 for (const [lName, lData] of Object.entries(localClasses)) {
                     if (lData.id && localProcessedIds.has(lData.id)) continue; // Already processed
 
+                    // Content Check against existing final classes to prevent "Name (Local)" duplicates of same functionality
+                    // (e.g. User logged out, then logged in, local became anonymous but is same as cloud)
+                    let isDuplicateContent = false;
+                    for (const [fName, fData] of Object.entries(finalClasses)) {
+                        const fHash = JSON.stringify({ s: fData.subjects, h: fData.holidays, sd: fData.startDate });
+                        const lHash = JSON.stringify({ s: lData.subjects, h: lData.holidays, sd: lData.startDate });
+                        if (fHash === lHash) {
+                            console.log(`🧹 Creating clean merge for "${lName}" -> Merged with "${fName}" (Content Identical)`);
+                            isDuplicateContent = true;
+                            break;
+                        }
+                    }
+                    if (isDuplicateContent) continue; // Skip adding this local duplicate
+
                     // Check for Name Collision in Final Set
                     if (finalClasses[lName]) {
                         // COLLISION: Same Name, Different ID
-                        const newName = `${lName} (Local)`;
+                        // SMART RENAME: Avoid "(Local) (Local)" recursion
+                        let baseName = lName.replace(/ \(Local\)+$/, ''); // Strip existing suffixes
+                        let newName = `${baseName} (Local)`;
+
+                        // Ensure unique if multiple locals exist
+                        let counter = 2;
+                        while (finalClasses[newName]) {
+                            newName = `${baseName} (Local ${counter})`;
+                            counter++;
+                        }
+
                         console.warn(`⚠️ Name Collision for "${lName}". Renaming to "${newName}"`);
 
                         finalClasses[newName] = lData;
