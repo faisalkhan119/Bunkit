@@ -10015,6 +10015,14 @@ ${subjectLines.join('\n')}
                 </div>`;
 
             function openAddClassModal(className = null) {
+                // SINGLE CLASS RESTRICTION
+                if (!className) { // Only check when adding NEW class
+                    const count = Object.keys(window.classes || {}).length;
+                    if (count > 0) {
+                        alert("⚠️ Single Class Limit\n\nYou already have a class. You can only manage one class at a time.");
+                        return;
+                    }
+                }
                 // SAFETY LOCK: Don't open if Auth is currently initializing (Too Early)
                 if (window.AuthManager && !window.AuthManager.isReady) {
                     console.warn('🚫 openAddClassModal blocked: Auth Initializing.');
