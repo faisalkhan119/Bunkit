@@ -6603,25 +6603,40 @@
             }
 
             function checkFirstLoginPrompt() {
-                // SAFETY LOCK: User requested "NO AUTOMATIC ONBOARDING".
-                // This legacy flow was showing the "Name Prompt" and "Example Class" options.
-                // We strictly disable it unless explicitly allowed (which is never in current flow).
-                if (!window.explicitWelcomeAllowed) {
-                    console.log('🚫 checkFirstLoginPrompt blocked (Passive Mode).');
+                // Check if user has already completed onboarding
+                const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
+
+                // ALSO Check if they actually have classes (Migration safety)
+                // If they have classes but no flag, assume they are onboarded to avoid annoyance.
+                const hasClasses = selectedClass || (window.classes && Object.keys(window.classes).length > 0);
+
+                if (hasCompleted || hasClasses) {
                     return;
                 }
 
-                const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
+                // First time user (No Flag + No Data) - show onboarding
+                console.log("🆕 Starting Onboarding Flow...");
+                setTimeout(() => {
+                    // Open the Class Setup Modal directly (Skip Name Prompt as it's less critical/confusing)
+                    // Or follow original flow? Original flow: openModal('firstLoginPromptModal') -> Name.
+                    // Let's stick to original flow but ensure it opens.
 
-                if (!hasCompleted) {
-                    // First time user - show onboarding
-                    setTimeout(() => {
+                    // Actually, let's skip to the main action: "Setup Your Class"
+                    // because "Name" is often handled in "Signup" now.
+                    // But if Guest? They might want a name.
+                    // Let's check if Guest Name exists.
+                    const guestName = localStorage.getItem('guest_name');
+
+                    if (!guestName) {
                         createProfileModals();
                         const firstLoginInput = document.getElementById('firstLoginNameInput');
                         if (firstLoginInput) firstLoginInput.value = '';
                         openModal('firstLoginPromptModal');
-                    }, 500);
-                }
+                    } else {
+                        // If name exists (e.g. from Google Login implicit?), go to Class Setup
+                        openOnboardingClassModal();
+                    }
+                }, 500);
             }
 
             function openOnboardingClassModal() {
