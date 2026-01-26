@@ -31,6 +31,37 @@ const SyncManager = {
                 if (classError || logError) throw new Error("Fetch failed");
 
                 // 2. Load Local Data
+                // SAFE WIPE STRATEGY: 
+                // If this is a standard Login (NOT a new Signup), we wipe local data to prevent conflicts.
+                // We rely entirely on the cloud state.
+                const isNewSignup = localStorage.getItem('is_new_signup');
+
+                if (!isNewSignup) {
+                    console.log("🔒 Existing Login detected: Wiping local data to prevent conflicts.");
+
+                    // Comprehensive Wipe of User Data Keys
+                    localStorage.removeItem('attendanceClasses_v2');
+                    localStorage.removeItem('attendance_logs');
+                    localStorage.removeItem('lastOpenedClass');
+                    localStorage.removeItem('userProfileName');
+                    localStorage.removeItem('theme');
+
+                    // Wipe Settings & Notifications
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('notificationSettings_') || key.startsWith('calcSettings_'))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+
+                    // Reset In-Memory State
+                    window.classes = {};
+                    window.attendanceLogs = {};
+                }
+
+                // Always clear the flag after checking
+                localStorage.removeItem('is_new_signup');
+
                 // FORCE PRUNE DUPLICATES before loading to clean up existing mess
                 this.pruneDuplicates();
                 const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');

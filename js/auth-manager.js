@@ -57,6 +57,17 @@ const AuthManager = {
 
 
     toggleLoginScreen(show) {
+        // GUARD: Block hiding the login screen if we are in the middle of a reset flow
+        if (!show) {
+            if (localStorage.getItem('pending_password_reset') === 'true' || window.isVerifyingOtp) {
+                console.log('🔒 AuthManager.toggleLoginScreen blocked (Hide Mode) due to pending reset.');
+                // HIDE Login Screen so Modal can be seen (Backdrop protects content)
+                const screen = document.getElementById('loginScreen');
+                if (screen) screen.style.display = 'none';
+                return;
+            }
+        }
+
         const screen = document.getElementById('loginScreen');
         if (screen) screen.style.display = show ? 'flex' : 'none';
     },
@@ -109,6 +120,12 @@ const AuthManager = {
                     // Force reload the class list from the newly synced localStorage
                     if (window.loadClasses) window.loadClasses();
                     if (window.renderDashboard) window.renderDashboard();
+
+                    // CRITICAL: Re-enforce Password Reset Modal if pending
+                    if (window.enforceResetPasswordModal && localStorage.getItem('pending_password_reset') === 'true') {
+                        console.log('🔄 Re-enforcing Password Reset after Sync');
+                        window.enforceResetPasswordModal();
+                    }
                 }
             }
 
@@ -245,6 +262,21 @@ const AuthManager = {
         });
     },
 
+    async sendOtp(email) {
+        if (!window.supabaseClient) return { error: { message: "Supabase not initialized" } };
+        // Use signInWithOtp which sends a magic link or code
+        return await supabaseClient.auth.signInWithOtp({ email });
+    },
+
+    async verifyOtp(email, token, type = 'email') {
+        if (!window.supabaseClient) return { error: { message: "Supabase not initialized" } };
+        return await supabaseClient.auth.verifyOtp({
+            email,
+            token,
+            type
+        });
+    },
+
     async updatePassword(newPassword) {
         if (!window.supabaseClient) return { error: { message: "Supabase not initialized" } };
         return await supabaseClient.auth.updateUser({ password: newPassword });
@@ -292,3 +324,34 @@ if (document.readyState === 'loading') {
 }
 
 window.AuthManager = AuthManager;
+
+// Global Reset Password Enforcement (Moved here for early availability)
+window.enforceResetPasswordModal = function () {
+    const isPending = localStorage.getItem('pending_password_reset') === 'true';
+    if (!isPending) return;
+
+    if (window.resetModalEnforcer) clearInterval(window.resetModalEnforcer);
+    console.log('🔒 Starting strict enforcement of Reset Password Modal');
+
+    window.resetModalEnforcer = setInterval(() => {
+        if (localStorage.getItem('pending_password_reset') !== 'true') {
+            clearInterval(window.resetModalEnforcer);
+            return;
+        }
+
+        const modal = document.getElementById('resetPasswordModal');
+        if (window.showResetPasswordModal) {
+            if (!modal || !modal.classList.contains('rp-visible') || modal.style.display === 'none') {
+                console.log('🔒 Enforcing Reset Password Modal Visibility');
+                window.showResetPasswordModal();
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.style.zIndex = '99999999';
+                }
+            }
+        }
+
+        const cancelBtns = document.querySelectorAll('#resetPasswordModal .fp-btn-cancel, #resetPasswordModal .close-btn');
+        cancelBtns.forEach(btn => btn.style.display = 'none');
+    }, 100);
+};
