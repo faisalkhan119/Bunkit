@@ -6606,6 +6606,12 @@
                 // Check if user has already completed onboarding
                 const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
 
+                // PRIORITY: If a class import is pending, let the Import Logic handle UI (skip generic onboarding)
+                if (sessionStorage.getItem('pendingClassImport')) {
+                    console.log("📥 Pending Import detected. Skipping generic onboarding to allow Import Flow.");
+                    return;
+                }
+
                 // ALSO Check if they actually have classes (Migration safety)
                 // If they have classes but no flag, assume they are onboarded to avoid annoyance.
                 const hasClasses = selectedClass || (window.classes && Object.keys(window.classes).length > 0);
@@ -21540,8 +21546,12 @@ Answer helpfully using this context.`;
                             return;
                         }
 
-                        // Default: No popups
-                        console.log('🚫 triggerOnboardingCheck blocked (No import link).');
+                        // If key exists but no import link, proceed to Standard Onboarding
+                        if (typeof checkFirstLoginPrompt === 'function') {
+                            checkFirstLoginPrompt();
+                        } else {
+                            console.log('🚫 checkFirstLoginPrompt not found, skipping onboarding.');
+                        }
                     }
 
                     // Hook into AuthManager to trigger onboarding

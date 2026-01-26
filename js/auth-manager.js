@@ -126,6 +126,11 @@ const AuthManager = {
                         console.log('🔄 Re-enforcing Password Reset after Sync');
                         window.enforceResetPasswordModal();
                     }
+
+                    // Check for Onboarding (First time user or Empty State)
+                    if (window.checkFirstLoginPrompt) {
+                        setTimeout(() => window.checkFirstLoginPrompt(), 500);
+                    }
                 }
             }
 
