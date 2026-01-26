@@ -5002,6 +5002,19 @@
                     </span>
                 </div>
 
+                <!-- Checkbox to Import Local Data (Only for Signup) -->
+                <div id="signupDataOption"
+                    style="display: none; margin-bottom: 15px; text-align: left; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                    <label
+                        style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #cbd5e1; font-size: 0.9rem;">
+                        <input type="checkbox" id="importLocalData" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>Keep existing data from this device?</span>
+                    </label>
+                    <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px; margin-left: 28px;">
+                        Check this if you want to move your Guest data to this new account.
+                    </p>
+                </div>
+
                 <button class="primary-auth-btn" id="emailAuthBtn" onclick="handleEmailSubmit()">Sign In</button>
 
                 <div class="toggle-auth-mode" onclick="toggleAuthMode()" id="authModeToggle">
@@ -13212,9 +13225,17 @@ RULES:
 
                 let resultHTML = `<div class="subject-card" style="border-left-color: var(--success-grad-end);"><div class="subject-title">✅ Maximum Safe Leave</div>`;
 
+                const realToday = new Date();
+                realToday.setHours(0, 0, 0, 0);
+
                 const futureWorkingDays = [];
+                // Start from currentDate + 1 day as per original logic, BUT filter by Real Today
                 for (let d = new Date(currentDate.getTime() + 86400000); d <= lastDate; d.setDate(d.getDate() + 1)) {
                     const dayTime = new Date(d).setHours(0, 0, 0, 0);
+
+                    // SKIP PAST DATES: Only recommend leaves for future dates
+                    if (dayTime <= realToday.getTime()) continue;
+
                     if (holidayDates.some(h => h.getTime() === dayTime) || leaveDateSet.has(dayTime) || compulsoryDateSet.has(dayTime)) continue;
 
                     const dayOfWeek = d.getDay();
@@ -14427,6 +14448,12 @@ RULES:
                 }
 
                 localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                // FIX: Track timestamp to prevent "Refresh Race Condition" overwriting local data with stale cloud data
+                const logTimestamps = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                logTimestamps[dateStr] = new Date().toISOString();
+                localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps));
+
                 // Sync with Cloud
                 if (window.SyncManager) {
                     SyncManager.saveLog(dateStr, newDayLog);
@@ -21379,11 +21406,30 @@ Answer helpfully using this context.`;
                             confirmPasswordWrapper.style.display = 'block';
                             btn.textContent = 'Create Account';
                             toggle.textContent = 'Already have an account? Sign In';
+
+                            // Check if there is local data to import
+                            const hasLocalData = localStorage.getItem('attendanceClasses_v2') && localStorage.getItem('attendanceClasses_v2') !== '{}';
+                            const dataOption = document.getElementById('signupDataOption');
+                            const importCheckbox = document.getElementById('importLocalData');
+
+                            if (hasLocalData && dataOption) {
+                                dataOption.style.display = 'block';
+                                // Auto-check if currently in Guest Mode (Explicit intent)
+                                const isGuest = localStorage.getItem('guest_mode_active');
+                                importCheckbox.checked = !!isGuest;
+                            } else if (dataOption) {
+                                dataOption.style.display = 'none';
+                            }
+
                         } else {
                             nameInput.style.display = 'none';
                             confirmPasswordWrapper.style.display = 'none';
                             btn.textContent = 'Sign In';
                             toggle.textContent = 'New here? Create an account';
+
+                            // Hide data option in Sign In mode
+                            const dataOption = document.getElementById('signupDataOption');
+                            if (dataOption) dataOption.style.display = 'none';
                         }
                     }
 
@@ -21406,7 +21452,13 @@ Answer helpfully using this context.`;
                                 if (!name) { alert('Please enter your name'); btn.disabled = false; btn.textContent = 'Create Account'; return; }
 
                                 // SIGNAL: Mark this as a new signup to preserve Guest Data during Sync
-                                localStorage.setItem('is_new_signup', 'true');
+                                // ONLY if user explicitly checked the box
+                                const keepData = document.getElementById('importLocalData').checked;
+                                if (keepData) {
+                                    localStorage.setItem('is_new_signup', 'true');
+                                } else {
+                                    localStorage.removeItem('is_new_signup'); // Ensure wipe
+                                }
 
                                 // Validate password confirmation
                                 const confirmPassword = document.getElementById('signupConfirmPassword').value;
@@ -21425,10 +21477,9 @@ Answer helpfully using this context.`;
                                 const { error } = await AuthManager.signIn(email, password);
                                 if (error) throw error;
 
-                                // Silent Sync & Reload
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 500);
+                                // Success! The AuthManager.onAuthStateChange listener will handle the UI update and Sync.
+                                // Do NOT reload, as it causes race conditions with session persistence and sync.
+                                btn.textContent = 'Success!';
                             }
                         } catch (e) {
                             alert(e.message);

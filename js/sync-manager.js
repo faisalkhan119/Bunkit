@@ -304,10 +304,23 @@ const SyncManager = {
                     }
                 });
 
-                // Merge Cloud Logs (Blind merge for now, or could use timestamps if we had them per log entry)
+                // Merge Cloud Logs (Smart Merge with Timestamp Check)
+                const logTimestamps = this.safeParse('attendance_log_timestamps');
+
                 cloudLogs.forEach(row => {
                     if (!finalLogs[row.date]) finalLogs[row.date] = {};
-                    Object.assign(finalLogs[row.date], row.logs);
+
+                    const cloudTime = new Date(row.updated_at || 0).getTime();
+                    const localTime = new Date(logTimestamps[row.date] || 0).getTime();
+
+                    if (localTime > cloudTime) {
+                        console.log(`🏠 Race Condition Avoided: Local log for ${row.date} is newer (${localTime} > ${cloudTime}). Keeping Local.`);
+                        this.pendingUploads = true; // Ensure this newer local version gets pushed eventually
+                        // Do NOT overwrite with stale cloud data
+                    } else {
+                        // Cloud is newer or same -> Accept Cloud
+                        Object.assign(finalLogs[row.date], row.logs);
+                    }
                 });
 
                 localStorage.setItem('attendance_logs', JSON.stringify(finalLogs));
