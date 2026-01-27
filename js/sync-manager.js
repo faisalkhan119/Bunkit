@@ -31,14 +31,28 @@ const SyncManager = {
                 if (classError || logError) throw new Error("Fetch failed");
 
                 // 2. Load Local Data
-                // SAFE WIPE STRATEGY: 
-                // If this is a standard Login (NOT a new Signup), we wipe local data to prevent conflicts.
-                // We rely entirely on the cloud state.
+                // SMART WIPE STRATEGY:
+                // Only wipe if:
+                // A) It's a fresh signup (Clean slate)
+                // B) It's a DIFFERENT user than before (Security/Privacy)
+                // C) We have no record of the last user
                 const isNewSignup = localStorage.getItem('is_new_signup');
+                const lastUserId = localStorage.getItem('last_user_id');
+                const currentUserId = AuthManager.user?.id;
 
-                if (!isNewSignup) {
-                    console.log("🔒 Existing Login detected: Wiping local data to prevent conflicts.");
+                let shouldWipe = false;
 
+                if (isNewSignup) {
+                    console.log("🆕 New Signup detected. Wiping local data.");
+                    shouldWipe = true;
+                } else if (!lastUserId || lastUserId !== currentUserId) {
+                    console.log(`👤 User Changed (Old: ${lastUserId}, New: ${currentUserId}). Wiping local data.`);
+                    shouldWipe = true;
+                } else {
+                    console.log("🔄 Same User Refresh. Preserving local data for sync merge.");
+                }
+
+                if (shouldWipe) {
                     // Comprehensive Wipe of User Data Keys
                     localStorage.removeItem('attendanceClasses_v2');
                     localStorage.removeItem('attendance_logs');
@@ -57,6 +71,11 @@ const SyncManager = {
                     // Reset In-Memory State
                     window.classes = {};
                     window.attendanceLogs = {};
+                }
+
+                // Update Last User ID for next time
+                if (currentUserId) {
+                    localStorage.setItem('last_user_id', currentUserId);
                 }
 
                 // Always clear the flag after checking
