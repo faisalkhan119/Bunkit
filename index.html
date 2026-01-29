@@ -6456,6 +6456,7 @@
 
                     // Set as current class and reload
                     localStorage.setItem('selectedClass', finalName);
+                    localStorage.setItem('lastOpenedClass', finalName);
 
                     // Flag to trigger tutorial after reload (Use localStorage for better reliability across refreshes)
                     localStorage.setItem('postImportTutorial', 'true');
