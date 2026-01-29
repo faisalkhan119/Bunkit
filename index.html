@@ -6114,6 +6114,7 @@
 
             function continueAsGuest() {
                 localStorage.setItem('isGuest', 'true');
+                document.body.classList.add('guest-mode'); // Ensure valid state
                 localStorage.removeItem('googleUser');
                 // googleUser = null; // Removed potential ReferenceError
                 hideLoginScreen();
@@ -6996,52 +6997,10 @@
                 }
             }
 
-            function createProfileModals() {
-                if (document.getElementById('profileNameModal')) return;
-
-                // Profile Name Modal
-                const profileModal = document.createElement('div');
-                profileModal.id = 'profileNameModal';
-                profileModal.className = 'modal';
-                profileModal.innerHTML = `
-                <div class="modal-content" style="max-width: 400px;">
-                    <button class="modal-close" onclick="closeModal('profileNameModal')">&times;</button>
-                    <div class="modal-header">
-                        <h2>👤 Edit Profile</h2>
-                        <p>Customize how your name appears</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="profileNameInput">Your Name:</label>
-                        <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="50">
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn primary-btn" onclick="saveProfileName()">💾 Save</button>
-                        <button class="btn secondary-btn" onclick="closeModal('profileNameModal')">Cancel</button>
-                    </div>
-                </div>`;
-                document.body.appendChild(profileModal);
-
-                // First Login Prompt Modal
-                const firstLoginModal = document.createElement('div');
-                firstLoginModal.id = 'firstLoginPromptModal';
-                firstLoginModal.className = 'modal';
-                firstLoginModal.innerHTML = `
-                <div class="modal-content" style="max-width: 400px;">
-                    <div class="modal-header" style="text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🎉</div>
-                        <h2>Welcome to Bunk it!</h2>
-                        <p>Let's personalize your experience</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="firstLoginNameInput">What should we call you?</label>
-                        <input type="text" id="firstLoginNameInput" placeholder="Enter your name" maxlength="50" style="text-align: center; font-size: 1.1rem;">
-                    </div>
-                    <div class="form-actions" style="justify-content: center;">
-                        <button class="btn primary-btn" onclick="saveFirstLoginName()" style="min-width: 150px;">Continue</button>
-                    </div>
-                </div>`;
-                document.body.appendChild(firstLoginModal);
-            }
+            // Duplicate function removed to fix onboarding UI consistency
+            /* 
+            // [DELETED] Conflicting createProfileModals definition
+            */
 
             // Update sidebar account section UI
             window.updateSidebarAccountUI = function () {
@@ -14156,8 +14115,7 @@ RULES:
                     message.innerHTML = '🎉 <strong>Today is a holiday!</strong> Enjoy your day off. <button class="config-btn" onclick="openPeriodConfigModal()">⏰ Configure Period Times</button>';
                     message.style.background = 'rgba(40, 167, 69, 0.15)';
                     message.style.borderLeft = '4px solid #28a745';
-                } else {
-                    message.innerHTML = '💡 Drag subjects to rearrange. <button class="config-btn" onclick="openPeriodConfigModal()">⏰ Configure Period Times</button>';
+                    message.innerHTML = '💡 <button class="config-btn" onclick="openPeriodConfigModal()">⏰ Configure Period Times</button>';
                 }
                 section.appendChild(message);
 
@@ -17818,12 +17776,19 @@ RULES:
 
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                 const startDate = parseLocalDate(selectedClass.portalSetup.semesterStartDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const now = new Date();
+                const limitDate = new Date();
+                limitDate.setHours(0, 0, 0, 0);
+
+                // Rule: If before 3:00 PM, we only expect logs up to Yesterday
+                // After 3:00 PM, we expect logs for Today as well
+                if (now.getHours() < 15) {
+                    limitDate.setDate(limitDate.getDate() - 1);
+                }
 
                 const missingDates = [];
 
-                for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+                for (let d = new Date(startDate); d <= limitDate; d.setDate(d.getDate() + 1)) {
                     const dateStr = d.toISOString().split('T')[0];
                     const check = isHolidayOrNoClass(dateStr);
 
