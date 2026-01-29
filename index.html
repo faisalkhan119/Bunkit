@@ -6438,6 +6438,18 @@
                         localStorage.setItem(`timetable_arrangement_${finalName}`, JSON.stringify(classData.timetable));
                     }
 
+                    // FIX: Save period times if present (using canonical snake_case key)
+                    if (classData.periodTimes) {
+                        localStorage.setItem(`period_times_${finalName}`, JSON.stringify(classData.periodTimes));
+                    }
+
+                    // FIX: Save period-wise view menu visibility preference if previously set? 
+                    // (Not strictly part of classData but good to know)
+
+                    // FIX: Check for portal setup in separate storage if needed?
+                    // Currently portalSetup is inside classes object, checking initPortal usage...
+                    // initPortal reads selectedClass.portalSetup. Correct. No separate storage needed.
+
                     saveToStorage();
 
                     // Mark onboarding complete
@@ -14929,7 +14941,7 @@ RULES:
                         for (const className in backupData.periodTimes) {
                             if (backupData.periodTimes.hasOwnProperty(className)) {
                                 localStorage.setItem(
-                                    `periodTimes_${className}`,
+                                    `period_times_${className}`,
                                     JSON.stringify(backupData.periodTimes[className])
                                 );
                             }
