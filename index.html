@@ -11906,6 +11906,20 @@ CRITICAL INSTRUCTIONS:
 
                         if (logsChanged) {
                             localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                            // FIX: Update timestamps for all affected dates and sync
+                            const logTimestamps = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                            Object.keys(logs).forEach(dateKey => {
+                                logTimestamps[dateKey] = new Date().toISOString();
+                            });
+                            localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps));
+
+                            // Sync all affected dates
+                            if (window.SyncManager) {
+                                Object.keys(logs).forEach(dateKey => {
+                                    SyncManager.saveLog(dateKey, logs[dateKey] || {});
+                                });
+                            }
                         }
                     }
                 }
@@ -14271,6 +14285,9 @@ RULES:
                             classes[selectedClass.name] = selectedClass;
                             localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
 
+                            // FIX: Sync to cloud
+                            if (window.SyncManager) SyncManager.uploadAll();
+
                             // Notify user
                             if (typeof showToast === 'function') {
                                 showToast(
@@ -15708,6 +15725,9 @@ RULES:
                 classes[selectedClass.name] = selectedClass;
                 localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
 
+                // FIX: Sync to cloud
+                if (window.SyncManager) SyncManager.uploadAll();
+
                 alert(
                     `✅ Portal Baseline Updated!\n\n` +
                     `Baseline Date: ${newBaselineDate}\n` +
@@ -15763,6 +15783,9 @@ RULES:
                 const classes = JSON.parse(localStorage.getItem('attendanceClasses_v2')) || {};
                 classes[selectedClass.name] = selectedClass;
                 localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+
+                // FIX: Sync to cloud
+                if (window.SyncManager) SyncManager.uploadAll();
 
                 alert(
                     `✅ Portal Updated Successfully!\n\n` +
@@ -18227,6 +18250,15 @@ RULES:
                         });
                     });
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                    // FIX: Update timestamp to prevent sync from overwriting local edits
+                    const logTimestamps1 = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                    logTimestamps1[dateStr] = new Date().toISOString();
+                    localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps1));
+
+                    // Sync to cloud
+                    if (window.SyncManager) SyncManager.saveLog(dateStr, logs[dateStr]);
+
                     alert("Medical Leave (ML) selected.\n\nAll subjects for this day have been marked as ML.");
                     refreshPeriodAndHistoryViews();
                     return;
@@ -18245,6 +18277,14 @@ RULES:
                     }
 
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                    // FIX: Update timestamp to prevent sync from overwriting local edits
+                    const logTimestamps2 = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                    logTimestamps2[dateStr] = new Date().toISOString();
+                    localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps2));
+
+                    // Sync to cloud
+                    if (window.SyncManager) SyncManager.saveLog(dateStr, logs[dateStr] || {});
 
                     alert("ML removed from this day.\n\nAll subjects have been reset to 'Not Logged'.\nPlease mark attendance for each subject individually.");
 
@@ -18273,6 +18313,14 @@ RULES:
                 }
 
                 localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                // FIX: Update timestamp to prevent sync from overwriting local edits
+                const logTimestamps3 = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                logTimestamps3[dateStr] = new Date().toISOString();
+                localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps3));
+
+                // Sync to cloud
+                if (window.SyncManager) SyncManager.saveLog(dateStr, logs[dateStr] || {});
 
                 // Refresh all views
                 refreshPeriodAndHistoryViews();
@@ -18652,6 +18700,20 @@ RULES:
 
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
 
+                    // FIX: Update timestamps for all filled dates and sync
+                    const logTimestamps = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                    validEntries.forEach(entry => {
+                        logTimestamps[entry.date] = new Date().toISOString();
+                    });
+                    localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps));
+
+                    // Sync all filled dates
+                    if (window.SyncManager) {
+                        validEntries.forEach(entry => {
+                            SyncManager.saveLog(entry.date, logs[entry.date] || {});
+                        });
+                    }
+
                     // Build status message
                     let statusMsg = `✅ Auto-filled ${filledCount} day(s)!`;
                     if (skippedDates.length > 0) {
@@ -18902,6 +18964,20 @@ RULES:
                     });
 
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
+
+                    // FIX: Update timestamps for all imported dates and sync
+                    const logTimestamps = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
+                    validEntries.forEach(entry => {
+                        logTimestamps[entry.date] = new Date().toISOString();
+                    });
+                    localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps));
+
+                    // Sync all imported dates
+                    if (window.SyncManager) {
+                        validEntries.forEach(entry => {
+                            SyncManager.saveLog(entry.date, logs[entry.date] || {});
+                        });
+                    }
 
                     closeModal('bulkLogJsonModal');
 
