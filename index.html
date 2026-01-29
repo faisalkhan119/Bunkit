@@ -8892,8 +8892,14 @@
                             ${stats.projectedMaxPercent >= (getMinAttendanceCriteria() * 100) ? generateStatItemHTML(`safeSkipPercent_${subject.code}`, 'After Safe Skips %', stats.safeSkipPercent.toFixed(1) + '%', 'Your final percentage after skipping the maximum number of classes while staying above the minimum requirement.') : ''}
                             <div class="stat-item">
                                 <div class="stat-value-editable">
-                                    <input type="number" id="attended_${subject.code}" value="${subject.attended}" oninput="recalculateSubject('${subject.code}')"> / 
-                                    <input type="number" id="total_${subject.code}" value="${subject.totalHeld}" oninput="recalculateSubject('${subject.code}')">
+                                    ${(selectedClass && selectedClass.portalSetup && selectedClass.portalSetup.active) ?
+                            `<input type="number" id="attended_${subject.code}" value="${subject.attended}" disabled style="background:#eee;color:#777;cursor:not-allowed" title="Managed by Portal Mode">` :
+                            `<input type="number" id="attended_${subject.code}" value="${subject.attended}" oninput="recalculateSubject('${subject.code}')">`
+                        } / 
+                                    ${(selectedClass && selectedClass.portalSetup && selectedClass.portalSetup.active) ?
+                            `<input type="number" id="total_${subject.code}" value="${subject.totalHeld}" disabled style="background:#eee;color:#777;cursor:not-allowed" title="Managed by Portal Mode">` :
+                            `<input type="number" id="total_${subject.code}" value="${subject.totalHeld}" oninput="recalculateSubject('${subject.code}')">`
+                        }
                                 </div>
                                 <div class="stat-label">Attended / Held</div>
                             </div>
