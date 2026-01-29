@@ -8767,26 +8767,46 @@
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                 const logStats = {}; // { code: { attended: 0, total: 0 } }
 
-                Object.keys(logs).forEach(date => {
-                    Object.keys(logs[date]).forEach(code => {
-                        const status = logs[date][code];
-                        if (!logStats[code]) logStats[code] = { attended: 0, total: 0 };
+                if (logs && typeof logs === 'object') {
+                    Object.keys(logs).forEach(date => {
+                        if (!logs[date] || typeof logs[date] !== 'object') return; // Skip invalid days
 
-                        if (status === 'Present') {
-                            logStats[code].attended++;
-                            logStats[code].total++;
-                        } else if (status === 'Absent') {
-                            logStats[code].total++;
-                        }
-                        // Cancelled, ML, Default = 0/0
+                        Object.keys(logs[date]).forEach(code => {
+                            const status = logs[date][code];
+                            if (!logStats[code]) logStats[code] = { attended: 0, total: 0 };
+
+                            if (status === 'Present') {
+                                logStats[code].attended++;
+                                logStats[code].total++;
+                            } else if (status === 'Absent') {
+                                logStats[code].total++;
+                            }
+                            // Cancelled, ML, Default = 0/0
+                        });
                     });
-                });
+                }
 
                 attendanceData.forEach(subject => {
-                    const currentDate = parseLocalDate(document.getElementById('currentDate').value);
-                    const lastDate = parseLocalDate(document.getElementById('lastDate').value);
-                    const holidayDates = (selectedClass.holidays || []).map(h => parseLocalDate(h));
-                    const remaining = countClassesInRange(new Date(currentDate.getTime() + 86400000), lastDate, subject.schedule, holidayDates, subject.code);
+                    // Safety check for subject existence
+                    if (!subject || !subject.code) return;
+
+                    const currentDateVal = document.getElementById('currentDate')?.value || formatLocalDate(new Date());
+                    const lastDateVal = document.getElementById('lastDate')?.value || '';
+
+                    const currentDate = parseLocalDate(currentDateVal);
+                    // Use a safe lastDate (fallback to current+30 days if missing, or just ignore remaining calc if critical)
+                    const lastDate = lastDateVal ? parseLocalDate(lastDateVal) : new Date(currentDate.getTime() + 30 * 86400000);
+
+                    const holidayDates = (selectedClass && selectedClass.holidays ? selectedClass.holidays : []).map(h => parseLocalDate(h));
+
+                    // Validate Dates
+                    let remaining = 0;
+                    try {
+                        remaining = countClassesInRange(new Date(currentDate.getTime() + 86400000), lastDate, subject.schedule, holidayDates, subject.code);
+                    } catch (e) {
+                        console.warn('Error calculating remaining classes:', e);
+                        remaining = 0;
+                    }
 
                     const baseAttended = Number(subject.initialAttended ?? subject.attended) || 0;
                     const baseTotal = Number(subject.initialTotal ?? subject.totalHeld) || 0;
