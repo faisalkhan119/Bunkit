@@ -8763,22 +8763,46 @@
 
                 const analysisResults = [];
 
+                // Aggregate Logs
+                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                const logStats = {}; // { code: { attended: 0, total: 0 } }
+
+                Object.keys(logs).forEach(date => {
+                    Object.keys(logs[date]).forEach(code => {
+                        const status = logs[date][code];
+                        if (!logStats[code]) logStats[code] = { attended: 0, total: 0 };
+
+                        if (status === 'Present') {
+                            logStats[code].attended++;
+                            logStats[code].total++;
+                        } else if (status === 'Absent') {
+                            logStats[code].total++;
+                        }
+                        // Cancelled, ML, Default = 0/0
+                    });
+                });
+
                 attendanceData.forEach(subject => {
                     const currentDate = parseLocalDate(document.getElementById('currentDate').value);
                     const lastDate = parseLocalDate(document.getElementById('lastDate').value);
                     const holidayDates = (selectedClass.holidays || []).map(h => parseLocalDate(h));
                     const remaining = countClassesInRange(new Date(currentDate.getTime() + 86400000), lastDate, subject.schedule, holidayDates, subject.code);
 
-                    const attended = subject.initialAttended ?? subject.attended;
-                    const totalHeld = subject.initialTotal ?? subject.totalHeld;
+                    const baseAttended = Number(subject.initialAttended ?? subject.attended) || 0;
+                    const baseTotal = Number(subject.initialTotal ?? subject.totalHeld) || 0;
+
+                    const logAdditions = logStats[subject.code] || { attended: 0, total: 0 };
+
+                    const attended = baseAttended + logAdditions.attended;
+                    const totalHeld = baseTotal + logAdditions.total;
 
                     analysisResults.push({
                         ...subject,
                         remaining,
                         attended: attended,
                         totalHeld: totalHeld,
-                        initialAttended: attended,
-                        initialTotal: totalHeld
+                        initialAttended: baseAttended,
+                        initialTotal: baseTotal
                     });
                 });
 
@@ -9343,7 +9367,8 @@
 
                 // UX Improvement: Scroll to the updated card
 
-                attendedInput.closest('.subject-card')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const cardElement = document.getElementById(`attended_${subjectCode}`);
+                cardElement?.closest('.subject-card')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
 
@@ -14210,6 +14235,9 @@ RULES:
             // Keep updateDailyDashboard for backward compatibility but redirect to timetable
             function updateDailyDashboard() {
                 generateTimetable();
+                if (typeof selectedClass !== 'undefined' && selectedClass && selectedClass.subjects) {
+                    calculateAttendance(selectedClass.subjects);
+                }
             }
 
 
