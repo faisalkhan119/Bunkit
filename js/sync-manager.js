@@ -181,20 +181,7 @@ const SyncManager = {
                 for (const [lName, lData] of Object.entries(localClasses)) {
                     if (lData.id && localProcessedIds.has(lData.id)) continue; // Already processed
 
-                    // STRICT SINGLE CLASS POLICY (Sync Conflict)
-                    // If we *already* have a finalized class (from Cloud), any *remaining* local class is a conflict.
-                    // Cloud Authority Rule: Cloud class wins. Local class is dropped.
-                    const existingSurvivors = Object.keys(finalClasses);
-                    if (existingSurvivors.length > 0) {
-                        const survivor = existingSurvivors[0];
-                        console.warn(`🔒 Single Class Policy: Conflict detected.`);
-                        console.warn(`   Cloud/Survivor: "${survivor}"`);
-                        console.warn(`   Local Victim:   "${lName}"`);
-                        console.warn(`   ACTION: Dropping local class "${lName}" to enforce limit.`);
 
-                        droppedLocalClasses.add(lName);
-                        continue; // Skip processing/adding this class
-                    }
 
                     // Content Check against existing final classes to prevent "Name (Local)" duplicates of same functionality
                     // (e.g. User logged out, then logged in, local became anonymous but is same as cloud)
@@ -261,6 +248,21 @@ const SyncManager = {
                             console.log(`☁️ Cloud "${lName}" is newer/same. Local changes discarded.`);
                         }
                     } else {
+                        // STRICT SINGLE CLASS POLICY (Sync Conflict) - MOVED TO END
+                        // If we are here, we have a unique local class that did not merge with any cloud class.
+                        // BUT if we already have a class in the final set, we must drop this one.
+                        const existingSurvivors = Object.keys(finalClasses);
+                        if (existingSurvivors.length > 0) {
+                            const survivor = existingSurvivors[0];
+                            console.warn(`🔒 Single Class Policy: Conflict detected.`);
+                            console.warn(`   Cloud/Survivor: "${survivor}"`);
+                            console.warn(`   Local Victim:   "${lName}"`);
+                            console.warn(`   ACTION: Dropping local class "${lName}" to enforce limit.`);
+
+                            droppedLocalClasses.add(lName);
+                            continue; // Skip processing/adding this class
+                        }
+
                         // No Collision -> Safe to add
                         finalClasses[lName] = lData;
                         this.pendingUploads = true; // New local data needs upload
