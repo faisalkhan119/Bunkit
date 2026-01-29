@@ -6229,6 +6229,8 @@
                 const name = nameInput ? nameInput.value.trim() : '';
                 if (name) {
                     localStorage.setItem('userProfileName', name);
+                    // Sync to cloud
+                    if (window.SyncManager) SyncManager.saveSettings();
                     updateSidebarAccountUI();
                     closeModal('profileNameModal');
                     showToast('Profile name updated successfully', 'success');
@@ -6457,6 +6459,8 @@
                 const name = nameInput ? nameInput.value.trim() : '';
                 if (name) {
                     localStorage.setItem('userProfileName', name);
+                    // Sync to cloud
+                    if (window.SyncManager) SyncManager.saveSettings();
                     updateSidebarAccountUI();
                     // Close modal with iOS animation
                     closeModal('firstLoginPromptModal');
@@ -18264,21 +18268,27 @@ RULES:
                     return;
                 }
 
-                // If changing FROM ML to something else - reset all and prompt
+                // If changing FROM ML to something else - reset all and apply new status
                 if (isCurrentSubjectML && status !== 'Medical Leave (ML)') {
                     // Reset all subjects to Default (delete their entries)
                     allSubjectCodes.forEach(subCode => {
                         delete logs[dateStr][subCode];
                     });
 
+                    // FIX: Apply the new status the user selected (not just reset)
+                    if (status !== 'Default') {
+                        if (!logs[dateStr]) logs[dateStr] = {};
+                        logs[dateStr][code] = status;
+                    }
+
                     // Clean up empty date
-                    if (Object.keys(logs[dateStr]).length === 0) {
+                    if (logs[dateStr] && Object.keys(logs[dateStr]).length === 0) {
                         delete logs[dateStr];
                     }
 
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
 
-                    // FIX: Update timestamp to prevent sync from overwriting local edits
+                    // Update timestamp to prevent sync from overwriting local edits
                     const logTimestamps2 = JSON.parse(localStorage.getItem('attendance_log_timestamps') || '{}');
                     logTimestamps2[dateStr] = new Date().toISOString();
                     localStorage.setItem('attendance_log_timestamps', JSON.stringify(logTimestamps2));
@@ -18286,7 +18296,12 @@ RULES:
                     // Sync to cloud
                     if (window.SyncManager) SyncManager.saveLog(dateStr, logs[dateStr] || {});
 
-                    alert("ML removed from this day.\n\nAll subjects have been reset to 'Not Logged'.\nPlease mark attendance for each subject individually.");
+                    // FIX: Show appropriate message based on new status
+                    if (status === 'Default') {
+                        alert("ML removed from this day.\n\nAll subjects have been reset to 'Not Logged'.");
+                    } else {
+                        showToast(`ML removed. ${code} marked as ${status}.`, 'success');
+                    }
 
                     refreshPeriodAndHistoryViews();
                     return;
@@ -20988,12 +21003,8 @@ Answer helpfully using this context.`;
                                 // Capture class name BEFORE deletion attempt
                                 const classToDelete = selectedClass && selectedClass.name ? selectedClass.name : null;
 
-                                // CONFIRMATION DIALOG (Requested by User)
-                                if (classToDelete) {
-                                    if (!confirm(`Are you sure you want to delete "${classToDelete}"? This will remove all associated data and cannot be undone.`)) {
-                                        return; // User cancelled
-                                    }
-                                }
+                                // CONFIRMATION handled by originalDeleteSelectedClass
+                                // We just hook to detect if deletion occurred
 
                                 // Call original function (handles confirmation prompts etc.)
                                 originalDeleteSelectedClass();
