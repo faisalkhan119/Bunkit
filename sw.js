@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bunkit-v2.1';
+const CACHE_NAME = 'bunkit-v2.2';
 const ASSETS_TO_CACHE = [
-    './',
-    './index.html',
+    // NOTE: index.html intentionally NOT cached to prevent stale data issues
+    // The service worker will still serve it via network-first strategy
     './offline.html',
     './privacy.html',
     './terms.html',

@@ -385,6 +385,9 @@ const SyncManager = {
                 this.subscribeToChanges(); // Subscribe to real-time (if available)
                 this.startPolling(); // Start polling-based sync (fallback/alternative)
 
+                // Clear SW cache to ensure fresh HTML on next load
+                this.clearServiceWorkerCache();
+
                 return { success: true, count: Object.keys(finalClasses).length };
 
             } catch (e) {
@@ -931,6 +934,14 @@ const SyncManager = {
     updateSyncStatus(msg) {
         const el = document.getElementById('sidebarSyncStatus');
         if (el) el.textContent = `☁️ ${msg}`;
+    },
+
+    // Clear Service Worker cache to prevent stale HTML issues
+    clearServiceWorkerCache() {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            console.log('🧹 Requesting SW cache clear after sync...');
+            navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+        }
     }
 };
 

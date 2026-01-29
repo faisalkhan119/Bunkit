@@ -6324,6 +6324,9 @@
                         // FIX: URLSearchParams converts '+' to spaces, restore them before decompression
                         const fixedData = encodedData.substring(3).replace(/ /g, '+');
                         jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+                    } else if (encodedData.match(/^v\d+_/)) {
+                        // Unknown future version (v3_, v4_, etc.) - show helpful error
+                        throw new Error("This link was created with a newer version of Bunkit. Please update the app.");
                     } else {
                         jsonString = atob(encodedData);
                     }
@@ -6335,6 +6338,18 @@
                     if (!classData.name || !classData.subjects) {
                         throw new Error("Invalid class data structure");
                     }
+
+                    // Validate subjects is non-empty array
+                    if (!Array.isArray(classData.subjects) || classData.subjects.length === 0) {
+                        throw new Error("Class must have at least one subject");
+                    }
+
+                    // Validate each subject has required fields
+                    classData.subjects.forEach((sub, index) => {
+                        if (!sub.name || typeof sub.name !== 'string') {
+                            throw new Error(`Subject ${index + 1} is missing a valid name`);
+                        }
+                    });
 
                     // FIX: Ensure all subjects have a shortName (fallback to code if missing)
                     classData.subjects.forEach(sub => {
@@ -6388,7 +6403,8 @@
                         subjects: classData.subjects,
                         holidays: classData.holidays || [],
                         periodTimes: classData.periodTimes || {}, // Import period times if available
-                        portalSetup: classData.portalSetup || {}  // Import portal setup if available
+                        portalSetup: classData.portalSetup || {},  // Import portal setup if available
+                        updatedAt: Date.now() // Add timestamp for sync priority
                     };
 
                     // Save timetable arrangement if present
@@ -6508,8 +6524,15 @@
                     // Cleanup flag
                     localStorage.removeItem('forceOnboarding');
                 } else {
-                    // Standard Login with no data -> Empty Dashboard (Blocked Onboarding)
-                    console.log("🚫 Standard Login (Old Account + No Data). Blocking Onboarding.");
+                    // Standard Login with no data -> Show subtle empty state prompt (not modal)
+                    console.log("🚫 Standard Login (Old Account + No Data). Showing empty state prompt.");
+
+                    // Show a subtle toast after a short delay to guide user
+                    setTimeout(() => {
+                        if (typeof showToast === 'function') {
+                            showToast('👋 Welcome back!', 'Tap "Add Class" to get started', { duration: 5000 });
+                        }
+                    }, 1500);
                     return;
                 }
 
@@ -10333,6 +10356,7 @@ ${subjectLines.join('\n')}
             async function importClassFromJson() {
                 const jsonText = document.getElementById('importJsonTextarea').value.trim();
                 if (!jsonText) { alert("Please paste JSON code first."); return; }
+
                 try {
                     const data = JSON.parse(jsonText);
                     // Support both formats: Wrapped export and direct data
@@ -10349,29 +10373,83 @@ ${subjectLines.join('\n')}
                         throw new Error("Invalid class export format. Pasted JSON must be a valid Bunkit export.");
                     }
 
-                    // Check if class exists
-                    const classes = JSON.parse(localStorage.getItem('attendanceClasses_v2')) || {};
-                    if (classes[className] && !confirm(`Class "${className}" already exists. Overwrite?`)) {
-                        return;
+                    // Validate essential data
+                    if (!className || !classData.subjects || !Array.isArray(classData.subjects)) {
+                        throw new Error("Invalid class data: missing class name or subjects array.");
                     }
 
-                    classes[className] = classData;
-                    localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+                    // Normalize subject shortNames (fix missing/undefined)
+                    classData.subjects.forEach(sub => {
+                        if (!sub.shortName || sub.shortName === 'undefined') {
+                            sub.shortName = sub.code || sub.name.substring(0, 3).toUpperCase();
+                        }
+                    });
 
-                    alert(`✅ Class "${className}" imported successfully!`);
+                    // Apply default values for optional fields
+                    classData.holidays = classData.holidays || [];
+                    classData.periodTimes = classData.periodTimes || {};
+                    classData.portalSetup = classData.portalSetup || {};
+                    classData.lastDate = classData.lastDate || formatLocalDate(new Date());
+
+                    // Smart duplicate detection (matches importClassFromURL logic)
+                    let finalName = className;
+                    const dupResult = checkClassDuplicate(className, classData);
+
+                    if (dupResult.status === 'exact_duplicate') {
+                        // XSS-safe alert
+                        const safeName = className.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        alert(`⚠️ Class "${safeName}" already exists with identical schedule!`);
+                        return;
+                    } else if (dupResult.status === 'name_conflict') {
+                        // Different data, same name - offer options
+                        const safeName = className.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        const choice = confirm(`Class "${safeName}" exists with different data.\n\nClick OK to create "${dupResult.suggestedName}"\nClick Cancel to overwrite existing class`);
+                        if (choice) {
+                            finalName = dupResult.suggestedName;
+                        }
+                        // else: overwrite existing
+                    }
+
+                    // Import class using global classes object (not raw localStorage)
+                    classes[finalName] = {
+                        lastDate: classData.lastDate,
+                        subjects: classData.subjects,
+                        holidays: classData.holidays,
+                        periodTimes: classData.periodTimes,
+                        portalSetup: classData.portalSetup,
+                        updatedAt: Date.now() // Mark for sync
+                    };
+
+                    // Save timetable arrangement if present (CRITICAL - was missing!)
+                    if (classData.timetable && Object.keys(classData.timetable).length > 0) {
+                        localStorage.setItem(`timetable_arrangement_${finalName}`, JSON.stringify(classData.timetable));
+                    }
+
+                    // Use saveToStorage for proper sync trigger (not raw localStorage)
+                    if (typeof saveToStorage === 'function') {
+                        saveToStorage();
+                    } else {
+                        localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
+                    }
+
+                    // XSS-safe success message
+                    const safeFinalName = finalName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    showToast(`✅ Class "${safeFinalName}" imported successfully!`, 'success');
+
                     closeModal('addClassModal');
-                    populateClassSelector(); // Refresh dropdown
+                    populateClassSelector();
 
-                    // Select it
+                    // Select the imported class
                     const selector = document.getElementById('classSelector');
                     if (selector) {
-                        selector.value = className;
+                        selector.value = finalName;
                         if (typeof handleDropdownChange === 'function') handleDropdownChange();
                     }
 
                 } catch (e) {
-                    console.error(e);
-                    alert("❌ Import failed: " + e.message);
+                    console.error('JSON Import Error:', e);
+                    const safeError = e.message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    alert("❌ Import failed: " + safeError);
                 }
             }
 
@@ -17515,6 +17593,16 @@ RULES:
                 const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(cleanClassData));
                 const encodedData = 'v2_' + compressed;
                 const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
+
+                // URL length validation (browsers typically support ~2000 chars, warn at 1500)
+                if (shareUrl.length > 1500) {
+                    console.warn(`⚠️ Share URL is ${shareUrl.length} chars (may exceed limits)`);
+                    if (shareUrl.length > 2000) {
+                        showToast('⚠️ Class too large to share', 'Try removing some subjects or holidays', { duration: 5000 });
+                        return;
+                    }
+                    showToast('⚠️ Large class', 'Link may not work on all devices', { duration: 3000 });
+                }
 
                 const shareData = {
                     title: `${cleanClassData.name} | Bunkit Class`,
