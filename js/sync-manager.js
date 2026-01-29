@@ -92,7 +92,12 @@ const SyncManager = {
                 const renames = {}; // Map<OldName, NewName> for log migration
 
                 // Step 3a: Process Cloud Classes
+                const pendingDeletes = JSON.parse(localStorage.getItem('pending_deletes') || '[]');
+
                 cloudClasses.forEach(row => {
+                    // TOMBSTONE CHECK: If pending delete, ignore cloud version
+                    if (pendingDeletes.includes(row.name)) return;
+
                     const cloudData = row.data;
                     const cloudId = cloudData.id;
                     const cloudName = row.name;
@@ -388,6 +393,9 @@ const SyncManager = {
                 // Clear SW cache to ensure fresh HTML on next load
                 this.clearServiceWorkerCache();
 
+                // Process any pending deletes in background
+                this.processPendingDeletes();
+
                 return { success: true, count: Object.keys(finalClasses).length };
 
             } catch (e) {
@@ -403,9 +411,39 @@ const SyncManager = {
         return this.syncPromise;
     },
 
+    async processPendingDeletes() {
+        if (!AuthManager.user) return;
+        const pending = JSON.parse(localStorage.getItem('pending_deletes') || '[]');
+        if (pending.length === 0) return;
+
+        console.log(`🗑️ Processing ${pending.length} pending deletes...`);
+        const remaining = [];
+
+        for (const name of pending) {
+            try {
+                await supabaseClient.from('classes').delete()
+                    .eq('user_id', AuthManager.user.id)
+                    .eq('name', name);
+                console.log(`✅ Pending delete success: ${name}`);
+            } catch (e) {
+                console.error(`❌ Pending delete failed: ${name}`, e);
+                remaining.push(name);
+            }
+        }
+
+        if (remaining.length > 0) {
+            localStorage.setItem('pending_deletes', JSON.stringify(remaining));
+        } else {
+            localStorage.removeItem('pending_deletes');
+        }
+    },
+
     async uploadAll() {
         if (!AuthManager.user) return;
         this.updateSyncStatus('Uploading...');
+
+        // Process pending deletes first
+        await this.processPendingDeletes();
 
         const localClasses = JSON.parse(localStorage.getItem('attendanceClasses_v2') || '{}');
         const theme = localStorage.getItem('theme') || 'light';
@@ -646,9 +684,22 @@ const SyncManager = {
             this.updateSyncStatus('Deleting...');
             try {
                 await this.retryOperation(async () => {
+                    // Add tombstone first
+                    const pending = JSON.parse(localStorage.getItem('pending_deletes') || '[]');
+                    if (!pending.includes(name)) {
+                        pending.push(name);
+                        localStorage.setItem('pending_deletes', JSON.stringify(pending));
+                    }
+
                     await supabaseClient.from('classes').delete()
                         .eq('user_id', AuthManager.user.id)
                         .eq('name', name);
+
+                    // Remove tombstone on success
+                    const updatedPending = JSON.parse(localStorage.getItem('pending_deletes') || '[]');
+                    const newPending = updatedPending.filter(n => n !== name);
+                    if (newPending.length > 0) localStorage.setItem('pending_deletes', JSON.stringify(newPending));
+                    else localStorage.removeItem('pending_deletes');
                 });
 
                 const notifKey = `notificationSettings_${name}`;
@@ -848,7 +899,12 @@ const SyncManager = {
             let hasUpdates = false;
 
             // Check classes for updates
+            const pendingDeletes = JSON.parse(localStorage.getItem('pending_deletes') || '[]');
+
             cloudClasses.forEach(row => {
+                // TOMBSTONE CHECK: If pending delete, ignore cloud version
+                if (pendingDeletes.includes(row.name)) return;
+
                 const cloudData = row.data;
                 const localData = localClasses[row.name];
 

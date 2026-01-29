@@ -6524,7 +6524,7 @@
                     }
                 }
 
-                if (forceOnboarding || isNewUser) {
+                if (forceOnboarding || isNewUser || !user) {
                     // Cleanup flag
                     localStorage.removeItem('forceOnboarding');
                 } else {
@@ -7555,6 +7555,23 @@
                     // Force save local state ensuring only survivor remains
                     localStorage.setItem('attendanceClasses_v2', JSON.stringify(classes));
                     if (survivorName) localStorage.setItem('lastOpenedClass', survivorName);
+                }
+
+                // MULTI-TAB SYNC: If classes exist, ensure onboarding modals are closed
+                if (Object.keys(classes).length > 0) {
+                    const onboardingModal = document.getElementById('onboardingClassModal');
+                    const firstLoginModal = document.getElementById('firstLoginPromptModal');
+
+                    if (onboardingModal && onboardingModal.classList.contains('active')) {
+                        closeModal('onboardingClassModal');
+                    }
+                    if (firstLoginModal && firstLoginModal.classList.contains('active')) {
+                        closeModal('firstLoginPromptModal');
+                    }
+
+                    if (localStorage.getItem('hasCompletedOnboarding') !== 'true') {
+                        localStorage.setItem('hasCompletedOnboarding', 'true');
+                    }
                 }
             }
 
