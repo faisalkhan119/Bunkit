@@ -13952,7 +13952,14 @@ RULES:
                 if (existingArrangement) {
                     Object.values(existingArrangement).forEach(dayArr => {
                         if (Array.isArray(dayArr)) {
-                            maxPeriods = Math.max(maxPeriods, dayArr.length);
+                            // Only count up to the last OCCUPIED slot
+                            // This effectively trims trailing empty periods (e.g. if user set 8 periods but 7 & 8 are empty)
+                            for (let i = dayArr.length - 1; i >= 0; i--) {
+                                if (dayArr[i] !== null) {
+                                    maxPeriods = Math.max(maxPeriods, i + 1);
+                                    break; // Found the last occupied slot for this day
+                                }
+                            }
                         }
                     });
                 }
@@ -14109,7 +14116,6 @@ RULES:
 
                             cellContent = `
                                 <div class="subject-chip${statusClass}" 
-                                     draggable="true" 
                                      data-code="${subjectAtPeriod.code}"
                                      data-day="${day.index}"
                                      data-period="${period}"
@@ -14177,6 +14183,8 @@ RULES:
                 const chips = document.querySelectorAll('.subject-chip');
                 const cells = document.querySelectorAll('.timetable-cell');
 
+                // Drag and drop disabled by user request
+                /* 
                 chips.forEach(chip => {
                     chip.addEventListener('dragstart', handleDragStart);
                     chip.addEventListener('dragend', handleDragEnd);
@@ -14186,7 +14194,8 @@ RULES:
                     cell.addEventListener('dragover', handleDragOver);
                     cell.addEventListener('dragleave', handleDragLeave);
                     cell.addEventListener('drop', handleDrop);
-                });
+                }); 
+                */
             }
 
             let draggedChip = null;
