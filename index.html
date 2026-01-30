@@ -8734,11 +8734,13 @@
 
                 const analysisResults = [];
 
-                // Aggregate Logs
-                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                // Aggregate Logs - ONLY for Standard Mode (non-Portal)
+                // Portal mode already handles log aggregation in calculateFromPortal()
+                const portalModeActive = selectedClass?.portalSetup?.active;
+                const logs = portalModeActive ? {} : (JSON.parse(localStorage.getItem('attendance_logs')) || {});
                 const logStats = {}; // { code: { attended: 0, total: 0 } }
 
-                if (logs && typeof logs === 'object') {
+                if (!portalModeActive && logs && typeof logs === 'object') {
                     Object.keys(logs).forEach(date => {
                         if (!logs[date] || typeof logs[date] !== 'object') return; // Skip invalid days
 
