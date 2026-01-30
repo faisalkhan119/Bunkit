@@ -16240,7 +16240,18 @@ RULES:
 
                     // Migrate each legacy key
                     legacyKeys.forEach(legacyCode => {
-                        const status = dayLog[legacyCode];
+                        let status = dayLog[legacyCode];
+
+                        // Normalize old raw status codes to proper values
+                        if (status) {
+                            const s = status.toUpperCase().trim();
+                            if (s === 'P' || s === 'PRESENT') status = 'Attended';
+                            else if (s === 'A' || s === 'ABSENT') status = 'Skipped';
+                            else if (s === 'C' || s === 'CANCELLED') status = 'Cancelled';
+                            else if (s === 'ML') status = 'Medical Leave (ML)';
+                            else if (s === 'OD') status = 'Duty Leave (OD)';
+                        }
+
                         const periodCount = subjectPeriodCount[legacyCode] || 1;
 
                         // Create period-based entries
@@ -16321,8 +16332,9 @@ RULES:
                             if (!pastLogStats[code]) pastLogStats[code] = { attended: 0, total: 0 };
 
                             const status = dayLog[key];
-                            const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)';
-                            const isAbsent = status === 'Skipped' || status === 'Absent';
+                            const s = (status || '').toUpperCase().trim();
+                            const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)' || s === 'P' || s === 'PRESENT' || s === 'ML' || s === 'OD';
+                            const isAbsent = status === 'Skipped' || status === 'Absent' || s === 'A' || s === 'ABSENT';
 
                             if (isPresent) {
                                 pastLogStats[code].attended++;
@@ -16376,8 +16388,9 @@ RULES:
 
                             if (effectiveStats[code]) {
                                 const status = dayLog[key];
-                                const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)';
-                                const isAbsent = status === 'Skipped' || status === 'Absent';
+                                const s = (status || '').toUpperCase().trim();
+                                const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)' || s === 'P' || s === 'PRESENT' || s === 'ML' || s === 'OD';
+                                const isAbsent = status === 'Skipped' || status === 'Absent' || s === 'A' || s === 'ABSENT';
 
                                 if (isPresent) {
                                     effectiveStats[code].attended++;
