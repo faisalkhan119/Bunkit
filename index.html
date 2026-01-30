@@ -16192,8 +16192,92 @@ RULES:
             window.resetPreviewDates = resetPreviewDates;
             // ==================== END TIMELINE PREVIEW ====================
 
+            // ==================== LEGACY LOG MIGRATION ====================
+            // Migrate logs from old format (MATH: Skipped) to new format (MATH_p1: Skipped, MATH_p2: Skipped)
+            let logMigrationCompleted = false;
+
+            function migrateLegacyLogs() {
+                if (logMigrationCompleted) return; // Only run once per session
+                if (!selectedClass || !selectedClass.subjects) return;
+
+                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                const className = document.getElementById('classSelector')?.value;
+                const arrangement = getTimetableArrangement(className) || {};
+                let migrationsMade = 0;
+
+                Object.keys(logs).forEach(dateStr => {
+                    const dayLog = logs[dateStr];
+                    if (!dayLog || typeof dayLog !== 'object') return;
+
+                    // Check if this day has any legacy keys (keys without _p suffix)
+                    const legacyKeys = Object.keys(dayLog).filter(key => !key.includes('_p'));
+                    if (legacyKeys.length === 0) return; // Already migrated
+
+                    // Get day of week for timetable lookup
+                    const date = parseLocalDate(dateStr);
+                    const dayOfWeek = date.getDay();
+                    const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+                    // Get custom schedule or timetable
+                    const customSchedule = getCustomScheduleForDate(dateStr);
+                    let dayPeriods = [];
+
+                    if (customSchedule && customSchedule._periods) {
+                        dayPeriods = customSchedule._periods;
+                    } else if (arrangement[dayIndex] && arrangement[dayIndex].length > 0) {
+                        dayPeriods = arrangement[dayIndex].map(item =>
+                            typeof item === 'object' ? item?.code : item
+                        );
+                    }
+
+                    // Count how many times each subject appears in the timetable for this day
+                    const subjectPeriodCount = {};
+                    dayPeriods.forEach(code => {
+                        if (code && code !== 'FREE' && code !== null) {
+                            subjectPeriodCount[code] = (subjectPeriodCount[code] || 0) + 1;
+                        }
+                    });
+
+                    // Migrate each legacy key
+                    legacyKeys.forEach(legacyCode => {
+                        const status = dayLog[legacyCode];
+                        const periodCount = subjectPeriodCount[legacyCode] || 1;
+
+                        // Create period-based entries
+                        for (let i = 1; i <= periodCount; i++) {
+                            const periodKey = `${legacyCode}_p${i}`;
+                            if (!dayLog[periodKey]) { // Don't overwrite existing period keys
+                                dayLog[periodKey] = status;
+                            }
+                        }
+
+                        // Remove legacy key
+                        delete dayLog[legacyCode];
+                        migrationsMade++;
+                    });
+                });
+
+                if (migrationsMade > 0) {
+                    localStorage.setItem('attendance_logs', JSON.stringify(logs));
+                    console.log(`✅ Migrated ${migrationsMade} legacy log entries to period-based format`);
+
+                    // Sync with cloud
+                    if (window.SyncManager) {
+                        Object.keys(logs).forEach(dateStr => {
+                            SyncManager.saveLog(dateStr, logs[dateStr] || {});
+                        });
+                    }
+                }
+
+                logMigrationCompleted = true;
+            }
+            // ==================== END LEGACY LOG MIGRATION ====================
+
             function calculateFromPortal(previewOverrides = null) {
                 if (!selectedClass || !selectedClass.portalSetup) return;
+
+                // Run migration for legacy logs on first calculation
+                migrateLegacyLogs();
 
                 const baseline = selectedClass.portalSetup.baselineData;
                 const baselineDate = parseLocalDate(selectedClass.portalSetup.baselineDate);
