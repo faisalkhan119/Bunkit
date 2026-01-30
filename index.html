@@ -5979,30 +5979,41 @@
             };
 
             // --- GLOBAL STATE & CONSTANTS ---
-            const defaultHolidays = ["2025-08-09", "2025-08-15", "2025-09-05", "2025-09-26", "2025-10-01", "2025-10-02", "2025-10-03", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-12-25"];
+            const defaultHolidays = ["2026-01-01", "2026-01-15", "2026-01-26", "2026-02-15", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-21", "2026-03-26", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01", "2026-05-27", "2026-06-26"];
             const defaultExampleClass = {
-                'CSE Core - H (Example)': {
-                    lastDate: '2026-04-01',
+                'CSE Core - H': {
+                    id: 'a0d0e740-6e71-4921-9647-703b27351c93',
+                    lastDate: '2026-05-06',
                     holidays: [...defaultHolidays],
+                    sharedId: 'b0fc8471119b44ea',
                     subjects: [
-                        { name: "Data Structures & Algorithms", code: "21CSC201J", shortName: "DSA", schedule: [1, 2, 1, 0, 1, 1, 0] },
-                        { name: "Operating Systems", code: "21CSC202J", shortName: "OS", schedule: [2, 0, 2, 1, 0, 1, 0] },
-                        { name: "Advanced Programming Practice", code: "21CSC203P", shortName: "APP", schedule: [1, 0, 1, 1, 2, 1, 0] },
-                        { name: "Computer Org. & Architecture", code: "21CSS201T", shortName: "COA", schedule: [1, 1, 1, 1, 1, 1, 0] },
-                        { name: "Design Thinking & Methodology", code: "21DCS201P", shortName: "DTM", schedule: [1, 1, 0, 1, 1, 1, 0] },
-                        { name: "Professional Ethics", code: "21LEM201T", shortName: "ETHICS", schedule: [0, 1, 1, 0, 0, 0, 0] },
-                        { name: "Transforms & BVP", code: "21MAB201T", shortName: "MATH", schedule: [1, 1, 1, 1, 0, 1, 0] },
-                        { name: "Class In Charge", code: "CL", shortName: "CL", schedule: [0, 0, 0, 1, 0, 0, 0] }
+                        { name: "Design and Analysis of Algorithms", code: "21CSC204J", shortName: "DAA", schedule: ["3", "0", "6", "0", "1,3,4", "0", "0"] },
+                        { name: "Database Management Systems", code: "21CSC205P", shortName: "DMS", schedule: ["2", "2", "3,4", "6", "0", "0", "0"] },
+                        { name: "Artificial Intelligence", code: "21CSC206T", shortName: "AI", schedule: ["4", "6", "1", "2", "6", "0", "0"] },
+                        { name: "Internet of Things", code: "21CSE253T", shortName: "IT", schedule: ["5", "5", "5", "5", "0", "0", "0"] },
+                        { name: "Universal Human Values-II", code: "21LEM202T", shortName: "UHV", schedule: ["0", "3,4", "0", "0", "0", "0", "0"] },
+                        { name: "Probability and Queueing Theory", code: "21MAB204T", shortName: "PQT", schedule: ["1", "1", "2", "1", "5", "0", "0"] },
+                        { name: "Social Engineering", code: "21PDH209T", shortName: "SE", schedule: ["6", "0", "0", "0", "2", "0", "0"] },
+                        { name: "Class Incharge", code: "CL", shortName: "CI", schedule: ["0", "0", "0", "3,4", "0", "0", "0"] }
                     ],
-                    timetable: {
-                        0: ["21CSC201J", "21CSC203P", "21CSS201T", "21DCS201P", "21MAB201T", "", "", ""], // Mon
-                        1: ["21CSC201J", "21CSC201J", "21CSS201T", "21DCS201P", "21LEM201T", "21MAB201T", "", ""], // Tue
-                        2: ["21CSC202J", "21CSC202J", "21CSC201J", "21CSC203P", "21CSS201T", "21LEM201T", "21MAB201T", ""], // Wed
-                        3: ["21CSC202J", "21CSC203P", "21CSS201T", "21DCS201P", "CL", "21MAB201T", "", ""], // Thu
-                        4: ["21CSC203P", "21CSC203P", "21CSC201J", "21CSS201T", "21DCS201P", "", "", ""], // Fri
-                        5: ["21CSC202J", "21CSC201J", "21CSS201T", "21DCS201P", "21MAB201T", "21CSC203P", "", ""], // Sat
-                        6: ["", "", "", "", "", "", "", ""] // Sun
-                    }
+                    updatedAt: 1769350252992,
+                    periodTimes: {},
+                    portalSetup: {
+                        active: true,
+                        baselineData: {
+                            "CL": { total: 0, attended: 0 },
+                            "21CSC204J": { total: 0, attended: 0 },
+                            "21CSC205P": { total: 0, attended: 0 },
+                            "21CSC206T": { total: 0, attended: 0 },
+                            "21CSE253T": { total: 0, attended: 0 },
+                            "21LEM202T": { total: 0, attended: 0 },
+                            "21MAB204T": { total: 0, attended: 0 },
+                            "21PDH209T": { total: 0, attended: 0 }
+                        },
+                        baselineDate: "2026-01-29",
+                        semesterStartDate: "2026-01-05"
+                    },
+                    qrCode: ""
                 }
             };
             let classes = {};
