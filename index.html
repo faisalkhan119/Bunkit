@@ -9388,6 +9388,19 @@
                 cardElement?.closest('.subject-card')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
+            // Helper function to parse schedule values (handles both old number format and new string format)
+            function parseScheduleValue(scheduleValue) {
+                if (typeof scheduleValue === 'number') {
+                    return scheduleValue;
+                } else if (typeof scheduleValue === 'string') {
+                    if (scheduleValue === '0' || scheduleValue === '') {
+                        return 0;
+                    }
+                    // Count periods by splitting on comma
+                    return scheduleValue.split(',').filter(p => p.trim() !== '' && p.trim() !== '0').length;
+                }
+                return 0;
+            }
 
             function countClassesInRange(startDate, endDate, schedule, classHolidays, subjectCode) {
                 let total = 0;
@@ -9400,15 +9413,14 @@
                     const isHolidayDay = holidayTimestamps.has(new Date(current).setHours(0, 0, 0, 0));
                     if (!isHolidayDay) {
                         const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                        if (schedule[scheduleIndex]) {
-                            let classesToday = schedule[scheduleIndex];
-                            const dateStr = formatLocalDate(current);
-                            const dayLog = logs[dateStr];
-                            if (dayLog && dayLog[subjectCode] === 'Cancelled') {
-                                classesToday = 0;
-                            }
-                            total += classesToday;
+                        let classesToday = parseScheduleValue(schedule[scheduleIndex]);
+
+                        const dateStr = formatLocalDate(current);
+                        const dayLog = logs[dateStr];
+                        if (dayLog && dayLog[subjectCode] === 'Cancelled') {
+                            classesToday = 0;
                         }
+                        total += classesToday;
                     }
                     current.setDate(current.getDate() + 1);
                 }
@@ -12613,7 +12625,7 @@ RULES:
                         acc.attended += subject.attended;
                         acc.totalHeld += subject.totalHeld;
                         acc.remaining += subject.remaining;
-                        subject.schedule.forEach((val, i) => acc.schedule[i] = (acc.schedule[i] || 0) + val);
+                        subject.schedule.forEach((val, i) => acc.schedule[i] = (acc.schedule[i] || 0) + parseScheduleValue(val));
                         return acc;
                     }, { attended: 0, totalHeld: 0, remaining: 0, schedule: Array(7).fill(0) });
 
@@ -12855,14 +12867,14 @@ RULES:
                                     selectedClass.subjects.forEach(sub => {
                                         const dayOfWeek = d.getDay();
                                         const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                                        skippedCount += sub.schedule[scheduleIndex] || 0;
+                                        skippedCount += parseScheduleValue(sub.schedule[scheduleIndex]);
                                     });
                                 } else {
                                     const subject = selectedClass.subjects.find(s => s.code === activeStats.code);
                                     if (subject) {
                                         const dayOfWeek = d.getDay();
                                         const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                                        skippedCount += subject.schedule[scheduleIndex] || 0;
+                                        skippedCount += parseScheduleValue(subject.schedule[scheduleIndex]);
                                     }
                                 }
                             } else if (logs[dateStr]) {
@@ -12875,7 +12887,7 @@ RULES:
                                         if (status === 'Skipped' || status === 'Absent') {
                                             const dayOfWeek = d.getDay();
                                             const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                                            skippedCount += sub.schedule[scheduleIndex] || 0;
+                                            skippedCount += parseScheduleValue(sub.schedule[scheduleIndex]);
                                         }
                                     });
                                 } else {
@@ -12884,7 +12896,7 @@ RULES:
                                         const dayOfWeek = d.getDay();
                                         const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                                         const subject = selectedClass.subjects.find(s => s.code === activeStats.code);
-                                        skippedCount += subject ? (subject.schedule[scheduleIndex] || 0) : 0;
+                                        skippedCount += subject ? parseScheduleValue(subject.schedule[scheduleIndex]) : 0;
                                     }
                                 }
                             }
@@ -13540,7 +13552,7 @@ RULES:
 
                         let classesOnDay = 0;
                         currentAnalysisData.forEach(subject => {
-                            classesOnDay += subject.schedule[scheduleIndex] || 0;
+                            classesOnDay += parseScheduleValue(subject.schedule[scheduleIndex]);
                         });
 
                         if (classesOnDay > 0) {
@@ -13713,16 +13725,20 @@ RULES:
                 const className = document.getElementById('classSelector').value;
                 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-                // Calculate max periods
+                // Calculate max periods - find the highest period number used
                 let maxPeriods = 0;
-                dayNames.forEach((day, dayIndex) => {
-                    let totalClassesOnDay = 0;
-                    selectedClass.subjects.forEach(subject => {
-                        totalClassesOnDay += subject.schedule[dayIndex] || 0;
+                selectedClass.subjects.forEach(subject => {
+                    subject.schedule.forEach(scheduleValue => {
+                        if (typeof scheduleValue === 'number') {
+                            // Old format: number of periods on that day
+                            if (scheduleValue > maxPeriods) maxPeriods = scheduleValue;
+                        } else if (typeof scheduleValue === 'string' && scheduleValue !== '0' && scheduleValue !== '') {
+                            // New format: period slots like "3" or "1,3,4"
+                            const periods = scheduleValue.split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p));
+                            const maxInSlot = Math.max(...periods, 0);
+                            if (maxInSlot > maxPeriods) maxPeriods = maxInSlot;
+                        }
                     });
-                    if (totalClassesOnDay > maxPeriods) {
-                        maxPeriods = totalClassesOnDay;
-                    }
                 });
 
                 if (maxPeriods === 0) {
@@ -16335,14 +16351,55 @@ RULES:
                 // 1. Calculate sums of logs BEFORE or ON baseline date
                 const pastLogStats = {};
 
+                // Helper function to get classes for a subject on a given date
+                function getSubjectClassCountForDate(dateStr, subjectCode) {
+                    const date = parseLocalDate(dateStr);
+                    const dayOfWeek = date.getDay();
+                    const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+                    // Check custom schedule first
+                    const className = document.getElementById('classSelector')?.value;
+                    const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${className}`) || '{}');
+                    const customSchedule = customSchedules[dateStr];
+
+                    if (customSchedule) {
+                        if (customSchedule._periods) {
+                            // New period-based custom schedule
+                            return customSchedule._periods.filter(code => code === subjectCode).length;
+                        } else {
+                            // Old count-based custom schedule
+                            return customSchedule[subjectCode] || 0;
+                        }
+                    }
+
+                    // Use timetable arrangement
+                    const arrangement = getTimetableArrangement(className) || {};
+                    const dayArrangement = arrangement[scheduleIndex] || [];
+
+                    if (dayArrangement.length > 0) {
+                        return dayArrangement.filter(item => {
+                            const code = typeof item === 'object' ? item?.code : item;
+                            return code === subjectCode;
+                        }).length;
+                    }
+
+                    // Fallback to default schedule
+                    const subject = selectedClass?.subjects?.find(s => s.code === subjectCode);
+                    if (subject) {
+                        return parseScheduleValue(subject.schedule[scheduleIndex]);
+                    }
+
+                    return 1; // Default fallback
+                }
+
                 Object.keys(logs).forEach(dateStr => {
                     const logDate = parseLocalDate(dateStr);
                     // Check if log is before or on baseline date
                     if (logDate <= baselineDate) {
                         const dayLog = logs[dateStr];
                         Object.keys(dayLog).forEach(key => {
-                            // Extract base subject code from Subject_pX or use as-is (legacy)
-                            // e.g., "MATH_p1" -> "MATH", "ENG" -> "ENG"
+                            // Check if this is legacy format (no _p suffix) or new format
+                            const isLegacyFormat = !key.includes('_p');
                             const code = key.split('_p')[0];
 
                             if (!pastLogStats[code]) pastLogStats[code] = { attended: 0, total: 0 };
@@ -16352,11 +16409,15 @@ RULES:
                             const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)' || s === 'P' || s === 'PRESENT' || s === 'ATTENDED' || s === 'ML' || s === 'OD' || s === 'DUTY LEAVE (OD)' || s === 'MEDICAL LEAVE (ML)';
                             const isAbsent = status === 'Skipped' || status === 'Absent' || s === 'A' || s === 'ABSENT' || s === 'SKIPPED';
 
+                            // For legacy format, count all classes for that subject on that day
+                            // For new period-based format, count just 1 per entry
+                            const classCount = isLegacyFormat ? getSubjectClassCountForDate(dateStr, code) : 1;
+
                             if (isPresent) {
-                                pastLogStats[code].attended++;
-                                pastLogStats[code].total++;
+                                pastLogStats[code].attended += classCount;
+                                pastLogStats[code].total += classCount;
                             } else if (isAbsent) {
-                                pastLogStats[code].total++;
+                                pastLogStats[code].total += classCount;
                             }
                             // Cancelled adds nothing
                         });
@@ -16399,7 +16460,8 @@ RULES:
                     if (logDate > baselineDate && logDate <= effectiveDateObj) {
                         const dayLog = logs[dateStr];
                         Object.keys(dayLog).forEach(key => {
-                            // Extract base subject code from Subject_pX or use as-is (legacy)
+                            // Check if this is legacy format (no _p suffix) or new format
+                            const isLegacyFormat = !key.includes('_p');
                             const code = key.split('_p')[0];
 
                             if (effectiveStats[code]) {
@@ -16408,11 +16470,15 @@ RULES:
                                 const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)' || s === 'P' || s === 'PRESENT' || s === 'ATTENDED' || s === 'ML' || s === 'OD' || s === 'DUTY LEAVE (OD)' || s === 'MEDICAL LEAVE (ML)';
                                 const isAbsent = status === 'Skipped' || status === 'Absent' || s === 'A' || s === 'ABSENT' || s === 'SKIPPED';
 
+                                // For legacy format, count all classes for that subject on that day
+                                // For new period-based format, count just 1 per entry
+                                const classCount = isLegacyFormat ? getSubjectClassCountForDate(dateStr, code) : 1;
+
                                 if (isPresent) {
-                                    effectiveStats[code].attended++;
-                                    effectiveStats[code].total++;
+                                    effectiveStats[code].attended += classCount;
+                                    effectiveStats[code].total += classCount;
                                 } else if (isAbsent) {
-                                    effectiveStats[code].total++;
+                                    effectiveStats[code].total += classCount;
                                 }
                             }
                         });
@@ -16468,7 +16534,7 @@ RULES:
                         } else {
                             // Fallback to schedule counts
                             selectedClass.subjects.forEach(subject => {
-                                const count = subject.schedule[dayIndex] || 0;
+                                const count = parseScheduleValue(subject.schedule[dayIndex]);
                                 maxPossibleClasses[subject.code] += count;
                             });
                         }
@@ -16674,7 +16740,7 @@ RULES:
                 } else {
                     // Fallback: use default schedule counts in storage order
                     selectedClass.subjects.forEach(subject => {
-                        const periodCount = subject.schedule[dayIndex] || 0;
+                        const periodCount = parseScheduleValue(subject.schedule[dayIndex]);
                         for (let i = 1; i <= periodCount; i++) {
                             orderedSubjects.push({ subject, periodNum: i, totalPeriods: periodCount });
                         }
@@ -16686,7 +16752,7 @@ RULES:
                     // fall back to default schedule to prevent blank screen
                     console.warn('⚠️ No subjects found for working day. Using default fallback.');
                     selectedClass.subjects.forEach(subject => {
-                        const periodCount = subject.schedule[dayIndex] || 0;
+                        const periodCount = parseScheduleValue(subject.schedule[dayIndex]);
                         for (let i = 1; i <= periodCount; i++) {
                             orderedSubjects.push({ subject, periodNum: i, totalPeriods: periodCount });
                         }
@@ -17582,7 +17648,7 @@ RULES:
                                 classData.subjects.forEach(subject => {
                                     // Check how many classes this subject has on this day
                                     // Handle array schedule (new format) or mapped schedule
-                                    const count = subject.schedule[dayIndex] || 0;
+                                    const count = parseScheduleValue(subject.schedule[dayIndex]);
                                     for (let k = 0; k < count; k++) {
                                         dailySequence.push(subject.code);
                                     }
@@ -17969,7 +18035,7 @@ RULES:
                     // Generate from schedule (fallback)
                     const periods = [];
                     selectedClass.subjects.forEach(subject => {
-                        const count = subject.schedule[dayIndex] || 0;
+                        const count = parseScheduleValue(subject.schedule[dayIndex]);
                         for (let i = 0; i < count; i++) {
                             periods.push({ code: subject.code, name: subject.name });
                         }
