@@ -6705,7 +6705,7 @@
                 localStorage.setItem('hasCompletedOnboarding', 'true');
 
                 // Explicitly Add Example Class
-                const exampleClassName = 'CSE Core - H (Example)';
+                const exampleClassName = 'CSE Core - H';
                 // Only add if not already present (though unlikely in this flow)
                 if (!classes[exampleClassName]) {
                     classes[exampleClassName] = JSON.parse(JSON.stringify(defaultExampleClass[exampleClassName]));
@@ -7611,7 +7611,7 @@
 
             // Auto-remove Example Class when user has their own classes
             function autoRemoveExampleClass() {
-                const exampleClassName = 'CSE Core - H (Example)';
+                const exampleClassName = 'CSE Core - H';
 
                 // Check if Example Class exists
                 if (!classes[exampleClassName]) return false;
