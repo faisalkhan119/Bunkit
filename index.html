@@ -8742,17 +8742,24 @@
                     Object.keys(logs).forEach(date => {
                         if (!logs[date] || typeof logs[date] !== 'object') return; // Skip invalid days
 
-                        Object.keys(logs[date]).forEach(code => {
-                            const status = logs[date][code];
+                        Object.keys(logs[date]).forEach(key => {
+                            const status = logs[date][key];
+                            // Extract base subject code from Subject_pX or use as-is (legacy)
+                            // e.g., "MATH_p1" -> "MATH", "ENG" -> "ENG"
+                            const code = key.split('_p')[0];
                             if (!logStats[code]) logStats[code] = { attended: 0, total: 0 };
 
-                            if (status === 'Present') {
+                            // Match Portal mode status values: 'Attended', 'Present', 'Duty Leave (OD)', 'Medical Leave (ML)'
+                            const isPresent = status === 'Attended' || status === 'Present' || status === 'Duty Leave (OD)' || status === 'Medical Leave (ML)';
+                            const isAbsent = status === 'Skipped' || status === 'Absent';
+
+                            if (isPresent) {
                                 logStats[code].attended++;
                                 logStats[code].total++;
-                            } else if (status === 'Absent') {
+                            } else if (isAbsent) {
                                 logStats[code].total++;
                             }
-                            // Cancelled, ML, Default = 0/0
+                            // Cancelled adds nothing
                         });
                     });
                 }
