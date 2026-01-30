@@ -18777,9 +18777,9 @@ RULES:
                         }
 
                         const subjectsForDay = {};
-                        const subjectStatuses = {}; // Track multiple periods of same subject
+                        const periodCounts = {}; // Track period numbers per subject
 
-                        // Map each period status to its subject
+                        // Map each period status to its subject with period-based key
                         entry.periods.forEach((periodStatus, periodIndex) => {
                             if (periodIndex >= dayPeriods.length) return; // More periods than timetable has
 
@@ -18791,26 +18791,13 @@ RULES:
                             const normalizedStatus = normalizeStatus(periodStatus);
                             if (!normalizedStatus) return; // Skip free periods
 
-                            // For subjects with multiple periods, use priority: Attended > OD/ML > Skipped
-                            if (!subjectStatuses[subjectCode]) {
-                                subjectStatuses[subjectCode] = [];
-                            }
-                            subjectStatuses[subjectCode].push(normalizedStatus);
-                        });
+                            // Track period number for this subject
+                            periodCounts[subjectCode] = (periodCounts[subjectCode] || 0) + 1;
+                            const periodNum = periodCounts[subjectCode];
 
-                        // Resolve final status for each subject
-                        Object.keys(subjectStatuses).forEach(code => {
-                            const statuses = subjectStatuses[code];
-                            // Priority: If ANY period is Attended, mark as Attended
-                            if (statuses.includes('Attended')) {
-                                subjectsForDay[code] = 'Attended';
-                            } else if (statuses.includes('Medical Leave (ML)')) {
-                                subjectsForDay[code] = 'Medical Leave (ML)';
-                            } else if (statuses.includes('Duty Leave (OD)')) {
-                                subjectsForDay[code] = 'Duty Leave (OD)';
-                            } else {
-                                subjectsForDay[code] = statuses[0]; // Use first (likely Skipped)
-                            }
+                            // Save with period-based key (e.g., MATH_p1, MATH_p2)
+                            const periodKey = `${subjectCode}_p${periodNum}`;
+                            subjectsForDay[periodKey] = normalizedStatus;
                         });
 
                         if (Object.keys(subjectsForDay).length > 0) {
@@ -19043,9 +19030,10 @@ RULES:
                             return;
                         }
 
-                        const subjectStatuses = {}; // Track multiple periods of same subject
+                        const subjectsForDay = {};
+                        const periodCounts = {}; // Track period numbers per subject
 
-                        // Map each period status to its subject
+                        // Map each period status to its subject with period-based key
                         entry.periods.forEach((periodStatus, periodIndex) => {
                             if (periodIndex >= dayPeriods.length) return;
 
@@ -19057,25 +19045,13 @@ RULES:
                             const normalizedStatus = normalizeStatus(periodStatus);
                             if (!normalizedStatus) return;
 
-                            if (!subjectStatuses[subjectCode]) {
-                                subjectStatuses[subjectCode] = [];
-                            }
-                            subjectStatuses[subjectCode].push(normalizedStatus);
-                        });
+                            // Track period number for this subject
+                            periodCounts[subjectCode] = (periodCounts[subjectCode] || 0) + 1;
+                            const periodNum = periodCounts[subjectCode];
 
-                        // Resolve final status for each subject
-                        const subjectsForDay = {};
-                        Object.keys(subjectStatuses).forEach(code => {
-                            const statuses = subjectStatuses[code];
-                            if (statuses.includes('Attended')) {
-                                subjectsForDay[code] = 'Attended';
-                            } else if (statuses.includes('Medical Leave (ML)')) {
-                                subjectsForDay[code] = 'Medical Leave (ML)';
-                            } else if (statuses.includes('Duty Leave (OD)')) {
-                                subjectsForDay[code] = 'Duty Leave (OD)';
-                            } else {
-                                subjectsForDay[code] = statuses[0];
-                            }
+                            // Save with period-based key (e.g., MATH_p1, MATH_p2)
+                            const periodKey = `${subjectCode}_p${periodNum}`;
+                            subjectsForDay[periodKey] = normalizedStatus;
                         });
 
                         if (Object.keys(subjectsForDay).length > 0) {
