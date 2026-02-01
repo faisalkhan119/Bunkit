@@ -1538,6 +1538,54 @@
             animation: edgeGlow 2s ease-in-out infinite;
         }
 
+        /* --- TOAST NOTIFICATIONS --- */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(40, 44, 52, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #2ecc71;
+        }
+
+        .toast.error {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .toast.info {
+            border-left: 4px solid #3498db;
+        }
+
 
         .class-search-wrapper {
             position: relative;
@@ -22245,41 +22293,80 @@ Answer helpfully using this context.`;
                         if (modal) modal.style.display = 'none';
                     }
 
-                    window.saveNotificationSettings = async function () {
-                        const isEnabled = document.getElementById('notificationToggle').checked;
-                        const time = document.getElementById('reminderTimeInput').value;
-                        const modal = document.getElementById('notificationPermissionModal');
+                    // Toast Function
+                    window.showToast = function (message, type = 'info') {
+                        const container = document.getElementById('toast-container');
+                        if (!container) return;
 
-                        if (isEnabled) {
-                            // Request permission if not already granted
-                            if (Notification.permission !== 'granted') {
-                                const permission = await Notification.requestPermission();
-                                if (permission !== 'granted') {
-                                    alert("Please allow notifications in your browser settings to enable this feature.");
-                                    return;
+                        const toast = document.createElement('div');
+                        toast.className = `toast ${type}`;
+
+                        let icon = 'ℹ️';
+                        if (type === 'success') icon = '✅';
+                        if (type === 'error') icon = '❌';
+
+                        toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+                        container.appendChild(toast);
+
+                        // Animate in
+                        requestAnimationFrame(() => toast.classList.add('show'));
+
+                        // Remove after 3s
+                        setTimeout(() => {
+                            toast.classList.remove('show');
+                            setTimeout(() => toast.remove(), 300);
+                        }, 3000);
+                    };
+
+                    window.saveNotificationSettings = async function () {
+                        try {
+                            const isEnabled = document.getElementById('notificationToggle').checked;
+                            const time = document.getElementById('reminderTimeInput').value;
+                            const modal = document.getElementById('notificationPermissionModal');
+
+                            // Validate Time
+                            if (!time) {
+                                alert("Please select a valid time.");
+                                return;
+                            }
+
+                            if (isEnabled) {
+                                // Request permission if not already granted
+                                if (Notification.permission !== 'granted') {
+                                    const permission = await Notification.requestPermission();
+                                    if (permission !== 'granted') {
+                                        alert("Permission denied. Please allow notifications in browser settings.");
+                                        return;
+                                    }
+                                }
+
+                                // Get/Refresh Token
+                                const token = await window.requestNotificationPermission();
+                                if (token) {
+                                    // Save settings to Firestore
+                                    await updateFirestoreSettings(token, true, time);
+                                    localStorage.setItem('reminderTime', time);
+                                    window.showToast(`Reminder set for ${time} daily!`, 'success');
+                                } else {
+                                    throw new Error("Failed to get notification token. Check internet connection.");
+                                }
+                            } else {
+                                // User disabled notifications
+                                const token = localStorage.getItem('fcmToken');
+                                if (token) {
+                                    await updateFirestoreSettings(token, false, time);
+                                    window.showToast('Notifications disabled.', 'info');
+                                } else {
+                                    window.showToast('Notifications disabled (Local).', 'info');
                                 }
                             }
 
-                            // Get/Refresh Token
-                            const token = await window.requestNotificationPermission();
-                            if (token) {
-                                // Save settings to Firestore
-                                updateFirestoreSettings(token, true, time);
-                                localStorage.setItem('reminderTime', time);
-                                if (typeof showToast === 'function') showToast(`🔔 Reminder set for ${time} daily!`, 'success');
-                            }
-                        } else {
-                            // User disabled notifications
-                            // We can't revoke browser permission, but we can mark disabled in Firestore
-                            const token = localStorage.getItem('fcmToken');
-                            if (token) {
-                                updateFirestoreSettings(token, false, time);
-                                if (typeof showToast === 'function') showToast('🔕 Notifications disabled.', 'info');
-                            }
+                            localStorage.setItem('notificationPromptShown', 'true');
+                            if (modal) modal.style.display = 'none';
+                        } catch (error) {
+                            console.error("Save Settings Error:", error);
+                            alert("Error saving settings: " + (error.message || error));
                         }
-
-                        localStorage.setItem('notificationPromptShown', 'true');
-                        if (modal) modal.style.display = 'none';
                     };
 
                     async function updateFirestoreSettings(token, enabled, time) {
@@ -22313,6 +22400,9 @@ Answer helpfully using this context.`;
                         }
                     });
                 </script>
+                <!-- Toast Container -->
+                <div id="toast-container"></div>
+
                 <!-- Notification Settings FAB -->
                 <button onclick="window.showNotificationPermissionModal()" class="fab-glass"
                     style="bottom: 20px; right: 20px; font-size: 24px;">
