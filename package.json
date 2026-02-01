@@ -16,6 +16,9 @@
         "javascript-obfuscator": "^4.1.0",
         "cheerio": "^1.0.0-rc.12"
     },
+    "dependencies": {
+        "firebase-admin": "^12.0.0"
+    },
     "engines": {
         "node": "24.x"
     }
