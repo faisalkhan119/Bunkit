@@ -1428,6 +1428,55 @@
             border-color: rgba(255, 255, 255, 0.1);
         }
 
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(120, 120, 128, 0.3);
+            backdrop-filter: blur(4px);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
         /* ========================================
            FLOATING ACTION BUTTON - LIQUID GLASS
            ======================================== */
@@ -22320,19 +22369,23 @@ Answer helpfully using this context.`;
 
                     window.saveNotificationSettings = async function () {
                         try {
-                            const isEnabled = document.getElementById('notificationToggle').checked;
-                            const time = document.getElementById('reminderTimeInput').value;
+                            const params = {
+                                isEnabled: document.getElementById('notificationToggle').checked,
+                                time: document.getElementById('reminderTimeInput').value
+                            };
+                            console.log('💾 Saving Notification Settings:', params);
+
                             const modal = document.getElementById('notificationPermissionModal');
 
-                            // Validate Time
-                            if (!time) {
+                            if (!params.time) {
                                 alert("Please select a valid time.");
                                 return;
                             }
 
-                            if (isEnabled) {
+                            if (params.isEnabled) {
                                 // Request permission if not already granted
                                 if (Notification.permission !== 'granted') {
+                                    console.log('🔔 Requesting permission...');
                                     const permission = await Notification.requestPermission();
                                     if (permission !== 'granted') {
                                         alert("Permission denied. Please allow notifications in browser settings.");
@@ -22344,20 +22397,23 @@ Answer helpfully using this context.`;
                                 const token = await window.requestNotificationPermission();
                                 if (token) {
                                     // Save settings to Firestore
-                                    await updateFirestoreSettings(token, true, time);
-                                    localStorage.setItem('reminderTime', time);
-                                    window.showToast(`Reminder set for ${time} daily!`, 'success');
+                                    await updateFirestoreSettings(token, true, params.time);
+                                    localStorage.setItem('reminderTime', params.time);
+                                    window.showToast(`Reminder set for ${params.time} daily!`, 'success');
                                 } else {
                                     throw new Error("Failed to get notification token. Check internet connection.");
                                 }
                             } else {
                                 // User disabled notifications
                                 const token = localStorage.getItem('fcmToken');
+                                console.log('🔕 Disabling notifications. Token:', token);
+
                                 if (token) {
-                                    await updateFirestoreSettings(token, false, time);
+                                    await updateFirestoreSettings(token, false, params.time);
                                     window.showToast('Notifications disabled.', 'info');
                                 } else {
-                                    window.showToast('Notifications disabled (Local).', 'info');
+                                    // No token found (never enabled or cleared)
+                                    window.showToast('Notifications are OFF.', 'info');
                                 }
                             }
 
