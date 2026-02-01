@@ -6542,9 +6542,26 @@
                 // Check if user has already completed onboarding
                 const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
 
-                // PRIORITY 1: If a class import is pending, let the Import Logic handle UI (skip generic onboarding)
-                if (sessionStorage.getItem('pendingClassImport')) {
-                    console.log("📥 Pending Import detected. Skipping generic onboarding to allow Import Flow.");
+                // PRIORITY 1: If a class import is pending, handle it
+                const pendingImport = sessionStorage.getItem('pendingClassImport');
+                if (pendingImport) {
+                    console.log("📥 Pending Import detected. Triggering import...");
+
+                    // Check if user has a profile name, if not show name prompt first
+                    const profileName = localStorage.getItem('userProfileName');
+                    if (!profileName) {
+                        // Show name prompt - the saveFirstLoginName function will handle import after
+                        console.log("📥 No profile name. Showing name prompt first...");
+                        if (typeof createProfileModals === 'function') createProfileModals();
+                        setTimeout(() => {
+                            if (document.getElementById('firstLoginPromptModal')) {
+                                openModal('firstLoginPromptModal');
+                            }
+                        }, 500);
+                    } else {
+                        // User has name, import directly
+                        setTimeout(() => importClassFromURL(pendingImport), 500);
+                    }
                     return;
                 }
 
