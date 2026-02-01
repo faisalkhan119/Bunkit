@@ -22272,11 +22272,14 @@ Answer helpfully using this context.`;
                         </p>
 
                         <!-- Notification Toggle -->
-                        <div
-                            style="margin-bottom: 20px; text-align: left; background: var(--light-bg); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <div onclick="document.getElementById('notificationToggle').click()"
+                            style="margin-bottom: 20px; text-align: left; background: var(--light-bg); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;"
+                            onmouseover="this.style.background='var(--hover-bg, #eef2f7)'"
+                            onmouseout="this.style.background='var(--light-bg)'">
                             <span style="font-weight: 600;">Enable Notifications</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="notificationToggle" onchange="toggleNotificationState()">
+                            <label class="toggle-switch" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="notificationToggle" onchange="toggleNotificationState()"
+                                    style="opacity: 0.1; width: 50px; height: 28px; z-index: 10; position: absolute; cursor: pointer;">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -22309,32 +22312,46 @@ Answer helpfully using this context.`;
                     // ==================== NOTIFICATION PERMISSION FUNCTIONS ====================
 
                     // Show notification permission modal
+                    // Show notification permission modal
                     window.showNotificationPermissionModal = async function () {
                         const modal = document.getElementById('notificationPermissionModal');
                         if (modal) {
-                            // Pre-fill values
-                            const isEnabled = Notification.permission === 'granted';
+                            // Pre-fill values based on saved preference (default to browser perm if no preference)
+                            const savedState = localStorage.getItem('notificationsEnabled');
+                            let isEnabled;
+
+                            if (savedState !== null) {
+                                isEnabled = savedState === 'true';
+                            } else {
+                                isEnabled = Notification.permission === 'granted';
+                            }
+
                             document.getElementById('notificationToggle').checked = isEnabled;
-                            toggleNotificationState(); // Update UI based on toggle
+                            toggleNotificationState(true); // Silent update
 
                             // Load saved time from localStorage or default
                             const savedTime = localStorage.getItem('reminderTime') || "18:00";
                             document.getElementById('reminderTimeInput').value = savedTime;
 
                             modal.style.display = 'flex';
-                            console.log('🔔 Showing notification settings modal');
+                            console.log('🔔 Showing notification settings modal. Enabled:', isEnabled);
                         }
                     };
 
-                    window.toggleNotificationState = function () {
+                    window.toggleNotificationState = function (silent = false) {
                         const isChecked = document.getElementById('notificationToggle').checked;
                         const timePicker = document.getElementById('timePickerContainer');
                         if (isChecked) {
                             timePicker.style.display = 'block';
                             timePicker.style.opacity = '1';
+                            if (!silent && typeof window.showToast === 'function') window.showToast('Notifications ON - Set your time below', 'success');
                         } else {
                             timePicker.style.display = 'none';
+                            if (!silent && typeof window.showToast === 'function') window.showToast('Notifications turned OFF', 'info');
                         }
+
+                        // Auto-save toggle state to localStorage for UI persistence (final save to DB happens on Save button)
+                        localStorage.setItem('notificationsEnabled', isChecked);
                     };
 
                     window.closeNotificationModal = function () {
