@@ -6355,21 +6355,43 @@
             }
 
             function importClassFromURL(encodedData) {
+                console.log("🔗 Processing Import Data (Raw):", encodedData);
                 try {
                     // Decode class data (Support for v2 compressed and v1 base64)
                     let jsonString;
                     if (encodedData.startsWith('v2_')) {
-                        // FIX: URLSearchParams converts '+' to spaces, restore them before decompression
-                        const fixedData = encodedData.substring(3).replace(/ /g, '+');
+                        // FIX: URLSearchParams converts '+' to spaces.
+                        // STRATEGY 1: Restore '+' and try decompression
+                        let fixedData = encodedData.substring(3).replace(/ /g, '+');
+                        console.log("Strategy 1 (Replace Space -> +):", fixedData);
                         jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+
+                        if (!jsonString) {
+                            // STRATEGY 2: Maybe browser DIDN'T replace +? Try raw substring.
+                            console.warn("Strategy 1 failed. Trying Strategy 2 (Raw substring)...");
+                            fixedData = encodedData.substring(3);
+                            jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+                        }
+
+                        if (!jsonString) {
+                            // STRATEGY 3: URL Decoding might have messed up differently?
+                            // Try to strip any whitespace
+                            console.warn("Strategy 2 failed. Trying Strategy 3 (Strip whitespace)...");
+                            fixedData = encodedData.substring(3).replace(/\s/g, '');
+                            jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+                        }
                     } else if (encodedData.match(/^v\d+_/)) {
                         // Unknown future version (v3_, v4_, etc.) - show helpful error
                         throw new Error("This link was created with a newer version of Bunkit. Please update the app.");
                     } else {
+                        // Legacy v1 (Base64)
                         jsonString = atob(encodedData);
                     }
 
-                    if (!jsonString) throw new Error("Decompression failed or invalid string");
+                    if (!jsonString) {
+                        console.error("❌ Decompression returned null/empty.");
+                        throw new Error(`Decompression failed. Data length: ${encodedData.length}`);
+                    }
                     const classData = JSON.parse(jsonString);
 
                     // Validate essential data
@@ -6567,6 +6589,7 @@
 
                 // Check if user has already completed onboarding
                 const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
+                if (hasCompleted === 'true') return;
 
                 // PRIORITY 1: If a class import is pending, handle it
                 const pendingImport = sessionStorage.getItem('pendingClassImport');
@@ -6755,8 +6778,7 @@
 
                     // [NEW] Disable Portal Mode by default for Example Class
                     if (classes[exampleClassName].portalSetup) {
-                        classes[exampleClassName].portalSetup.isEnabled = false;
-                        classes[exampleClassName].portalSetup.mode = 'standard';
+                        classes[exampleClassName].portalSetup.active = false; // key is 'active' not 'isEnabled'
                     }
 
                     saveToStorage();
