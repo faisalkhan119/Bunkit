@@ -33,6 +33,76 @@
     <script src="js/auth-manager.js"></script>
     <script src="js/sync-manager.js"></script>
     <script src="js/social-manager.js"></script>
+    <!-- Firebase SDK for Cloud Messaging -->
+    <script type="module">
+        // ==================== FIREBASE CONFIGURATION ====================
+        // IMPORTANT: Replace the placeholder values below with your actual
+        // Firebase config from: Firebase Console > Project Settings > General > Your apps
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_AbhNHG3WkRjtKfoLkHvrZaWxhJf3Zyk",
+            authDomain: "bunk-it-notifications.firebaseapp.com",
+            projectId: "bunk-it-notifications",
+            storageBucket: "bunk-it-notifications.firebasestorage.app",
+            messagingSenderId: "360203480812",
+            appId: "1:360203480812:web:9350364110a5db986c7fc9",
+            measurementId: "G-DFTJC9Q81Z"
+        };
+
+        // VAPID key from Firebase Console > Cloud Messaging > Web Push certificates
+        const VAPID_KEY = "BGRvIc4cMEwLInvR809i2aFUUt6OgvgcFhrrqzQhq3VtW1udIBzWX5d_Cg3s_zCGSkBu18s8PaPNkFvJAQr72iE";
+
+        // Initialize Firebase
+        const firebaseApp = initializeApp(firebaseConfig);
+        const messaging = getMessaging(firebaseApp);
+
+        // Store globally for use in other scripts
+        window.firebaseMessaging = messaging;
+        window.VAPID_KEY = VAPID_KEY;
+
+        // Request notification permission and get FCM token
+        window.requestNotificationPermission = async function () {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('🔔 Notification permission granted.');
+                    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+                    if (token) {
+                        console.log('🔑 FCM Token:', token);
+                        // Store token locally (for both guest and logged-in users)
+                        localStorage.setItem('fcmToken', token);
+                        // If user is logged in, sync token to backend (optional)
+                        if (typeof window.syncFCMToken === 'function') {
+                            window.syncFCMToken(token);
+                        }
+                        return token;
+                    } else {
+                        console.log('⚠️ No FCM registration token available.');
+                    }
+                } else {
+                    console.log('❌ Notification permission denied.');
+                }
+            } catch (err) {
+                console.error('FCM Token Error:', err);
+            }
+            return null;
+        };
+
+        // Handle foreground messages
+        onMessage(messaging, (payload) => {
+            console.log('📩 Foreground message received:', payload);
+            // Show in-app notification or toast
+            if (typeof showToast === 'function') {
+                const title = payload.notification?.title || 'New Notification';
+                const body = payload.notification?.body || '';
+                showToast(`${title}: ${body}`, 'info');
+            }
+        });
+
+        console.log('🔥 Firebase Messaging initialized');
+    </script>
     <!-- App Recovery: Detect and fix black screen issues -->
     <script>
         (function () {
@@ -22066,6 +22136,107 @@ Answer helpfully using this context.`;
                     // Check for pending password reset from localStorage (Robust Fallback)
                     window.addEventListener('DOMContentLoaded', () => {
                         window.enforceResetPasswordModal();
+                    });
+                </script>
+
+                <!-- ==================== NOTIFICATION PERMISSION MODAL ==================== -->
+                <div id="notificationPermissionModal"
+                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:999999; justify-content:center; align-items:center;">
+                    <div
+                        style="background:var(--card-bg, #fff); border-radius:20px; padding:30px; max-width:400px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size:60px; margin-bottom:15px;">🔔</div>
+                        <h2 style="margin:0 0 10px; color:var(--dark-text, #2c3e50);">Enable Notifications?</h2>
+                        <p style="color:var(--medium-text, #6c757d); margin-bottom:25px; font-size:14px;">
+                            Get reminders to log attendance, alerts for low attendance, and important updates.
+                        </p>
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button onclick="enableNotifications()"
+                                style="padding:12px 24px; border:none; border-radius:10px; background:linear-gradient(135deg, #667eea, #764ba2); color:white; font-size:16px; font-weight:600; cursor:pointer; flex:1;">
+                                ✅ Enable
+                            </button>
+                            <button onclick="skipNotifications()"
+                                style="padding:12px 24px; border:none; border-radius:10px; background:var(--light-bg, #f0f2f5); color:var(--dark-text, #2c3e50); font-size:16px; cursor:pointer; flex:1;">
+                                Maybe Later
+                            </button>
+                        </div>
+                        <p style="color:var(--medium-text, #999); font-size:11px; margin-top:15px;">
+                            You can change this anytime in Settings.
+                        </p>
+                    </div>
+                </div>
+
+                <script>
+                    // ==================== NOTIFICATION PERMISSION FUNCTIONS ====================
+
+                    // Show notification permission modal
+                    window.showNotificationPermissionModal = function () {
+                        // Skip if already asked or already granted
+                        if (localStorage.getItem('notificationPromptShown') === 'true') {
+                            console.log('🔔 Notification prompt already shown before.');
+                            return;
+                        }
+
+                        // Skip if permission already granted
+                        if (Notification.permission === 'granted') {
+                            console.log('🔔 Notifications already enabled.');
+                            localStorage.setItem('notificationPromptShown', 'true');
+                            return;
+                        }
+
+                        // Skip if permission denied (don't annoy user)
+                        if (Notification.permission === 'denied') {
+                            console.log('🔔 Notifications were denied previously.');
+                            localStorage.setItem('notificationPromptShown', 'true');
+                            return;
+                        }
+
+                        // Show modal after a short delay for better UX
+                        setTimeout(() => {
+                            const modal = document.getElementById('notificationPermissionModal');
+                            if (modal) {
+                                modal.style.display = 'flex';
+                                console.log('🔔 Showing notification permission modal');
+                            }
+                        }, 2000); // 2 second delay after app loads
+                    };
+
+                    // Enable notifications
+                    window.enableNotifications = async function () {
+                        const modal = document.getElementById('notificationPermissionModal');
+                        if (modal) modal.style.display = 'none';
+
+                        localStorage.setItem('notificationPromptShown', 'true');
+
+                        // Request permission
+                        if (typeof window.requestNotificationPermission === 'function') {
+                            const token = await window.requestNotificationPermission();
+                            if (token) {
+                                if (typeof showToast === 'function') {
+                                    showToast('🔔 Notifications enabled!', 'success');
+                                }
+                            }
+                        }
+                    };
+
+                    // Skip notifications (maybe later)
+                    window.skipNotifications = function () {
+                        const modal = document.getElementById('notificationPermissionModal');
+                        if (modal) modal.style.display = 'none';
+
+                        localStorage.setItem('notificationPromptShown', 'true');
+                        console.log('🔔 User skipped notification permission.');
+                    };
+
+                    // Auto-trigger for new users after app loads
+                    window.addEventListener('load', () => {
+                        // Check if user has any data (indication they're not brand new)
+                        const hasData = localStorage.getItem('classesData') || localStorage.getItem('userName');
+                        const isFirstVisit = !localStorage.getItem('notificationPromptShown');
+
+                        // Show prompt for users who have some data but haven't seen the prompt
+                        if (hasData && isFirstVisit) {
+                            window.showNotificationPermissionModal();
+                        }
                     });
                 </script>
 </body>

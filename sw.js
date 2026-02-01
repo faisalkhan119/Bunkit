@@ -1,3 +1,41 @@
+// ==================== FIREBASE CLOUD MESSAGING FOR SERVICE WORKER ====================
+// Import Firebase compat libraries (required for service workers)
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
+
+// Firebase config (same as in index.html)
+const firebaseConfig = {
+    apiKey: "AIzaSyA_AbhNHG3WkRjtKfoLkHvrZaWxhJf3Zyk",
+    authDomain: "bunk-it-notifications.firebaseapp.com",
+    projectId: "bunk-it-notifications",
+    storageBucket: "bunk-it-notifications.firebasestorage.app",
+    messagingSenderId: "360203480812",
+    appId: "1:360203480812:web:9350364110a5db986c7fc9",
+    measurementId: "G-DFTJC9Q81Z"
+};
+
+// Initialize Firebase in Service Worker
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// Handle background push messages from FCM
+messaging.onBackgroundMessage((payload) => {
+    console.log('SW: Background message received:', payload);
+
+    const notificationTitle = payload.notification?.title || '📚 Bunk it Notification';
+    const notificationOptions = {
+        body: payload.notification?.body || 'You have a new notification!',
+        icon: '/icon-192x192.png',
+        badge: '/notification-icon.png',
+        tag: payload.data?.tag || 'fcm-notification',
+        data: payload.data || { url: '/' }
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// ==================== END FIREBASE CLOUD MESSAGING ====================
+
 const CACHE_NAME = 'bunkit-v2.2';
 const ASSETS_TO_CACHE = [
     // NOTE: index.html intentionally NOT cached to prevent stale data issues
