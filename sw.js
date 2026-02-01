@@ -390,7 +390,27 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     event.waitUntil(
-        clients.openWindow('/?openLog=true')
+        (async () => {
+            // Try to find an existing open window/tab
+            const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+            // Filter for clients that are our app (not other sites)
+            const appClients = allClients.filter(client =>
+                client.url.includes(self.registration.scope) || client.url.includes(self.location.origin)
+            );
+
+            if (appClients.length > 0) {
+                // Focus the first existing window and send message to open daily log
+                const client = appClients[0];
+                await client.focus();
+                client.postMessage({ type: 'OPEN_DAILY_LOG' });
+                console.log('SW: Focused existing window and sent OPEN_DAILY_LOG message');
+            } else {
+                // No existing window, open a new one
+                await clients.openWindow('/?openLog=true');
+                console.log('SW: Opened new window with openLog=true');
+            }
+        })()
     );
 });
 

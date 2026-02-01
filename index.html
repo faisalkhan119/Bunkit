@@ -8104,6 +8104,43 @@
                     autoRemoveExampleClass();
 
                     document.getElementById('currentDate').value = formatLocalDate(new Date());
+
+                    // Check for openLog URL parameter (from notification click)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('openLog') === 'true') {
+                        // Remove the parameter from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+
+                        // Wait for UI to be ready, then open daily log
+                        setTimeout(() => {
+                            const lastClass = localStorage.getItem('lastOpenedClass');
+                            if (lastClass && classes[lastClass]) {
+                                document.getElementById('classSelector').value = lastClass;
+                                onClassChange();
+                            }
+                            openDailyLog();
+                            console.log('📱 Opened Daily Log from notification (Fast Load path)');
+                        }, 500);
+                    }
+
+                    // Set up Service Worker message listener for notification clicks when app is already open
+                    if ('serviceWorker' in navigator && !window._swMessageListenerAdded) {
+                        navigator.serviceWorker.addEventListener('message', (event) => {
+                            if (event.data && event.data.type === 'OPEN_DAILY_LOG') {
+                                console.log('📱 Received OPEN_DAILY_LOG message from Service Worker');
+                                // Ensure we have a class selected
+                                const lastClass = localStorage.getItem('lastOpenedClass');
+                                if (lastClass && classes[lastClass]) {
+                                    document.getElementById('classSelector').value = lastClass;
+                                    onClassChange();
+                                }
+                                // Open the daily log modal
+                                setTimeout(() => openDailyLog(), 200);
+                            }
+                        });
+                        window._swMessageListenerAdded = true; // Prevent duplicate listeners
+                    }
+
                     return;
                 }
 
@@ -8261,6 +8298,24 @@
                                     openDailyLog();
                                 }, 500);
                             }
+                        }
+
+                        // Set up Service Worker message listener for notification clicks when app is already open
+                        if ('serviceWorker' in navigator && !window._swMessageListenerAdded) {
+                            navigator.serviceWorker.addEventListener('message', (event) => {
+                                if (event.data && event.data.type === 'OPEN_DAILY_LOG') {
+                                    console.log('📱 Received OPEN_DAILY_LOG message from Service Worker');
+                                    // Ensure we have a class selected
+                                    const lastClass = localStorage.getItem('lastOpenedClass');
+                                    if (lastClass && classes[lastClass]) {
+                                        document.getElementById('classSelector').value = lastClass;
+                                        onClassChange();
+                                    }
+                                    // Open the daily log modal
+                                    setTimeout(() => openDailyLog(), 200);
+                                }
+                            });
+                            window._swMessageListenerAdded = true; // Prevent duplicate listeners
                         }
 
                         // Define switchModalTab function BEFORE modal HTML
