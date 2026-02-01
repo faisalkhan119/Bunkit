@@ -30,24 +30,33 @@ export default async function handler(req, res) {
             targetTokens = tokens;
             console.log(`Using ${targetTokens.length} tokens provided in request.`);
         }
-        // Priority 2: Fetch all enabled tokens from Firestore
+        // Priority 2: Fetch enabled tokens from Firestore based on time
         else {
-            console.log('Fetching tokens from Firestore...');
+            // Calculate current hour in IST (UTC+5:30)
+            const now = new Date();
+            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istDate = new Date(utcTime + istOffset);
+            const currentHour = istDate.getHours();
+
+            console.log(`Checking for reminders scheduled at ${currentHour}:00 IST...`);
+
             const db = admin.firestore();
             const snapshot = await db.collection('notification_tokens')
                 .where('enabled', '==', true)
+                .where('reminderHour', '==', currentHour)
                 .get();
 
             if (snapshot.empty) {
-                console.log('No enabled subscriber tokens found.');
-                return res.status(200).json({ success: true, message: 'No subscribers found' });
+                console.log(`No subscribers found for ${currentHour}:00 IST.`);
+                return res.status(200).json({ success: true, message: 'No subscribers for this hour' });
             }
 
             targetTokens = snapshot.docs
                 .map(doc => doc.data().token)
                 .filter(t => t); // Filter out null/undefined
 
-            console.log(`Found ${targetTokens.length} tokens in Firestore.`);
+            console.log(`Found ${targetTokens.length} tokens for ${currentHour}:00.`);
         }
 
         if (targetTokens.length === 0) {

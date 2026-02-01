@@ -22169,23 +22169,42 @@ Answer helpfully using this context.`;
                     <div
                         style="background:var(--card-bg, #fff); border-radius:20px; padding:30px; max-width:400px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                         <div style="font-size:60px; margin-bottom:15px;">🔔</div>
-                        <h2 style="margin:0 0 10px; color:var(--dark-text, #2c3e50);">Enable Notifications?</h2>
+                        <h2 style="margin:0 0 10px; color:var(--dark-text, #2c3e50);">Notification Settings</h2>
                         <p style="color:var(--medium-text, #6c757d); margin-bottom:25px; font-size:14px;">
-                            Get reminders to log attendance, alerts for low attendance, and important updates.
+                            Configure your daily attendance reminders.
                         </p>
+
+                        <!-- Notification Toggle -->
+                        <div
+                            style="margin-bottom: 20px; text-align: left; background: var(--light-bg); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600;">Enable Notifications</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notificationToggle" onchange="toggleNotificationState()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Time Picker (Hidden if disabled) -->
+                        <div id="timePickerContainer" style="margin-bottom: 25px; text-align: left;">
+                            <label
+                                style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Daily
+                                Reminder Time</label>
+                            <input type="time" id="reminderTimeInput" value="18:00"
+                                style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 1.1rem; background: var(--card-bg); color: var(--dark-text);">
+                            <p style="font-size: 0.8rem; color: var(--medium-text); margin-top: 5px;">We'll send a
+                                reminder at this time everyday.</p>
+                        </div>
+
                         <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                            <button onclick="enableNotifications()"
+                            <button onclick="saveNotificationSettings()"
                                 style="padding:12px 24px; border:none; border-radius:10px; background:linear-gradient(135deg, #667eea, #764ba2); color:white; font-size:16px; font-weight:600; cursor:pointer; flex:1;">
-                                ✅ Enable
+                                💾 Save Settings
                             </button>
-                            <button onclick="skipNotifications()"
+                            <button onclick="closeNotificationModal()"
                                 style="padding:12px 24px; border:none; border-radius:10px; background:var(--light-bg, #f0f2f5); color:var(--dark-text, #2c3e50); font-size:16px; cursor:pointer; flex:1;">
-                                Maybe Later
+                                Close
                             </button>
                         </div>
-                        <p style="color:var(--medium-text, #999); font-size:11px; margin-top:15px;">
-                            You can change this anytime in Settings.
-                        </p>
                     </div>
                 </div>
 
@@ -22193,76 +22212,112 @@ Answer helpfully using this context.`;
                     // ==================== NOTIFICATION PERMISSION FUNCTIONS ====================
 
                     // Show notification permission modal
-                    window.showNotificationPermissionModal = function () {
-                        // Skip if already asked or already granted
-                        if (localStorage.getItem('notificationPromptShown') === 'true') {
-                            console.log('🔔 Notification prompt already shown before.');
-                            return;
-                        }
+                    window.showNotificationPermissionModal = async function () {
+                        const modal = document.getElementById('notificationPermissionModal');
+                        if (modal) {
+                            // Pre-fill values
+                            const isEnabled = Notification.permission === 'granted';
+                            document.getElementById('notificationToggle').checked = isEnabled;
+                            toggleNotificationState(); // Update UI based on toggle
 
-                        // Skip if permission already granted
-                        if (Notification.permission === 'granted') {
-                            console.log('🔔 Notifications already enabled.');
-                            localStorage.setItem('notificationPromptShown', 'true');
-                            return;
-                        }
+                            // Load saved time from localStorage or default
+                            const savedTime = localStorage.getItem('reminderTime') || "18:00";
+                            document.getElementById('reminderTimeInput').value = savedTime;
 
-                        // Skip if permission denied (don't annoy user)
-                        if (Notification.permission === 'denied') {
-                            console.log('🔔 Notifications were denied previously.');
-                            localStorage.setItem('notificationPromptShown', 'true');
-                            return;
+                            modal.style.display = 'flex';
+                            console.log('🔔 Showing notification settings modal');
                         }
-
-                        // Show modal after a short delay for better UX
-                        setTimeout(() => {
-                            const modal = document.getElementById('notificationPermissionModal');
-                            if (modal) {
-                                modal.style.display = 'flex';
-                                console.log('🔔 Showing notification permission modal');
-                            }
-                        }, 2000); // 2 second delay after app loads
                     };
 
-                    // Enable notifications
-                    window.enableNotifications = async function () {
+                    window.toggleNotificationState = function () {
+                        const isChecked = document.getElementById('notificationToggle').checked;
+                        const timePicker = document.getElementById('timePickerContainer');
+                        if (isChecked) {
+                            timePicker.style.display = 'block';
+                            timePicker.style.opacity = '1';
+                        } else {
+                            timePicker.style.display = 'none';
+                        }
+                    };
+
+                    window.closeNotificationModal = function () {
                         const modal = document.getElementById('notificationPermissionModal');
                         if (modal) modal.style.display = 'none';
+                    }
 
-                        localStorage.setItem('notificationPromptShown', 'true');
+                    window.saveNotificationSettings = async function () {
+                        const isEnabled = document.getElementById('notificationToggle').checked;
+                        const time = document.getElementById('reminderTimeInput').value;
+                        const modal = document.getElementById('notificationPermissionModal');
 
-                        // Request permission
-                        if (typeof window.requestNotificationPermission === 'function') {
-                            const token = await window.requestNotificationPermission();
-                            if (token) {
-                                if (typeof showToast === 'function') {
-                                    showToast('🔔 Notifications enabled!', 'success');
+                        if (isEnabled) {
+                            // Request permission if not already granted
+                            if (Notification.permission !== 'granted') {
+                                const permission = await Notification.requestPermission();
+                                if (permission !== 'granted') {
+                                    alert("Please allow notifications in your browser settings to enable this feature.");
+                                    return;
                                 }
                             }
-                        }
-                    };
 
-                    // Skip notifications (maybe later)
-                    window.skipNotifications = function () {
-                        const modal = document.getElementById('notificationPermissionModal');
-                        if (modal) modal.style.display = 'none';
+                            // Get/Refresh Token
+                            const token = await window.requestNotificationPermission();
+                            if (token) {
+                                // Save settings to Firestore
+                                updateFirestoreSettings(token, true, time);
+                                localStorage.setItem('reminderTime', time);
+                                if (typeof showToast === 'function') showToast(`🔔 Reminder set for ${time} daily!`, 'success');
+                            }
+                        } else {
+                            // User disabled notifications
+                            // We can't revoke browser permission, but we can mark disabled in Firestore
+                            const token = localStorage.getItem('fcmToken');
+                            if (token) {
+                                updateFirestoreSettings(token, false, time);
+                                if (typeof showToast === 'function') showToast('🔕 Notifications disabled.', 'info');
+                            }
+                        }
 
                         localStorage.setItem('notificationPromptShown', 'true');
-                        console.log('🔔 User skipped notification permission.');
+                        if (modal) modal.style.display = 'none';
                     };
 
-                    // Auto-trigger for new users after app loads
+                    async function updateFirestoreSettings(token, enabled, time) {
+                        if (!window.firestoreDb || !token) return;
+
+                        try {
+                            const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js");
+                            const userRef = doc(window.firestoreDb, "notification_tokens", token);
+
+                            // Extract hour for efficient querying
+                            const reminderHour = parseInt(time.split(':')[0], 10);
+
+                            await setDoc(userRef, {
+                                reminderTime: time,
+                                reminderHour: reminderHour, // Store hour separately (0-23)
+                                enabled: enabled,
+                                updatedAt: serverTimestamp()
+                            }, { merge: true });
+                            console.log("✅ Firestore settings updated:", { enabled, time, reminderHour });
+                        } catch (e) {
+                            console.error("❌ Error updating Firestore settings:", e);
+                        }
+                    }
+
+                    // Auto-trigger logic remains (simplified)
                     window.addEventListener('load', () => {
-                        // Check if user has any data (indication they're not brand new)
                         const hasData = localStorage.getItem('classesData') || localStorage.getItem('userName');
                         const isFirstVisit = !localStorage.getItem('notificationPromptShown');
-
-                        // Show prompt for users who have some data but haven't seen the prompt
                         if (hasData && isFirstVisit) {
-                            window.showNotificationPermissionModal();
+                            setTimeout(() => window.showNotificationPermissionModal(), 3000);
                         }
                     });
                 </script>
+                <!-- Notification Settings FAB -->
+                <button onclick="window.showNotificationPermissionModal()" class="fab-glass"
+                    style="bottom: 20px; right: 20px; font-size: 24px;">
+                    🔔
+                </button>
 </body>
 
 </html>
