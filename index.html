@@ -21896,31 +21896,35 @@ Answer helpfully using this context.`;
                     }
 
                     // Also fix the toggleLoginScreen to actually work with our new ID and layout
-                    AuthManager.toggleLoginScreen = function (show) {
-                        // GUARD: Block hiding the login screen if pending reset
-                        if (!show) {
-                            if (localStorage.getItem('pending_password_reset') === 'true' || window.isVerifyingOtp) {
-                                console.log('🔒 AuthManager.toggleLoginScreen (Inline) blocked (Hide Mode) due to pending reset.');
-                                const screen = document.getElementById('loginScreen');
-                                if (screen) screen.style.display = 'none';
-                                return;
+                    if (window.AuthManager) {
+                        window.AuthManager.toggleLoginScreen = function (show) {
+                            // GUARD: Block hiding the login screen if pending reset
+                            if (!show) {
+                                if (localStorage.getItem('pending_password_reset') === 'true' || window.isVerifyingOtp) {
+                                    console.log('🔒 AuthManager.toggleLoginScreen (Inline) blocked (Hide Mode) due to pending reset.');
+                                    const screen = document.getElementById('loginScreen');
+                                    if (screen) screen.style.display = 'none';
+                                    return;
+                                }
                             }
-                        }
 
-                        const screen = document.getElementById('loginScreen');
-                        if (screen) {
-                            if (show) {
-                                screen.style.display = 'flex';
-                                setTimeout(() => screen.classList.add('active'), 10);
-                            } else {
-                                screen.classList.remove('active');
-                                setTimeout(() => screen.style.display = 'none', 300);
+                            const screen = document.getElementById('loginScreen');
+                            if (screen) {
+                                if (show) {
+                                    screen.style.display = 'flex';
+                                    setTimeout(() => screen.classList.add('active'), 10);
+                                } else {
+                                    screen.classList.remove('active');
+                                    setTimeout(() => screen.style.display = 'none', 300);
+                                }
                             }
-                        }
-                    };
+                        };
+                    } else {
+                        console.warn('AuthManager not found during toggleLoginScreen patch');
+                    }
 
                     // Initial check on load (in case AuthManager ran before this script)
-                    if (!AuthManager.user && !localStorage.getItem('guest_mode_active')) {
+                    if (window.AuthManager && !window.AuthManager.user && !localStorage.getItem('guest_mode_active')) {
                         // Force show login if no session and no guest mode
                         // But wait for initial auth check to complete? 
                         // AuthManager.init() does this check.
@@ -22302,12 +22306,63 @@ Answer helpfully using this context.`;
                                 💾 Save Settings
                             </button>
                             <button onclick="closeNotificationModal()"
-                                style="padding:12px 24px; border:none; border-radius:10px; background:var(--light-bg, #f0f2f5); color:var(--dark-text, #2c3e50); font-size:16px; cursor:pointer; flex:1;">
+                                style="padding:12px 24px; border:none; border-radius:10px; background:var(--light-bg, #f0f2f5); color:var(--dark-text, #2c3e50); font-size:16px; cursor:pointer; flex:0.5;">
                                 Close
+                            </button>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button onclick="window.sendTestNotification()"
+                                style="background:none; border:none; color:var(--primary-color); font-size:0.9rem; text-decoration:underline; cursor:pointer; opacity:0.8;">
+                                🧪 Send Test Notification Now
                             </button>
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    // Test Notification Logic
+                    window.sendTestNotification = async function () {
+                        const toggle = document.getElementById('notificationToggle');
+                        if (!toggle.checked && Notification.permission !== 'granted') {
+                            alert('⚠️ Please enable notifications via the toggle first.');
+                            return;
+                        }
+
+                        if (typeof showToast === 'function') showToast('🚀 Sending test notification...', 'info');
+
+                        // 1. Try Local Immediate Notification (Fastest check)
+                        try {
+                            if (Notification.permission === 'granted') {
+                                if ('serviceWorker' in navigator) {
+                                    const reg = await navigator.serviceWorker.ready;
+                                    reg.showNotification('✅ Test Notification', {
+                                        body: 'Your device is ready to receive reminders!',
+                                        icon: '/icon-192x192.png',
+                                        badge: '/icon-192x192.png',
+                                        vibrate: [200, 100, 200]
+                                    });
+                                } else {
+                                    new Notification('✅ Test Notification', {
+                                        body: 'Your device is ready to receive reminders!',
+                                        icon: '/icon-192x192.png'
+                                    });
+                                }
+                            } else {
+                                // Force request if not granted but UI says enabled (edge case)
+                                const perm = await Notification.requestPermission();
+                                if (perm === 'granted') window.sendTestNotification(); // Retry
+                            }
+                        } catch (e) {
+                            console.error('Local notification failed:', e);
+                            alert('Error showing notification: ' + e.message);
+                        }
+                    };
+
+                    function closeNotificationModal() {
+                        const modal = document.getElementById('notificationPermissionModal');
+                        if (modal) modal.style.display = 'none';
+                    }
+                </script>
 
                 <script>
                     // ==================== NOTIFICATION PERMISSION FUNCTIONS ====================
