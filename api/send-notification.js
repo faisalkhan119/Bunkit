@@ -22,12 +22,36 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Get FCM tokens from request body or environment
-        // For now, we'll accept tokens in the request
         const { tokens, title, body, data } = req.body;
+        let targetTokens = [];
 
-        if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-            return res.status(400).json({ error: 'No tokens provided' });
+        // Priority 1: Tokens provided in request body (for testing/manual override)
+        if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+            targetTokens = tokens;
+            console.log(`Using ${targetTokens.length} tokens provided in request.`);
+        }
+        // Priority 2: Fetch all enabled tokens from Firestore
+        else {
+            console.log('Fetching tokens from Firestore...');
+            const db = admin.firestore();
+            const snapshot = await db.collection('notification_tokens')
+                .where('enabled', '==', true)
+                .get();
+
+            if (snapshot.empty) {
+                console.log('No enabled subscriber tokens found.');
+                return res.status(200).json({ success: true, message: 'No subscribers found' });
+            }
+
+            targetTokens = snapshot.docs
+                .map(doc => doc.data().token)
+                .filter(t => t); // Filter out null/undefined
+
+            console.log(`Found ${targetTokens.length} tokens in Firestore.`);
+        }
+
+        if (targetTokens.length === 0) {
+            return res.status(400).json({ error: 'No valid tokens found to send to.' });
         }
 
         const message = {
@@ -36,18 +60,18 @@ export default async function handler(req, res) {
                 body: body || "Time to log today's attendance!"
             },
             data: data || { url: '/' },
-            tokens: tokens // Send to multiple devices
+            tokens: targetTokens // Send to multiple devices
         };
 
         const response = await admin.messaging().sendEachForMulticast(message);
 
         console.log(`Successfully sent: ${response.successCount}, Failed: ${response.failureCount}`);
 
-        // Log failures for debugging
+        // Log failures
         if (response.failureCount > 0) {
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
-                    console.log(`Failed to send to token ${idx}: ${resp.error?.message}`);
+                    console.error(`Failed to send to token ${idx}:`, resp.error);
                 }
             });
         }

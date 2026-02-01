@@ -40,6 +40,7 @@
         // Firebase config from: Firebase Console > Project Settings > General > Your apps
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA_AbhNHG3WkRjtKfoLkHvrZaWxhJf3Zyk",
@@ -57,10 +58,29 @@
         // Initialize Firebase
         const firebaseApp = initializeApp(firebaseConfig);
         const messaging = getMessaging(firebaseApp);
+        const db = getFirestore(firebaseApp);
 
         // Store globally for use in other scripts
         window.firebaseMessaging = messaging;
         window.VAPID_KEY = VAPID_KEY;
+        window.firestoreDb = db;
+
+        // Save token to Firestore
+        async function saveTokenToFirestore(token) {
+            try {
+                const userRef = doc(db, "notification_tokens", token);
+                await setDoc(userRef, {
+                    token: token,
+                    reminderTime: "18:00", // Default time
+                    enabled: true,
+                    updatedAt: serverTimestamp(),
+                    deviceType: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+                }, { merge: true });
+                console.log("✅ FCM Token saved to Firestore");
+            } catch (e) {
+                console.error("❌ Error adding token to Firestore: ", e);
+            }
+        }
 
         // Request notification permission and get FCM token
         window.requestNotificationPermission = async function () {
@@ -73,6 +93,10 @@
                         console.log('🔑 FCM Token:', token);
                         // Store token locally (for both guest and logged-in users)
                         localStorage.setItem('fcmToken', token);
+
+                        // Save to Firestore for scheduled notifications
+                        await saveTokenToFirestore(token);
+
                         // If user is logged in, sync token to backend (optional)
                         if (typeof window.syncFCMToken === 'function') {
                             window.syncFCMToken(token);
