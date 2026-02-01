@@ -22272,12 +22272,13 @@ Answer helpfully using this context.`;
                         </p>
 
                         <!-- Notification Toggle -->
-                        <div onclick="document.getElementById('notificationToggle').click()"
-                            style="margin-bottom: 20px; text-align: left; background: var(--light-bg); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s;"
+                        <!-- Notification Toggle -->
+                        <div style="margin-bottom: 20px; text-align: left; background: var(--light-bg); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;"
                             onmouseover="this.style.background='var(--hover-bg, #eef2f7)'"
                             onmouseout="this.style.background='var(--light-bg)'">
-                            <span style="font-weight: 600;">Enable Notifications</span>
-                            <label class="toggle-switch" onclick="event.stopPropagation()">
+                            <label for="notificationToggle" style="font-weight: 600; flex: 1; cursor: pointer;">Enable
+                                Notifications</label>
+                            <label class="toggle-switch">
                                 <input type="checkbox" id="notificationToggle" onchange="toggleNotificationState()"
                                     style="opacity: 0.1; width: 50px; height: 28px; z-index: 10; position: absolute; cursor: pointer;">
                                 <span class="slider"></span>
@@ -22296,7 +22297,7 @@ Answer helpfully using this context.`;
                         </div>
 
                         <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                            <button onclick="saveNotificationSettings()"
+                            <button onclick="saveDailyReminderSettings()"
                                 style="padding:12px 24px; border:none; border-radius:10px; background:linear-gradient(135deg, #667eea, #764ba2); color:white; font-size:16px; font-weight:600; cursor:pointer; flex:1;">
                                 💾 Save Settings
                             </button>
@@ -22384,7 +22385,7 @@ Answer helpfully using this context.`;
                         }, 3000);
                     };
 
-                    window.saveNotificationSettings = async function () {
+                    window.saveDailyReminderSettings = async function () {
                         try {
                             const params = {
                                 isEnabled: document.getElementById('notificationToggle').checked,
