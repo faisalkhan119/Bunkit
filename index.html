@@ -6427,8 +6427,19 @@
                     }
 
                     if (dupResult.status === 'name_conflict') {
-                        // Same name but DIFFERENT schedule -> Create Copy
-                        finalName = dupResult.suggestedName;
+                        // Ask user: Update or Copy?
+                        const userWantsUpdate = confirm(
+                            `⚠️ Class "${inputName}" already exists on this device but looks different.\n\n` +
+                            `Do you want to UPDATE the existing class with this new version?\n` +
+                            `(Cancel will create a separate copy)`
+                        );
+
+                        if (userWantsUpdate) {
+                            finalName = inputName; // Overwrite existing
+                        } else {
+                            // Create Copy
+                            finalName = dupResult.suggestedName;
+                        }
                     }
 
                     if (!shouldImport) return;
@@ -6436,12 +6447,20 @@
                     // Import class to IndexedDB/LocalStorage
                     // We simply add it to the 'classes' object and saveToStorage
                     // Ensure we preserve all fields
+                    // Preserve Local Configs if updating
+                    const oldPortalSetup = classes[finalName]?.portalSetup;
+                    const oldSharedId = classes[finalName]?.sharedId;
+
                     classes[finalName] = {
                         lastDate: classData.lastDate || formatLocalDate(new Date()),
                         subjects: classData.subjects,
                         holidays: classData.holidays || [],
                         periodTimes: classData.periodTimes || {}, // Import period times if available
-                        portalSetup: classData.portalSetup || {},  // Import portal setup if available
+
+                        // CRITICAL: Preserve local configs (Portal Mode & Mass Bunk ID)
+                        portalSetup: classData.portalSetup || oldPortalSetup || {},
+                        sharedId: classData.sharedId || oldSharedId,
+
                         updatedAt: Date.now() // Add timestamp for sync priority
                     };
 
@@ -6520,9 +6539,8 @@
                         // Skip class choice modal and import directly
                         setTimeout(() => importClassFromURL(pendingClass), 350);
                     } else {
-                        // DISABLED: No automatic modal opening
-                        // User can click "Add Class" when ready
-                        console.log('✅ Name saved. User can add class manually via dashboard.');
+                        // Restore flow: Open Class Choice Modal
+                        openOnboardingClassModal();
                     }
                 } else {
                     showToast('Please enter your name to continue', 'warning');
@@ -6538,7 +6556,15 @@
                 }
             }
 
+            let isCheckingOnboarding = false;
             function checkFirstLoginPrompt() {
+                if (isCheckingOnboarding) {
+                    console.log('🛡️ Onboarding check blocked (Lock Active)');
+                    return;
+                }
+                isCheckingOnboarding = true;
+                setTimeout(() => { isCheckingOnboarding = false; }, 3000);
+
                 // Check if user has already completed onboarding
                 const hasCompleted = localStorage.getItem('hasCompletedOnboarding');
 
@@ -6726,6 +6752,13 @@
                 // Only add if not already present (though unlikely in this flow)
                 if (!classes[exampleClassName]) {
                     classes[exampleClassName] = JSON.parse(JSON.stringify(defaultExampleClass[exampleClassName]));
+
+                    // [NEW] Disable Portal Mode by default for Example Class
+                    if (classes[exampleClassName].portalSetup) {
+                        classes[exampleClassName].portalSetup.isEnabled = false;
+                        classes[exampleClassName].portalSetup.mode = 'standard';
+                    }
+
                     saveToStorage();
                     populateClassSelector(); // Refresh dropdown
                 }

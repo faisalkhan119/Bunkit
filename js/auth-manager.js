@@ -155,6 +155,11 @@ const AuthManager = {
 
             if (data) {
                 this.profile = data;
+                // [NEW] Sync to LocalStorage for offline/onboarding consistency
+                if (data.full_name) {
+                    localStorage.setItem('userProfileName', data.full_name);
+                }
+
                 // Update UI with name/avatar if needed
                 const nameDisplay = document.getElementById('sidebarUserName');
                 if (nameDisplay && data.full_name) nameDisplay.textContent = data.full_name;
