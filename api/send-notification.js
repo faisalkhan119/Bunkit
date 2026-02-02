@@ -32,31 +32,35 @@ export default async function handler(req, res) {
         }
         // Priority 2: Fetch enabled tokens from Firestore based on time
         else {
-            // Calculate current hour in IST (UTC+5:30)
+            // Calculate current time in IST (UTC+5:30)
             const now = new Date();
             const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
             const istOffset = 5.5 * 60 * 60 * 1000;
             const istDate = new Date(utcTime + istOffset);
-            const currentHour = istDate.getHours();
 
-            console.log(`Checking for reminders scheduled at ${currentHour}:00 IST...`);
+            // Format to "HH:mm" (e.g., "09:05", "18:30")
+            const hours = istDate.getHours().toString().padStart(2, '0');
+            const minutes = istDate.getMinutes().toString().padStart(2, '0');
+            const currentTimeStr = `${hours}:${minutes}`;
+
+            console.log(`Checking for reminders scheduled at ${currentTimeStr} IST...`);
 
             const db = admin.firestore();
             const snapshot = await db.collection('notification_tokens')
                 .where('enabled', '==', true)
-                .where('reminderHour', '==', currentHour)
+                .where('reminderTime', '==', currentTimeStr) // Exact minute match
                 .get();
 
             if (snapshot.empty) {
-                console.log(`No subscribers found for ${currentHour}:00 IST.`);
-                return res.status(200).json({ success: true, message: 'No subscribers for this hour' });
+                console.log(`No subscribers found for ${currentTimeStr} IST.`);
+                return res.status(200).json({ success: true, message: 'No subscribers for this time' });
             }
 
             targetTokens = snapshot.docs
                 .map(doc => doc.data().token)
                 .filter(t => t); // Filter out null/undefined
 
-            console.log(`Found ${targetTokens.length} tokens for ${currentHour}:00.`);
+            console.log(`Found ${targetTokens.length} tokens for ${currentTimeStr}.`);
         }
 
         if (targetTokens.length === 0) {
