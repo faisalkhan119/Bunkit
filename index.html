@@ -19682,7 +19682,8 @@ RULES:
 
                         // Get base URL (works for subdirectories too)
                         const baseUrl = window.location.href.split('?')[0].split('#')[0];
-                        const shareUrl = `${baseUrl}?class=${encodedData}`;
+                        // CRITICAL: Must encode the data for URL safety (handles + and / chars)
+                        const shareUrl = `${baseUrl}?class=${encodeURIComponent(encodedData)}`;
 
                         // Check URL length - warn if too long for some platforms
                         if (shareUrl.length > 2000) {
