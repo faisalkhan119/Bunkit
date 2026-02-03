@@ -14672,6 +14672,26 @@ RULES:
 
                     const dayOfWeek = parseLocalDate(dateStr).getDay();
 
+                    // Check if date is a holiday or valid class day
+                    // NOTE: We used to rely on cleanupHolidayLogs but merging it here is safer
+                    const holidayCheck = isHolidayOrNoClass(dateStr);
+                    const isHoliday = holidayCheck.isHoliday;
+
+                    // Check date range (if lastDate is set)
+                    let isOutOfRange = false;
+                    if (selectedClass.lastDate) {
+                        try {
+                            const dateObj = parseLocalDate(dateStr);
+                            const lastDateObj = parseLocalDate(selectedClass.lastDate);
+                            // If log date is AFTER last date
+                            if (dateObj > lastDateObj) {
+                                isOutOfRange = true;
+                            }
+                        } catch (e) {
+                            console.warn('Date parsing error in cleanup:', e);
+                        }
+                    }
+
                     // Get expected classes for this day from schedule
                     const expectedClasses = new Map(); // code -> number of periods
                     selectedClass.subjects.forEach(subject => {
@@ -14694,7 +14714,16 @@ RULES:
                         // 1. Subject code is not in current class
                         // 2. Subject had no classes scheduled for this day
                         // 3. Period number exceeds scheduled periods
-                        if (!validSubjectCodes.has(code)) {
+                        // 4. Date is a Holiday (unless it's an Extra Class marked explicitly? No, standard logic assumes no classes on holidays)
+                        // 5. Date is out of class range
+
+                        if (isHoliday) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Orphan: ${key} on ${dateStr} - IS HOLIDAY (${holidayCheck.reason})`);
+                        } else if (isOutOfRange) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Orphan: ${key} on ${dateStr} - DATE OUT OF RANGE`);
+                        } else if (!validSubjectCodes.has(code)) {
                             keysToRemove.push(key);
                             console.log(`🧹 Orphan: ${key} on ${dateStr} - subject not in class`);
                         } else if (!expectedClasses.has(code)) {
