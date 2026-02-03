@@ -16668,9 +16668,20 @@ RULES:
                     endDateEl.value = document.getElementById('lastDate')?.value || selectedClass.portalSetup.lastWorkingDay || '';
                     previewSection.style.display = 'block';
                 } else {
-                    // Standard Mode - use current values
-                    startDateEl.value = document.getElementById('currentDate')?.value || '';
+                    // Standard Mode - use class start date or first log date
+                    let defaultStart = '';
+                    if (selectedClass && selectedClass.startDate) {
+                        defaultStart = selectedClass.startDate;
+                    } else {
+                        // Attempt to find first log date
+                        const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                        const dates = Object.keys(logs).sort();
+                        if (dates.length > 0) defaultStart = dates[0];
+                    }
+
+                    startDateEl.value = defaultStart || document.getElementById('currentDate')?.value || '';
                     endDateEl.value = document.getElementById('lastDate')?.value || '';
+
                     // Only show if class exists
                     previewSection.style.display = selectedClass ? 'block' : 'none';
                 }
