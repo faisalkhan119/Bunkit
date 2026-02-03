@@ -14742,18 +14742,35 @@ RULES:
 
                     // 4. Validate Logs against Expected
                     const keysToRemove = [];
-                    Object.keys(logs[dateStr]).forEach(key => {
+                    const processedPeriods = new Set(); // To track duplicates: "CODE_p1"
+
+                    // Sort keys to prioritize p-suffixed keys? No, just detect collision.
+                    // We should process specific "pX" keys first to establish ground truth.
+
+                    const logKeys = Object.keys(logs[dateStr]).sort((a, b) => {
+                        // Sort: keys with '_p' come first, so we claim the slot. Legacy 'CODE' comes last.
+                        const aHasP = a.includes('_p');
+                        const bHasP = b.includes('_p');
+                        if (aHasP && !bHasP) return -1;
+                        if (!aHasP && bHasP) return 1;
+                        return 0;
+                    });
+
+                    logKeys.forEach(key => {
                         const code = key.split('_p')[0];
                         const periodMatch = key.match(/_p(\d+)$/);
                         const periodNum = periodMatch ? parseInt(periodMatch[1]) : 1;
+                        const slotId = `${code}_p${periodNum}`;
 
-                        // Allow "Extra Class" status? 
-                        // If status is "Extra Class", maybe we shouldn't delete?
-                        // But user wants strict total fix. 
-                        // If they marked "Extra Class", it should probably be supported.
-                        // However, current logs just store Status string.
-                        // Let's assume if it's not in expectedClasses, it's invalid.
+                        // Check for DUPLICATE (Double Counting)
+                        if (processedPeriods.has(slotId)) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Duplicate Slot ${slotId}`);
+                            return;
+                        }
+                        processedPeriods.add(slotId);
 
+                        // Strict Validity Checks
                         if (isOutOfRange) {
                             keysToRemove.push(key);
                             console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Out of Range`);
@@ -14761,11 +14778,9 @@ RULES:
                             keysToRemove.push(key);
                             console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Invalid Subject`);
                         } else if (!expectedClasses.has(code)) {
-                            // Subject not scheduled for today
                             keysToRemove.push(key);
                             console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Not in Schedule (Cust/Arr/Reg)`);
                         } else if (periodNum > expectedClasses.get(code)) {
-                            // Logged period > Scheduled periods
                             keysToRemove.push(key);
                             console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Period ${periodNum} > ${expectedClasses.get(code)}`);
                         }
