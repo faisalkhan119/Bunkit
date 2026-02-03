@@ -9082,6 +9082,12 @@
 
                 const analysisResults = [];
 
+                // FIX: Clean up orphan log entries before aggregation
+                // This removes entries for classes not scheduled on their logged day
+                if (typeof cleanupOrphanLogs === 'function') {
+                    cleanupOrphanLogs();
+                }
+
                 // Aggregate Logs - ONLY for Standard Mode (non-Portal)
                 // Portal mode already handles log aggregation in calculateFromPortal()
                 const portalModeActive = selectedClass?.portalSetup?.active;
@@ -14645,6 +14651,93 @@ RULES:
 
                 return cleanedCount;
             }
+
+            /**
+             * Cleanup orphan log entries - entries for classes not scheduled on that day.
+             * This fixes issues where users have extra attended entries from:
+             * 1. Logging classes on wrong days
+             * 2. Schedule changes after logging
+             * 3. Import issues
+             * @returns {number} Number of orphan entries removed
+             */
+            function cleanupOrphanLogs() {
+                if (!selectedClass || !selectedClass.subjects) return 0;
+
+                const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
+                const validSubjectCodes = new Set(selectedClass.subjects.map(s => s.code));
+                let orphanCount = 0;
+
+                Object.keys(logs).forEach(dateStr => {
+                    if (!logs[dateStr] || typeof logs[dateStr] !== 'object') return;
+
+                    const dayOfWeek = parseLocalDate(dateStr).getDay();
+
+                    // Get expected classes for this day from schedule
+                    const expectedClasses = new Map(); // code -> number of periods
+                    selectedClass.subjects.forEach(subject => {
+                        if (subject.schedule && Array.isArray(subject.schedule)) {
+                            const periodsOnDay = subject.schedule[dayOfWeek] || 0;
+                            if (periodsOnDay > 0) {
+                                expectedClasses.set(subject.code, periodsOnDay);
+                            }
+                        }
+                    });
+
+                    // Check each log entry for this day
+                    const keysToRemove = [];
+                    Object.keys(logs[dateStr]).forEach(key => {
+                        const code = key.split('_p')[0];
+                        const periodMatch = key.match(/_p(\d+)$/);
+                        const periodNum = periodMatch ? parseInt(periodMatch[1]) : 1;
+
+                        // Remove if:
+                        // 1. Subject code is not in current class
+                        // 2. Subject had no classes scheduled for this day
+                        // 3. Period number exceeds scheduled periods
+                        if (!validSubjectCodes.has(code)) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Orphan: ${key} on ${dateStr} - subject not in class`);
+                        } else if (!expectedClasses.has(code)) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Orphan: ${key} on ${dateStr} - no classes scheduled`);
+                        } else if (periodNum > expectedClasses.get(code)) {
+                            keysToRemove.push(key);
+                            console.log(`🧹 Orphan: ${key} on ${dateStr} - period exceeds schedule`);
+                        }
+                    });
+
+                    // Remove orphan entries
+                    keysToRemove.forEach(key => {
+                        delete logs[dateStr][key];
+                        orphanCount++;
+                    });
+
+                    // Remove empty day entries
+                    if (Object.keys(logs[dateStr]).length === 0) {
+                        delete logs[dateStr];
+                    }
+                });
+
+                // Save if any changes were made
+                if (orphanCount > 0) {
+                    localStorage.setItem('attendance_logs', JSON.stringify(logs));
+                    console.log(`🧹 Cleaned ${orphanCount} orphan log entries`);
+
+                    // Show toast notification
+                    if (typeof showToast === 'function') {
+                        showToast(`🧹 Fixed ${orphanCount} mismatched log entries`, 'info');
+                    }
+                }
+
+                return orphanCount;
+            }
+
+            // Auto-run cleanup when class changes
+            window.runLogCleanup = function () {
+                const holidayCount = typeof cleanLogsOfHolidays === 'function' ? cleanLogsOfHolidays() : 0;
+                const orphanCount = cleanupOrphanLogs();
+                return { holidayCount, orphanCount };
+            };
 
             function saveDailyLog() {
                 const dateStr = document.getElementById('logDate').value;
