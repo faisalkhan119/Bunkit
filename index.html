@@ -14653,85 +14653,121 @@ RULES:
             }
 
             /**
-             * Cleanup orphan log entries - entries for classes not scheduled on that day.
-             * This fixes issues where users have extra attended entries from:
-             * 1. Logging classes on wrong days
-             * 2. Schedule changes after logging
-             * 3. Import issues
+             * Cleanup orphan log entries - STRICT version
+             * Validates every log entry against the authoritative schedule source:
+             * 1. Holiday/No Class check
+             * 2. Custom Schedule (override for specific date)
+             * 3. Timetable Arrangement (day swap)
+             * 4. Regular Weekly Schedule
              * @returns {number} Number of orphan entries removed
              */
             function cleanupOrphanLogs() {
                 if (!selectedClass || !selectedClass.subjects) return 0;
 
+                const className = selectedClass.name; // Assuming selectedClass has name property or we get from selector
+                // Fallback for className if not directly on selectedClass (it usually is)
+                const safeClassName = className || document.getElementById('classSelector')?.value;
+
                 const logs = JSON.parse(localStorage.getItem('attendance_logs')) || {};
                 const validSubjectCodes = new Set(selectedClass.subjects.map(s => s.code));
+
+                // Load Overrides
+                const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${safeClassName}`) || '{}');
+                const timetableArrangement = getTimetableArrangement(safeClassName); // Use helper function
+
                 let orphanCount = 0;
 
                 Object.keys(logs).forEach(dateStr => {
                     if (!logs[dateStr] || typeof logs[dateStr] !== 'object') return;
 
-                    const dayOfWeek = parseLocalDate(dateStr).getDay();
-
-                    // Check if date is a holiday or valid class day
-                    // NOTE: We used to rely on cleanupHolidayLogs but merging it here is safer
+                    // 1. Holiday Check
                     const holidayCheck = isHolidayOrNoClass(dateStr);
                     const isHoliday = holidayCheck.isHoliday;
 
-                    // Check date range (if lastDate is set)
+                    // 2. Date Range Check
                     let isOutOfRange = false;
                     if (selectedClass.lastDate) {
                         try {
                             const dateObj = parseLocalDate(dateStr);
                             const lastDateObj = parseLocalDate(selectedClass.lastDate);
-                            // If log date is AFTER last date
-                            if (dateObj > lastDateObj) {
-                                isOutOfRange = true;
-                            }
-                        } catch (e) {
-                            console.warn('Date parsing error in cleanup:', e);
-                        }
+                            if (dateObj > lastDateObj) isOutOfRange = true;
+                        } catch (e) { console.warn('Date parsing error', e); }
                     }
 
-                    // Get expected classes for this day from schedule
+                    // 3. Determine Schedule for this specific date
                     const expectedClasses = new Map(); // code -> number of periods
-                    selectedClass.subjects.forEach(subject => {
-                        if (subject.schedule && Array.isArray(subject.schedule)) {
-                            const periodsOnDay = subject.schedule[dayOfWeek] || 0;
-                            if (periodsOnDay > 0) {
-                                expectedClasses.set(subject.code, periodsOnDay);
+
+                    if (customSchedules[dateStr]) {
+                        // CASE A: Custom Schedule Override
+                        // This takes absolute precedence. If a subject isn't here, it has 0 classes.
+                        Object.keys(customSchedules[dateStr]).forEach(code => {
+                            if (code === '_periods') return; // Skip metadata
+                            const count = customSchedules[dateStr][code];
+                            if (count > 0) expectedClasses.set(code, count);
+                        });
+                        // Note: If custom schedule exists, we ignore regular schedule, holidays (unless marked in custom?), etc.
+                        // Actually, custom schedule usually overrides holiday too (e.g. Extra Class on Sunday)
+                        // So if custom schedule matches, we trust it over isHoliday.
+                    } else if (isHoliday) {
+                        // CASE B: Holiday (and no custom schedule)
+                        // Max classes = 0 for everyone.
+                    } else {
+                        // CASE C: Regular Schedule (with potential Day Swap)
+                        let effectiveDay = parseLocalDate(dateStr).getDay(); // 0-6
+
+                        // Check Timetable Arrangement (Day Swap)
+                        // format might be { "2024-01-01": "Monday" } or { "2024-01-01": 1 }
+                        // Need to handle whatever getTimetableArrangement returns
+                        if (timetableArrangement && timetableArrangement[dateStr]) {
+                            const val = timetableArrangement[dateStr];
+                            // Map string day to index if needed
+                            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                            if (typeof val === 'number') effectiveDay = val;
+                            else if (typeof val === 'string') {
+                                const didx = days.findIndex(d => d.toLowerCase() === val.toLowerCase());
+                                if (didx !== -1) effectiveDay = didx;
                             }
                         }
-                    });
 
-                    // Check each log entry for this day
+                        // Build expected map from schedule
+                        selectedClass.subjects.forEach(subject => {
+                            if (subject.schedule && Array.isArray(subject.schedule)) {
+                                const periodsOnDay = subject.schedule[effectiveDay] || 0;
+                                if (periodsOnDay > 0) {
+                                    expectedClasses.set(subject.code, periodsOnDay);
+                                }
+                            }
+                        });
+                    }
+
+                    // 4. Validate Logs against Expected
                     const keysToRemove = [];
                     Object.keys(logs[dateStr]).forEach(key => {
                         const code = key.split('_p')[0];
                         const periodMatch = key.match(/_p(\d+)$/);
                         const periodNum = periodMatch ? parseInt(periodMatch[1]) : 1;
 
-                        // Remove if:
-                        // 1. Subject code is not in current class
-                        // 2. Subject had no classes scheduled for this day
-                        // 3. Period number exceeds scheduled periods
-                        // 4. Date is a Holiday (unless it's an Extra Class marked explicitly? No, standard logic assumes no classes on holidays)
-                        // 5. Date is out of class range
+                        // Allow "Extra Class" status? 
+                        // If status is "Extra Class", maybe we shouldn't delete?
+                        // But user wants strict total fix. 
+                        // If they marked "Extra Class", it should probably be supported.
+                        // However, current logs just store Status string.
+                        // Let's assume if it's not in expectedClasses, it's invalid.
 
-                        if (isHoliday) {
+                        if (isOutOfRange) {
                             keysToRemove.push(key);
-                            console.log(`🧹 Orphan: ${key} on ${dateStr} - IS HOLIDAY (${holidayCheck.reason})`);
-                        } else if (isOutOfRange) {
-                            keysToRemove.push(key);
-                            console.log(`🧹 Orphan: ${key} on ${dateStr} - DATE OUT OF RANGE`);
+                            console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Out of Range`);
                         } else if (!validSubjectCodes.has(code)) {
                             keysToRemove.push(key);
-                            console.log(`🧹 Orphan: ${key} on ${dateStr} - subject not in class`);
+                            console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Invalid Subject`);
                         } else if (!expectedClasses.has(code)) {
+                            // Subject not scheduled for today
                             keysToRemove.push(key);
-                            console.log(`🧹 Orphan: ${key} on ${dateStr} - no classes scheduled`);
+                            console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Not in Schedule (Cust/Arr/Reg)`);
                         } else if (periodNum > expectedClasses.get(code)) {
+                            // Logged period > Scheduled periods
                             keysToRemove.push(key);
-                            console.log(`🧹 Orphan: ${key} on ${dateStr} - period exceeds schedule`);
+                            console.log(`🧹 Strict Clean: ${key} on ${dateStr} - Period ${periodNum} > ${expectedClasses.get(code)}`);
                         }
                     });
 
@@ -14741,20 +14777,13 @@ RULES:
                         orphanCount++;
                     });
 
-                    // Remove empty day entries
-                    if (Object.keys(logs[dateStr]).length === 0) {
-                        delete logs[dateStr];
-                    }
+                    if (Object.keys(logs[dateStr]).length === 0) delete logs[dateStr];
                 });
 
-                // Save if any changes were made
                 if (orphanCount > 0) {
                     localStorage.setItem('attendance_logs', JSON.stringify(logs));
-                    console.log(`🧹 Cleaned ${orphanCount} orphan log entries`);
-
-                    // Show toast notification
                     if (typeof showToast === 'function') {
-                        showToast(`🧹 Fixed ${orphanCount} mismatched log entries`, 'info');
+                        showToast(`🧹 Auto-Fixed ${orphanCount} log inconsistencies`, 'success');
                     }
                 }
 
