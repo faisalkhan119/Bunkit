@@ -6469,18 +6469,23 @@
             // --- Deep Link Import Logic ---
 
             function checkForClassImport() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const classData = urlParams.get('class');
+                // CRITICAL FIX: URLSearchParams.get() auto-decodes values, which mangles LZString data.
+                // We need to extract the raw parameter value without decoding.
+                const searchString = window.location.search;
+                const classMatch = searchString.match(/[?&]class=([^&]*)/);
+                const classData = classMatch ? classMatch[1] : null;
 
                 if (classData) {
-                    // Store for import after onboarding completes
+                    // Store the RAW (still URL-encoded) value for import
+                    // The decompression function will handle decoding
                     sessionStorage.setItem('pendingClassImport', classData);
+                    console.log("🔗 Class import link detected (raw). Length:", classData.length);
 
                     // Clean URL without reload to avoid messy URL
                     const cleanUrl = window.location.origin + window.location.pathname;
                     window.history.replaceState({}, document.title, cleanUrl);
 
-                    console.log("🔗 Class import link detected and stored.");
+                    console.log("🔗 Class import link stored and URL cleaned.");
                 }
             }
 
@@ -6555,19 +6560,22 @@
                         console.log("🔗 v2_ Payload (first 30 chars):", rawPayload.substring(0, 30));
 
                         // Decompression strategies in order of likelihood
+                        // NOTE: Since we now store raw URL-encoded data, we need to decode first
                         const strategies = [
-                            // Strategy 1: Replace spaces with + (URLSearchParams converts + to space)
-                            () => LZString.decompressFromEncodedURIComponent(rawPayload.replace(/ /g, '+')),
-                            // Strategy 2: Raw payload (no modification)
+                            // Strategy 1: URL decode first, then decompress (MOST LIKELY to work)
+                            () => LZString.decompressFromEncodedURIComponent(decodeURIComponent(rawPayload)),
+                            // Strategy 2: URL decode + replace %20 with + (some encoders use %20)
+                            () => LZString.decompressFromEncodedURIComponent(decodeURIComponent(rawPayload).replace(/%20/g, '+')),
+                            // Strategy 3: Raw payload (in case it's already decoded)
                             () => LZString.decompressFromEncodedURIComponent(rawPayload),
-                            // Strategy 3: Strip all whitespace
+                            // Strategy 4: Replace spaces with + (old behavior)
+                            () => LZString.decompressFromEncodedURIComponent(rawPayload.replace(/ /g, '+')),
+                            // Strategy 5: Strip all whitespace
                             () => LZString.decompressFromEncodedURIComponent(rawPayload.replace(/\s/g, '')),
-                            // Strategy 4: URL decode first (handles double-encoding)
-                            () => LZString.decompressFromEncodedURIComponent(decodeURIComponent(rawPayload.replace(/ /g, '+'))),
-                            // Strategy 5: Try Base64 variant (some older links might use this)
-                            () => LZString.decompressFromBase64(rawPayload.replace(/ /g, '+')),
-                            // Strategy 6: Try UTF-16 (least likely but covers edge cases)
-                            () => LZString.decompress(rawPayload)
+                            // Strategy 6: Try Base64 variant (some older links might use this)
+                            () => LZString.decompressFromBase64(decodeURIComponent(rawPayload)),
+                            // Strategy 7: Try UTF-16 (least likely but covers edge cases)
+                            () => LZString.decompress(decodeURIComponent(rawPayload))
                         ];
 
                         for (let i = 0; i < strategies.length; i++) {
