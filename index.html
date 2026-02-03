@@ -6551,25 +6551,35 @@
                     // Decode class data (Support for v2 compressed and v1 base64)
                     let jsonString;
                     if (encodedData.startsWith('v2_')) {
-                        // FIX: URLSearchParams converts '+' to spaces.
-                        // STRATEGY 1: Restore '+' and try decompression
-                        let fixedData = encodedData.substring(3).replace(/ /g, '+');
-                        console.log("Strategy 1 (Replace Space -> +):", fixedData);
-                        jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+                        const rawPayload = encodedData.substring(3);
+                        console.log("🔗 v2_ Payload (first 30 chars):", rawPayload.substring(0, 30));
 
-                        if (!jsonString) {
-                            // STRATEGY 2: Maybe browser DIDN'T replace +? Try raw substring.
-                            console.warn("Strategy 1 failed. Trying Strategy 2 (Raw substring)...");
-                            fixedData = encodedData.substring(3);
-                            jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
-                        }
+                        // Decompression strategies in order of likelihood
+                        const strategies = [
+                            // Strategy 1: Replace spaces with + (URLSearchParams converts + to space)
+                            () => LZString.decompressFromEncodedURIComponent(rawPayload.replace(/ /g, '+')),
+                            // Strategy 2: Raw payload (no modification)
+                            () => LZString.decompressFromEncodedURIComponent(rawPayload),
+                            // Strategy 3: Strip all whitespace
+                            () => LZString.decompressFromEncodedURIComponent(rawPayload.replace(/\s/g, '')),
+                            // Strategy 4: URL decode first (handles double-encoding)
+                            () => LZString.decompressFromEncodedURIComponent(decodeURIComponent(rawPayload.replace(/ /g, '+'))),
+                            // Strategy 5: Try Base64 variant (some older links might use this)
+                            () => LZString.decompressFromBase64(rawPayload.replace(/ /g, '+')),
+                            // Strategy 6: Try UTF-16 (least likely but covers edge cases)
+                            () => LZString.decompress(rawPayload)
+                        ];
 
-                        if (!jsonString) {
-                            // STRATEGY 3: URL Decoding might have messed up differently?
-                            // Try to strip any whitespace
-                            console.warn("Strategy 2 failed. Trying Strategy 3 (Strip whitespace)...");
-                            fixedData = encodedData.substring(3).replace(/\s/g, '');
-                            jsonString = LZString.decompressFromEncodedURIComponent(fixedData);
+                        for (let i = 0; i < strategies.length; i++) {
+                            try {
+                                jsonString = strategies[i]();
+                                if (jsonString) {
+                                    console.log(`✅ Decompression succeeded with Strategy ${i + 1}`);
+                                    break;
+                                }
+                            } catch (e) {
+                                console.warn(`Strategy ${i + 1} threw error:`, e.message);
+                            }
                         }
                     } else if (encodedData.match(/^v\d+_/)) {
                         // Unknown future version (v3_, v4_, etc.) - show helpful error
@@ -6580,7 +6590,8 @@
                     }
 
                     if (!jsonString) {
-                        console.error("❌ Decompression returned null/empty.");
+                        console.error("❌ All decompression strategies failed.");
+                        console.error("❌ Raw data (first 50 chars):", encodedData.substring(0, 50));
                         throw new Error(`Decompression failed. Data length: ${encodedData.length}`);
                     }
                     const classData = JSON.parse(jsonString);
