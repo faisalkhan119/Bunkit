@@ -16663,10 +16663,25 @@ RULES:
                 const endDateEl = document.getElementById('previewEndDate');
 
                 if (selectedClass?.portalSetup?.active) {
-                    // Portal Mode - use semesterStartDate
+                    // Portal Mode - Fixed Start Date (Semester Start)
                     startDateEl.value = selectedClass.portalSetup.semesterStartDate || '';
+                    startDateEl.disabled = true; // Lock start date
+                    startDateEl.title = "Start date is fixed to Semester Start in Portal Mode";
+
                     endDateEl.value = document.getElementById('lastDate')?.value || selectedClass.portalSetup.lastWorkingDay || '';
                     previewSection.style.display = 'block';
+
+                    // Add helper text if not present
+                    let hint = document.getElementById('portalPreviewHint');
+                    if (!hint) {
+                        hint = document.createElement('p');
+                        hint.id = 'portalPreviewHint';
+                        hint.style.fontSize = '0.8rem';
+                        hint.style.color = 'var(--medium-text)';
+                        hint.style.marginTop = '5px';
+                        hint.innerHTML = '💡 <strong>Tip:</strong> Change <strong>End Date</strong> to your Exam Date to see if you can meet criteria by then.';
+                        endDateEl.parentNode.appendChild(hint);
+                    }
                 } else {
                     // Standard Mode - use class start date or first log date
                     let defaultStart = '';
