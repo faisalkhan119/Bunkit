@@ -6469,17 +6469,14 @@
             // --- Deep Link Import Logic ---
 
             function checkForClassImport() {
-                // CRITICAL FIX: URLSearchParams.get() auto-decodes values, which mangles LZString data.
-                // We need to extract the raw parameter value without decoding.
-                const searchString = window.location.search;
-                const classMatch = searchString.match(/[?&]class=([^&]*)/);
-                const classData = classMatch ? classMatch[1] : null;
+                // UPDATE: We now properly encode the share link on generation.
+                // So checking with URLSearchParams (which auto-decodes) is now Safe and Correct.
+                const params = new URLSearchParams(window.location.search);
+                const classData = params.get('class');
 
                 if (classData) {
-                    // Store the RAW (still URL-encoded) value for import
-                    // The decompression function will handle decoding
                     sessionStorage.setItem('pendingClassImport', classData);
-                    console.log("🔗 Class import link detected (raw). Length:", classData.length);
+                    console.log("🔗 Class import link detected. Length:", classData.length);
 
                     // Clean URL without reload to avoid messy URL
                     const cleanUrl = window.location.origin + window.location.pathname;
