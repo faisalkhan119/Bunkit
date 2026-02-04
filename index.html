@@ -18426,16 +18426,18 @@ RULES:
                 // Compression v2
                 const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(cleanClassData));
                 const encodedData = 'v2_' + compressed;
-                const shareUrl = `${window.location.origin}${window.location.pathname}?class=${encodedData}`;
+
+                // FIX: properly encode the data component for URL usage
+                const safeParam = encodeURIComponent(encodedData);
+                const shareUrl = `${window.location.origin}${window.location.pathname}?class=${safeParam}`;
 
                 // URL length validation (browsers typically support ~2000 chars, warn at 1500)
-                if (shareUrl.length > 1500) {
-                    console.warn(`⚠️ Share URL is ${shareUrl.length} chars (may exceed limits)`);
-                    if (shareUrl.length > 2000) {
-                        showToast('⚠️ Class too large to share', 'Try removing some subjects or holidays', { duration: 5000 });
-                        return;
-                    }
-                    showToast('⚠️ Large class', 'Link may not work on all devices', { duration: 3000 });
+                if (shareUrl.length > 2000) {
+                    // Critical warning for newer browsers/apps
+                    showToast('⚠️ Class data is very large!', 'Link may be truncated and fail.', { duration: 8000 });
+                    alert('⚠️ WARNING: This class has a lot of data (History/Timetable).\nThe generated link is very long (' + shareUrl.length + ' chars).\n\nSome apps may cut it off, causing import to fail.\n\nTry sending it via Email or Telegram which support long links.');
+                } else if (shareUrl.length > 1500) {
+                    showToast('⚠️ Large link generated', 'Use a simplified class if possible', { duration: 4000 });
                 }
 
                 const shareData = {
