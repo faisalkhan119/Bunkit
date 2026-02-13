@@ -14056,21 +14056,24 @@ RULES:
                 const className = document.getElementById('classSelector').value;
                 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-                // Calculate max periods - find the highest period number used
+                // Calculate max periods - sum all subjects' classes per day, then take the highest day
                 let maxPeriods = 0;
-                selectedClass.subjects.forEach(subject => {
-                    subject.schedule.forEach(scheduleValue => {
+                const numDays = 7;
+                for (let dayIdx = 0; dayIdx < numDays; dayIdx++) {
+                    let dayTotal = 0;
+                    selectedClass.subjects.forEach(subject => {
+                        const scheduleValue = subject.schedule[dayIdx];
                         if (typeof scheduleValue === 'number') {
-                            // Old format: number of periods on that day
-                            if (scheduleValue > maxPeriods) maxPeriods = scheduleValue;
+                            dayTotal += scheduleValue;
                         } else if (typeof scheduleValue === 'string' && scheduleValue !== '0' && scheduleValue !== '') {
-                            // New format: period slots like "3" or "1,3,4"
+                            // New format: period slots like "1,3,4"
                             const periods = scheduleValue.split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p));
                             const maxInSlot = Math.max(...periods, 0);
-                            if (maxInSlot > maxPeriods) maxPeriods = maxInSlot;
+                            if (maxInSlot > dayTotal) dayTotal = maxInSlot;
                         }
                     });
-                });
+                    if (dayTotal > maxPeriods) maxPeriods = dayTotal;
+                }
 
                 if (maxPeriods === 0) {
                     alert('No periods to configure. Add subjects with schedules first.');
