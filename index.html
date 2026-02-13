@@ -9034,7 +9034,9 @@
 
                 // Initialize the structure with Header and View Containers
                 // Check if this is Standard mode (not Portal mode) to show assumption message
-                const isPortalMode = selectedClass?.portalSetup?.active;
+                // Even if portal is active, if user switched to standard calc, show the notice
+                const isInStandardCalc = sessionStorage.getItem('calculatingFromPortal') === 'true';
+                const isPortalMode = selectedClass?.portalSetup?.active && !isInStandardCalc;
                 const standardModeNotice = !isPortalMode ? `
                     <div style="background: linear-gradient(135deg, #3b82f620, #60a5fa20); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 1.2rem;">ℹ️</span>
@@ -16065,6 +16067,9 @@ RULES:
                 // Add standard mode toggle (Back button)
                 addStandardModeToggle();
 
+                // Re-initialize preview dates for Standard mode (unlocks start date)
+                if (typeof initializePreviewDates === 'function') initializePreviewDates();
+
                 // Scroll to upload section
                 setTimeout(() => {
                     if (uploadSection) {
@@ -16373,6 +16378,9 @@ RULES:
 
                 // Add mode toggle to standard mode
                 addStandardModeToggle();
+
+                // Re-initialize preview dates for Standard mode (unlocks start date)
+                if (typeof initializePreviewDates === 'function') initializePreviewDates();
 
                 // Scroll to upload section
                 setTimeout(() => {
