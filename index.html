@@ -22592,6 +22592,18 @@ Answer helpfully using this context.`;
                         }
                     });
                 </script>
+
+                <!-- Skip Today Modal -->
+                <div id="skipTodayModal" class="modal">
+                    <div class="modal-content">
+                        <button class="modal-close" onclick="closeModal('skipTodayModal')">&times;</button>
+                        <div class="modal-header">
+                            <h3>🤔 Can I Skip Today?</h3>
+                        </div>
+                        <div id="skipTodayResults" style="padding: 15px;"></div>
+                    </div>
+                </div>
+
                 <!-- Toast Container -->
                 <div id="toast-container"></div>
 
