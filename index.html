@@ -16379,6 +16379,9 @@ RULES:
                 // Add mode toggle to standard mode
                 addStandardModeToggle();
 
+                // Mark that we're in standard calc mode (even if portal is active)
+                sessionStorage.setItem('calculatingFromPortal', 'true');
+
                 // Re-initialize preview dates for Standard mode (unlocks start date)
                 if (typeof initializePreviewDates === 'function') initializePreviewDates();
 
@@ -16500,7 +16503,9 @@ RULES:
                 // Get today's date as default start for preview
                 const todayStr = document.getElementById('currentDate')?.value || new Date().toISOString().split('T')[0];
 
-                if (selectedClass?.portalSetup?.active) {
+                // Check if user switched to standard calc mode (even if portal is active)
+                const isInStandardCalc = sessionStorage.getItem('calculatingFromPortal') === 'true';
+                if (selectedClass?.portalSetup?.active && !isInStandardCalc) {
                     // Portal Mode - Start = Today (Locked), End = Last Working Day (Editable)
                     startDateEl.value = todayStr;
                     startDateEl.disabled = true; // User can only change end date
