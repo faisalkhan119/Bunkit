@@ -13962,6 +13962,22 @@ RULES:
                 const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
                 const subjectsToday = selectedClass.subjects.filter(s => s.schedule[scheduleIndex] > 0);
+
+                // Build full modal content dynamically
+                const modal = document.getElementById('skipTodayModal');
+                if (!modal) return;
+
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <button class="modal-close" onclick="closeModal('skipTodayModal')">&times;</button>
+                        <div class="modal-header">
+                            <h2>🤔 Can I Skip Today?</h2>
+                            <p>See how skipping today's classes affects your final attendance</p>
+                        </div>
+                        <div id="skipTodayResults"></div>
+                    </div>
+                `;
+
                 const resultsDiv = document.getElementById('skipTodayResults');
 
                 if (subjectsToday.length === 0) {
@@ -22592,28 +22608,6 @@ Answer helpfully using this context.`;
                         }
                     });
                 </script>
-
-                <!-- Skip Today Modal -->
-                <div id="skipTodayModal" class="modal"
-                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:999999; justify-content:center; align-items:center;">
-                    <div
-                        style="background:var(--card-bg, #fff); border-radius:20px; padding:30px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:80vh; overflow-y:auto;">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="margin:0; color:var(--dark-text, #2c3e50);">🤔 Can I Skip Today?</h3>
-                            <button onclick="closeModal('skipTodayModal')"
-                                style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--medium-text);">&times;</button>
-                        </div>
-                        <div id="skipTodayResults" style="padding: 5px 0;"></div>
-                        <div style="text-align:center; margin-top:15px;">
-                            <button onclick="closeModal('skipTodayModal')"
-                                style="padding:10px 24px; border:none; border-radius:10px; background:var(--light-bg, #f0f2f5); color:var(--dark-text, #2c3e50); font-size:14px; cursor:pointer;">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Toast Container -->
                 <div id="toast-container"></div>
 
