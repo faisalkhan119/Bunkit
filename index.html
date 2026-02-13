@@ -16477,14 +16477,22 @@ RULES:
                 const startDateEl = document.getElementById('previewStartDate');
                 const endDateEl = document.getElementById('previewEndDate');
 
+
+                // Get today's date as default start for preview
+                const todayStr = document.getElementById('currentDate')?.value || new Date().toISOString().split('T')[0];
+
                 if (selectedClass?.portalSetup?.active) {
-                    // Portal Mode - use semesterStartDate
-                    startDateEl.value = selectedClass.portalSetup.semesterStartDate || '';
+                    // Portal Mode - Start = Today (Locked), End = Last Working Day (Editable)
+                    startDateEl.value = todayStr;
+                    startDateEl.disabled = true; // User can only change end date
+                    startDateEl.title = "Start date is fixed to today in Portal Mode";
                     endDateEl.value = document.getElementById('lastDate')?.value || selectedClass.portalSetup.lastWorkingDay || '';
                     previewSection.style.display = 'block';
                 } else {
-                    // Standard Mode - use current values
-                    startDateEl.value = document.getElementById('currentDate')?.value || '';
+                    // Standard Mode - Start = Today (Editable), End = Last Working Day (Editable)
+                    startDateEl.value = todayStr;
+                    startDateEl.disabled = false; // User can change both dates
+                    startDateEl.title = "Change start date to preview from a different point";
                     endDateEl.value = document.getElementById('lastDate')?.value || '';
                     // Only show if class exists
                     previewSection.style.display = selectedClass ? 'block' : 'none';
