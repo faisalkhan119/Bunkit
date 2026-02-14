@@ -292,7 +292,7 @@
             console.log('%c🔒 Security measures active', 'color: #28a745; font-weight: bold;');
         })();
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Bunk it - Free Attendance Tracker App for College Students | 75% Calculator</title>
 
     <!-- Primary SEO Meta Tags -->
@@ -315,6 +315,33 @@
     <link rel="alternate" hreflang="en-IN" href="https://bunkitapp.in/">
     <link rel="alternate" hreflang="hi" href="https://bunkitapp.in/">
     <link rel="alternate" hreflang="x-default" href="https://bunkitapp.in/">
+
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Air 4 -->
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad 10.5 -->
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Pro 11 -->
+    <link rel="apple-touch-startup-image" href="ios-splash.png"
+        media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Mini, Air -->
+
 
     <!-- Additional SEO Signals -->
     <meta name="rating" content="General">
@@ -356,7 +383,7 @@
     <meta name="application-name" content="Bunk it">
     <meta name="apple-mobile-web-app-title" content="Bunk it">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-TileColor" content="#667eea">
@@ -524,6 +551,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="js/pull-to-refresh.js"></script>
+    <script src="js/pwa-compat.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
@@ -636,6 +665,12 @@
             /* Brighter light mode container */
             --card-bg: white;
             --header-text-color: white;
+
+            /* Safe Area Insets (iOS Notch support) */
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
         }
 
         /* --- NEW: Dark Mode Theme --- */
@@ -717,6 +752,32 @@
             padding: 20px;
             color: var(--dark-text);
             transition: background 0.3s ease, color 0.3s ease;
+
+            /* iOS PWA UX Improvements */
+            overscroll-behavior-y: none;
+            /* Prevent pull-to-refresh rubber banding */
+            -webkit-tap-highlight-color: transparent;
+            /* Remove grey tap highlight */
+            touch-action: pan-x pan-y;
+            -webkit-user-select: none;
+            /* Disable text selection for UI feel */
+            user-select: none;
+        }
+
+        /* Allow text selection in inputs and content areas */
+        input,
+        textarea,
+        [contenteditable="true"],
+        .selectable-text {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* Prevent auto-zoom on inputs (font-size >= 16px) */
+        input,
+        select,
+        textarea {
+            font-size: 16px !important;
         }
 
         /* --- CUSTOM SCROLLBARS --- */

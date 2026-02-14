@@ -56,7 +56,9 @@ const ASSETS_TO_CACHE = [
     './notification-icon.png',
     './js/auth-manager.js',
     './js/sync-manager.js',
-    './js/social-manager.js'
+    './js/social-manager.js',
+    './js/pull-to-refresh.js',
+    './js/pwa-compat.js'
 ];
 
 // External assets to cache at runtime
