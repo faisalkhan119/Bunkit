@@ -22,21 +22,22 @@ const SocialManager = {
         const validSubjects = subjects.filter(s => s.code && s.name);
 
         // Sort by Code to ensure order independence
-        validSubjects.sort((a, b) => a.code.localeCompare(b.code));
+        validSubjects.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
 
         const timetableStr = validSubjects.map(s => {
             // Trim and Uppercase code
             const code = s.code ? s.code.trim().toUpperCase() : '';
+            // Schedule is the core structure
             return `${code}:${JSON.stringify(s.schedule || [])}`;
         }).join('|');
 
         // 2. Meta Fingerprint
-        const startDate = classData.startDate || '';
-        const lastDate = classData.lastDate || '';
+        // CRITICAL FIX: Exclude startDate/lastDate as they vary per user (lastDate changes daily!)
+        // Only Holidays define the 'structural' calendar of the class
         const holidays = (classData.holidays || []).sort().join(',');
 
         // 3. Final String
-        const fingerPrint = `${timetableStr}||${startDate}||${lastDate}||${holidays}`;
+        const fingerPrint = `${timetableStr}||${holidays}`;
 
         // 4. Hash (SHA-256)
         const msgBuffer = new TextEncoder().encode(fingerPrint);

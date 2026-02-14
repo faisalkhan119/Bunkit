@@ -545,17 +545,27 @@ window.CommunityManager = CommunityManager;
         try {
             if (!window.supabaseClient) { console.warn("⚠️ Supabase not loaded"); return; }
             if (!window.AuthManager?.user) { console.warn("⚠️ User not logged in"); return; }
-            if (!window.classes) { console.warn("⚠️ window.classes not found"); return; }
+            if (!window.classes || Object.keys(window.classes).length === 0) { console.warn("⚠️ No classes found"); return; }
 
             const userId = AuthManager.user.id;
             const registrations = [];
+            let needsSave = false;
 
             console.log("📂 Classes found:", Object.keys(window.classes).length);
 
             for (const className in window.classes) {
                 const classData = window.classes[className];
-                // Debug log for each class
-                // console.log(`Checking ${className}: sharedId=${classData.sharedId}`);
+
+                // AUTO-MIGRATE: Ensure sharedId is the canonical stable hash (without lastDate)
+                if (window.SocialManager && classData.subjects) {
+                    const canonicalId = await window.SocialManager.generateSharedClassId(classData);
+                    if (canonicalId && classData.sharedId !== canonicalId) {
+                        console.log(`🛠️ Migrating class "${className}" to stable Shared ID: ${canonicalId} (was ${classData.sharedId})`);
+                        classData.sharedId = canonicalId;
+                        window.classes[className] = classData;
+                        needsSave = true;
+                    }
+                }
 
                 if (classData.sharedId) {
                     registrations.push({
@@ -563,6 +573,12 @@ window.CommunityManager = CommunityManager;
                         user_id: userId
                     });
                 }
+            }
+
+            // Save migrated IDs if any changed
+            if (needsSave && window.saveToStorage) {
+                window.saveToStorage();
+                console.log("💾 Updated classes with stable Shared IDs");
             }
 
             if (registrations.length === 0) {
@@ -579,7 +595,7 @@ window.CommunityManager = CommunityManager;
             if (error) {
                 console.error('❌ Auto-register failed:', error);
             } else {
-                console.log(`✅ Success! Registered ${registrations.length} classes.`);
+                console.log(`✅ Success! Registered ${registrations.length} memberships with stable IDs.`);
             }
         } catch (e) {
             console.error('❌ Auto-register crash:', e);
