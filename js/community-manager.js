@@ -40,8 +40,10 @@ const CommunityManager = {
             return;
         }
 
-        // Guard: No class selected
-        if (!window.selectedClass) {
+        // Guard: No class selected — read from classSelector dropdown (selectedClass is local, not on window)
+        const className = document.getElementById('classSelector')?.value;
+        const classData = className && window.classes ? window.classes[className] : null;
+        if (!className || !classData) {
             loading.style.display = 'none';
             content.style.display = 'block';
             document.getElementById('communityStatusList').innerHTML = '';
@@ -53,7 +55,7 @@ const CommunityManager = {
         }
 
         // Set class ID
-        this.currentClassId = window.selectedClass.name;
+        this.currentClassId = className;
         classNameDisplay.textContent = this.currentClassId;
 
         try {
