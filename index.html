@@ -32,6 +32,7 @@
 
     <script src="js/auth-manager.js"></script>
     <script src="js/sync-manager.js"></script>
+    <script src="js/community-manager.js"></script>
     <script src="js/social-manager.js"></script>
     <!-- Firebase SDK for Cloud Messaging -->
     <script type="module">
@@ -5607,6 +5608,9 @@
         <a href="#" id="sidebarDeleteBtn" onclick="AuthManager.deleteAccount(); closeNav();"
             style="display: none; color: #c0392b; font-size: 0.9rem; margin-top: 5px;">🗑️ Delete
             Account</a>
+
+        <!-- Community Option -->
+        <a href="#" onclick="CommunityManager.openCommunityModal(); closeNav();">🗳️ Community</a>
 
         <!-- File Options -->
         <a href="#" class="sidenav-dropdown-toggle" onclick="toggleDropdown(this)">📁 File <span>▾</span></a>
@@ -22627,6 +22631,378 @@ Answer helpfully using this context.`;
                     style="bottom: 20px; right: 20px; font-size: 24px;">
                     🔔
                 </button>
+                <!-- Community Modal -->
+                <div id="communityModal" class="modal">
+                    <div class="modal-content full-screen-modal">
+                        <button class="modal-close" onclick="closeModal('communityModal')">&times;</button>
+                        <div class="modal-header">
+                            <h2>🗳️ Class Community</h2>
+                            <p>Polls & Mass Bunks for <span id="communityClassName">...</span></p>
+                        </div>
+
+                        <div id="communityLoading" class="loading-spinner"
+                            style="display:none; text-align:center; padding:20px;">
+                            <div class="spinner"></div>
+                            <p>Checking class eligibility...</p>
+                        </div>
+
+                        <div id="communityContent" style="display:none;">
+                            <!-- Status Dashboard -->
+                            <div class="status-card"
+                                style="background: var(--light-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                                <h3>👥 Class Readiness</h3>
+                                <p class="status-subtitle"
+                                    style="font-size: 0.9rem; color: var(--medium-text); margin-bottom: 15px;">
+                                    Mass Bunk unlocks when <strong>ALL</strong> active members have marked today's
+                                    attendance AND are safe (>75%).
+                                </p>
+
+                                <div id="communityStatusList" class="status-list"
+                                    style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;">
+                                    <!-- Rendered by JS -->
+                                </div>
+
+                                <div id="communityAlert" class="alert-box"
+                                    style="margin-top: 15px; padding: 10px; border-radius: 8px; font-size: 0.9rem;">
+                                    Checking...
+                                </div>
+                            </div>
+
+                            <!-- Active Polls Section -->
+                            <div id="pollsSection"
+                                style="margin-top: 20px; display:none; opacity: 0.5; pointer-events: none;">
+                                <div
+                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                    <h3>Active Polls</h3>
+                                    <button id="createPollBtn" class="btn primary-btn"
+                                        onclick="CommunityManager.openCreatePollModal()" disabled>+ Create Mass Bunk
+                                        Poll</button>
+                                </div>
+                                <div id="pollsFeed" class="polls-feed">
+                                    <!-- Rendered by JS -->
+                                    <div class="empty-state"
+                                        style="text-align:center; color: var(--medium-text); padding: 20px;">
+                                        No active polls yet.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    /* Community Styles */
+                    .member-item {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 8px 12px;
+                        background: white;
+                        border-radius: 8px;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                    }
+
+                    .member-info {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+
+                    .member-status-icon {
+                        font-size: 1.2rem;
+                    }
+
+                    .member-name {
+                        font-weight: 500;
+                        color: var(--main-text);
+                    }
+
+                    .member-percent {
+                        font-size: 0.85rem;
+                        color: var(--medium-text);
+                    }
+
+                    .status-ready {
+                        border-left: 4px solid #2ecc71;
+                    }
+
+                    .status-not-ready {
+                        border-left: 4px solid #e74c3c;
+                    }
+
+                    .status-pending {
+                        border-left: 4px solid #f1c40f;
+                    }
+
+                    .alert-box.success {
+                        background: #d4edda;
+                        color: #155724;
+                        border: 1px solid #c3e6cb;
+                    }
+
+                    .alert-box.warning {
+                        background: #fff3cd;
+                        color: #856404;
+                        border: 1px solid #ffeeba;
+                    }
+
+                    .alert-box.danger {
+                        background: #f8d7da;
+                        color: #721c24;
+                        border: 1px solid #f5c6cb;
+                    }
+
+                    .polls-unlocked {
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    }
+                </style>
+
+                <script>
+                    // Render Function used by CommunityManager
+                    window.renderCommunityModal = function () {
+                        const modal = document.getElementById('communityModal');
+                        const loading = document.getElementById('communityLoading');
+                        const content = document.getElementById('communityContent');
+                        const list = document.getElementById('communityStatusList');
+                        const alertBox = document.getElementById('communityAlert');
+                        const pollsSection = document.getElementById('pollsSection');
+                        const createBtn = document.getElementById('createPollBtn');
+                        const classNameDisplay = document.getElementById('communityClassName');
+
+                        // Show Modal
+                        modal.style.display = 'block';
+                        classNameDisplay.textContent = CommunityManager.currentClassId || 'Unknown Class';
+
+                        // Check State
+                        if (!CommunityManager.members || CommunityManager.members.length === 0) {
+                            loading.style.display = 'block';
+                            content.style.display = 'none';
+                            return;
+                        }
+
+                        // Hide Loading, Show Content
+                        loading.style.display = 'none';
+                        content.style.display = 'block';
+
+                        // Render Members Status
+                        list.innerHTML = '';
+                        let allReady = true;
+                        let missingLogs = false;
+                        let lowAttendance = false;
+
+                        CommunityManager.members.forEach(m => {
+                            const div = document.createElement('div');
+                            div.className = 'member-item ' + (m.ready ? 'status-ready' : 'status-not-ready');
+
+                            let icon = '✅';
+                            let statusText = 'Ready';
+
+                            if (!m.ready) {
+                                allReady = false;
+                                icon = '❌';
+                                statusText = 'Low Attendance (<75%)';
+                                lowAttendance = true;
+                            }
+
+                            // Note: IsLogUpdated check is implicit in can_mass_bunk for now based on strict rule
+
+                            div.innerHTML = `
+                    <div class="member-info">
+                        <span class="member-status-icon">${icon}</span>
+                        <div>
+                            <div class="member-name">${m.name}</div>
+                            <div class="member-percent">${m.percentage}% Attendance</div>
+                        </div>
+                    </div>
+                `;
+                            list.appendChild(div);
+                        });
+
+                        // Update Alert & Poll Section
+                        pollsSection.className = ''; // Reset
+
+                        if (allReady) {
+                            alertBox.className = 'alert-box success';
+                            alertBox.innerHTML = '🎉 <strong>Mass Bunk Unlocked!</strong> All members are eligible.';
+
+                            pollsSection.style.display = 'block';
+                            pollsSection.classList.add('polls-unlocked');
+                            createBtn.disabled = false;
+
+                            // Load Polls (Chunk 3)
+                            if (CommunityManager.loadPolls) CommunityManager.loadPolls();
+
+                        } else {
+                            alertBox.className = 'alert-box danger';
+                            alertBox.innerHTML = '⛔ <strong>Mass Bunk Locked.</strong> Some members are not eligible (Low Attendance).';
+
+                            pollsSection.style.display = 'block';
+                            pollsSection.classList.remove('polls-unlocked'); // Greys it out
+                            createBtn.disabled = true;
+                        }
+                    };
+                </script>
+                <!-- Create Poll Modal -->
+                <div id="createPollModal" class="modal">
+                    <div class="modal-content">
+                        <button class="modal-close" onclick="closeModal('createPollModal')">&times;</button>
+                        <div class="modal-header">
+                            <h2>📢 Create Mass Bunk Poll</h2>
+                        </div>
+                        <div class="input-group">
+                            <label>Subject</label>
+                            <select id="pollSubject" class="full-width-input">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Target Date</label>
+                            <input type="date" id="pollDate" class="full-width-input">
+                        </div>
+                        <div class="input-group">
+                            <label>Message (Optional)</label>
+                            <textarea id="pollMessage" class="full-width-input"
+                                placeholder="Why are we bunking? (e.g. Professor absent)"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn primary-btn" onclick="submitCreatePoll()">Create Poll</button>
+                            <button class="btn secondary-btn" onclick="closeModal('createPollModal')">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    // UI Helpers for Polls
+                    window.openCreatePollModal = function () {
+                        const modal = document.getElementById('createPollModal');
+                        const subjectSelect = document.getElementById('pollSubject');
+                        const dateInput = document.getElementById('pollDate');
+
+                        // Populate Subjects
+                        subjectSelect.innerHTML = '';
+                        if (window.selectedClass && window.selectedClass.subjects) {
+                            window.selectedClass.subjects.forEach(s => {
+                                const opt = document.createElement('option');
+                                opt.value = s.name;
+                                opt.textContent = s.name;
+                                subjectSelect.appendChild(opt);
+                            });
+                        }
+
+                        // Default Date = Tomorrow
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        dateInput.value = tomorrow.toISOString().split('T')[0];
+
+                        modal.style.display = 'block';
+                    };
+
+                    window.submitCreatePoll = function () {
+                        const subject = document.getElementById('pollSubject').value;
+                        const date = document.getElementById('pollDate').value;
+                        const msg = document.getElementById('pollMessage').value;
+
+                        if (!subject || !date) {
+                            alert("Please select a subject and date.");
+                            return;
+                        }
+
+                        CommunityManager.createPoll(subject, date, msg);
+                    };
+
+                    window.renderPolls = function (polls) {
+                        const feed = document.getElementById('pollsFeed');
+                        if (!feed) return;
+
+                        feed.innerHTML = '';
+
+                        if (polls.length === 0) {
+                            feed.innerHTML = '<div class="empty-state" style="text-align:center; padding:20px; color:var(--medium-text);">No active mass bunk polls.</div>';
+                            return;
+                        }
+
+                        polls.forEach(p => {
+                            const card = document.createElement('div');
+                            card.className = 'poll-card ' + (p.isExpired ? 'expired' : '');
+                            card.style.cssText = `
+                    background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px;
+                    border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                `;
+                            if (p.isExpired) card.style.opacity = '0.6';
+
+                            // Vote Buttons
+                            // Only show buttons if active. If voted, highlight selection.
+                            const yesClass = p.myVote === 'yes' ? 'selected' : '';
+                            const noClass = p.myVote === 'no' ? 'selected' : '';
+
+                            let actionButtons = '';
+                            if (!p.isExpired) {
+                                actionButtons = `
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button class="poll-btn yes-btn ${yesClass}" onclick="CommunityManager.vote('${p.id}', 'yes')">
+                                👍 Yes (${p.yesCount})
+                            </button>
+                            <button class="poll-btn no-btn ${noClass}" onclick="CommunityManager.vote('${p.id}', 'no')">
+                                👎 No (${p.noCount})
+                            </button>
+                        </div>
+                    `;
+                            } else {
+                                actionButtons = `
+                        <div style="margin-top:10px; font-weight:bold; color:var(--medium-text);">
+                            Result: Yes (${p.yesCount}) - No (${p.noCount}) [Expired]
+                        </div>
+                    `;
+                            }
+
+                            card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div>
+                            <div style="font-weight:600; font-size:1.1rem;">${p.subject_name}</div>
+                            <div style="font-size:0.85rem; color:var(--medium-text);">📅 ${p.date} • by ${p.initiatorName}</div>
+                        </div>
+                        ${p.isExpired ? '<span class="status-badge" style="background:#eee; color:#666; padding:2px 8px; border-radius:4px; font-size:0.75rem;">Expired</span>' : '<span class="status-badge" style="background:#e3f2fd; color:#1e88e5; padding:2px 8px; border-radius:4px; font-size:0.75rem;">Active</span>'}
+                    </div>
+                    ${p.message ? `<div style="margin:10px 0; font-style:italic; color:#555;">"${p.message}"</div>` : ''}
+                    ${actionButtons}
+                    <div style="margin-top:8px; font-size:0.8rem; color:#888;">
+                        ${p.yesCount + p.noCount} votes total
+                    </div>
+                `;
+                            feed.appendChild(card);
+                        });
+                    };
+                </script>
+                <style>
+                    .poll-btn {
+                        flex: 1;
+                        padding: 8px;
+                        border-radius: 6px;
+                        border: 1px solid #ddd;
+                        background: #fafafa;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+
+                    .poll-btn:hover {
+                        background: #f0f0f0;
+                    }
+
+                    .poll-btn.yes-btn.selected {
+                        background: #d4edda;
+                        border-color: #c3e6cb;
+                        font-weight: bold;
+                        color: #155724;
+                    }
+
+                    .poll-btn.no-btn.selected {
+                        background: #f8d7da;
+                        border-color: #f5c6cb;
+                        font-weight: bold;
+                        color: #721c24;
+                    }
+                </style>
 </body>
 
 </html>
