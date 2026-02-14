@@ -150,8 +150,9 @@ const CommunityManager = {
             .upsert({
                 shared_class_id: sharedId,
                 user_id: AuthManager.user.id
-            }, { onConflict: 'shared_class_id, user_id' });
+            }, { onConflict: 'shared_class_id, user_id', ignoreDuplicates: true });
         if (error) console.error("Membership registration error:", error);
+
         else console.log("✅ Membership registered for:", sharedId);
     },
 
@@ -573,7 +574,7 @@ window.CommunityManager = CommunityManager;
 
             const { error } = await supabaseClient
                 .from('class_memberships')
-                .upsert(registrations, { onConflict: 'shared_class_id, user_id' });
+                .upsert(registrations, { onConflict: 'shared_class_id, user_id', ignoreDuplicates: true });
 
             if (error) {
                 console.error('❌ Auto-register failed:', error);
