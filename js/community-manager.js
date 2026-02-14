@@ -530,3 +530,49 @@ const CommunityManager = {
 };
 
 window.CommunityManager = CommunityManager;
+
+// ===================== STARTUP AUTO-REGISTER =====================
+// Register membership for ALL classes with sharedId when app loads
+// This backfills memberships for users who imported classes before this feature existed
+(function autoRegisterMemberships() {
+    const REGISTER_DELAY = 3000; // Wait for auth + classes to load
+
+    setTimeout(async () => {
+        try {
+            // Check if user is logged in and Supabase is available
+            if (!window.supabaseClient || !window.AuthManager?.user) return;
+            if (!window.classes || Object.keys(window.classes).length === 0) return;
+
+            // Only auto-register once per session to avoid spamming
+            if (sessionStorage.getItem('membershipRegistered')) return;
+
+            const userId = AuthManager.user.id;
+            const registrations = [];
+
+            for (const className in window.classes) {
+                const classData = window.classes[className];
+                if (classData.sharedId) {
+                    registrations.push({
+                        shared_class_id: classData.sharedId,
+                        user_id: userId
+                    });
+                }
+            }
+
+            if (registrations.length === 0) return;
+
+            const { error } = await supabaseClient
+                .from('class_memberships')
+                .upsert(registrations, { onConflict: 'shared_class_id, user_id' });
+
+            if (error) {
+                console.error('Auto-register memberships error:', error);
+            } else {
+                console.log(`✅ Auto-registered ${registrations.length} class membership(s)`);
+                sessionStorage.setItem('membershipRegistered', 'true');
+            }
+        } catch (e) {
+            console.error('Auto-register memberships failed:', e);
+        }
+    }, REGISTER_DELAY);
+})();
