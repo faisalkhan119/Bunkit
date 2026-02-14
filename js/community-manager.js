@@ -124,6 +124,8 @@ const CommunityManager = {
         classNameDisplay.textContent = classInfo.name;
 
         try {
+            // Auto-register own membership when opening Community
+            await this.registerMembership(sharedId);
             await this.publishStatus(classInfo.data);
             await this.checkClassEligibility();
             this.renderDashboard();
@@ -139,6 +141,18 @@ const CommunityManager = {
                     <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">${e.message || 'Could not connect to community server. Check your internet.'}</p>
                 </div>`;
         }
+    },
+
+    // ===================== REGISTER MEMBERSHIP =====================
+    async registerMembership(sharedId) {
+        const { error } = await supabaseClient
+            .from('class_memberships')
+            .upsert({
+                shared_class_id: sharedId,
+                user_id: AuthManager.user.id
+            }, { onConflict: 'shared_class_id, user_id' });
+        if (error) console.error("Membership registration error:", error);
+        else console.log("✅ Membership registered for:", sharedId);
     },
 
     // ===================== PUBLISH STATUS =====================
@@ -186,20 +200,33 @@ const CommunityManager = {
     // ===================== CHECK CLASS ELIGIBILITY =====================
     async checkClassEligibility() {
         const today = new Date().toISOString().split('T')[0];
-
-        // Query for both sharedId (new) and className (old entries) to find all members
         const sharedId = this.currentClassId;
-        const className = this._displayName;
-        const { data: statuses, error } = await supabaseClient
+
+        // 1. Get ALL members from class_memberships (anyone who ever imported this class)
+        const { data: allMembers, error: memErr } = await supabaseClient
+            .from('class_memberships')
+            .select('user_id')
+            .eq('shared_class_id', sharedId);
+
+        if (memErr) throw memErr;
+
+        // 2. Get today's check-in statuses from daily_class_status
+        const { data: todayStatuses, error: statusErr } = await supabaseClient
             .from('daily_class_status')
             .select('user_id, can_mass_bunk')
-            .or(`shared_class_id.eq.${sharedId},shared_class_id.eq.${className}`)
+            .eq('shared_class_id', sharedId)
             .eq('date', today);
 
-        if (error) throw error;
+        if (statusErr) throw statusErr;
 
-        // Fetch profile names
-        const userIds = statuses.map(s => s.user_id);
+        // Build status map: userId -> { can_mass_bunk }
+        const statusMap = {};
+        (todayStatuses || []).forEach(s => {
+            statusMap[s.user_id] = s.can_mass_bunk;
+        });
+
+        // 3. Fetch profile names for all members
+        const userIds = (allMembers || []).map(m => m.user_id);
         let profileMap = {};
 
         if (userIds.length > 0) {
@@ -212,32 +239,39 @@ const CommunityManager = {
             }
         }
 
-        // Build members list
+        // 4. Build members list: ALL members, with check-in status
         const myId = AuthManager.user.id;
-        this.members = statuses.map(s => {
-            const isMe = s.user_id === myId;
+        this.members = userIds.map(uid => {
+            const isMe = uid === myId;
+            const hasCheckedIn = uid in statusMap;
+            const canBunk = hasCheckedIn ? statusMap[uid] : false;
+
             return {
-                id: s.user_id,
-                name: isMe ? this.getMyName() : (profileMap[s.user_id] || 'Classmate'),
-                percentage: isMe ? this._myPercentage : null, // Only show own %
+                id: uid,
+                name: isMe ? this.getMyName() : (profileMap[uid] || 'Classmate'),
+                percentage: isMe ? this._myPercentage : null,
                 projected: isMe ? this._myProjected : null,
-                ready: s.can_mass_bunk,
+                ready: canBunk,
+                checkedIn: hasCheckedIn,
                 isMe: isMe
             };
         });
 
-        // Sort: me first, then ready, then not ready
+        // Sort: me first, then checked-in ready, then checked-in not-ready, then not-checked-in
         this.members.sort((a, b) => {
             if (a.isMe) return -1;
             if (b.isMe) return 1;
+            if (a.checkedIn && !b.checkedIn) return -1;
+            if (!a.checkedIn && b.checkedIn) return 1;
             if (a.ready && !b.ready) return -1;
             if (!a.ready && b.ready) return 1;
             return 0;
         });
 
-        const totalActive = this.members.length;
+        const totalMembers = this.members.length;
+        const checkedInCount = this.members.filter(m => m.checkedIn).length;
         const readyCount = this.members.filter(m => m.ready).length;
-        this.isClassReady = (totalActive > 0 && totalActive === readyCount);
+        this.isClassReady = (totalMembers > 0 && checkedInCount === totalMembers && readyCount === totalMembers);
     },
 
     // ===================== RENDER DASHBOARD =====================
@@ -255,7 +289,9 @@ const CommunityManager = {
 
         const totalMembers = this.members.length;
         const readyCount = this.members.filter(m => m.ready).length;
-        const notReadyMembers = this.members.filter(m => !m.ready);
+        const checkedInCount = this.members.filter(m => m.checkedIn).length;
+        const notCheckedIn = this.members.filter(m => !m.checkedIn);
+        const checkedInNotReady = this.members.filter(m => m.checkedIn && !m.ready);
 
         // === No members ===
         if (totalMembers === 0) {
@@ -263,8 +299,8 @@ const CommunityManager = {
             alertBox.innerHTML = `
                 <div style="text-align:center; padding: 10px;">
                     <div style="font-size: 2rem; margin-bottom: 10px;">👋</div>
-                    <strong>You're the first one here!</strong>
-                    <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">Ask your classmates to open Community too so everyone's status shows up.</p>
+                    <strong>No classmates found yet</strong>
+                    <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">Share your class with classmates — they'll appear here automatically after importing it.</p>
                 </div>`;
             pollsSection.style.display = 'none';
             return;
@@ -273,23 +309,44 @@ const CommunityManager = {
         // === Render member cards ===
         this.members.forEach(m => {
             const div = document.createElement('div');
-            div.className = 'member-item ' + (m.ready ? 'status-ready' : 'status-not-ready');
+
+            // 3 states: checked-in + ready, checked-in + not-ready, not-checked-in
+            let statusClass, icon, statusText, statusColor;
+            if (!m.checkedIn) {
+                statusClass = 'status-pending';
+                icon = '⏳';
+                statusText = 'PENDING';
+                statusColor = '#f1c40f';
+            } else if (m.ready) {
+                statusClass = 'status-ready';
+                icon = '✅';
+                statusText = 'READY';
+                statusColor = '#2ecc71';
+            } else {
+                statusClass = 'status-not-ready';
+                icon = '❌';
+                statusText = 'NOT READY';
+                statusColor = '#e74c3c';
+            }
+
+            div.className = 'member-item ' + statusClass;
             div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:12px; background: var(--card-bg); margin-bottom:8px;';
 
-            const icon = m.ready ? '✅' : '❌';
             const tag = m.isMe ? ' <span style="font-size:0.75rem; background:var(--primary-grad-start); color:white; padding:2px 8px; border-radius:10px; margin-left:6px;">You</span>' : '';
 
             let details = '';
-            if (m.isMe && this._hasData && m.percentage !== null) {
-                details = `<div class="member-percent" style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.percentage.toFixed(1)}% attendance`;
+            if (!m.checkedIn) {
+                details = `<div style="font-size:0.8rem; color:#f1c40f; margin-top:2px;">⏳ Not checked in today — needs to open Community</div>`;
+            } else if (m.isMe && this._hasData && m.percentage !== null) {
+                details = `<div style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.percentage.toFixed(1)}% attendance`;
                 if (!m.ready && m.projected !== null) {
                     details += ` → ${m.projected.toFixed(1)}% if skip (need ≥75%)`;
                 }
                 details += '</div>';
             } else if (m.isMe && !this._hasData) {
-                details = `<div class="member-percent" style="font-size:0.8rem; color:#e67e22; margin-top:2px;">⚠️ Calculate attendance first (use main screen)</div>`;
-            } else if (!m.isMe) {
-                details = `<div class="member-percent" style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.ready ? 'Can safely bunk' : 'Cannot bunk today'}</div>`;
+                details = `<div style="font-size:0.8rem; color:#e67e22; margin-top:2px;">⚠️ Calculate attendance first (use main screen)</div>`;
+            } else if (!m.isMe && m.checkedIn) {
+                details = `<div style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.ready ? 'Can safely bunk' : 'Cannot bunk today'}</div>`;
             }
 
             div.innerHTML = `
@@ -300,7 +357,7 @@ const CommunityManager = {
                         ${details}
                     </div>
                 </div>
-                <div style="font-size:0.8rem; font-weight:600; color:${m.ready ? '#2ecc71' : '#e74c3c'};">${m.ready ? 'READY' : 'NOT READY'}</div>
+                <div style="font-size:0.8rem; font-weight:600; color:${statusColor};">${statusText}</div>
             `;
             list.appendChild(div);
         });
@@ -313,7 +370,7 @@ const CommunityManager = {
                     <span style="font-size:1.8rem;">🎉</span>
                     <div>
                         <strong>Mass Bunk Unlocked!</strong>
-                        <p style="margin:4px 0 0; font-size:0.85rem; opacity:0.85;">All ${totalMembers} members are eligible. Create a poll to coordinate!</p>
+                        <p style="margin:4px 0 0; font-size:0.85rem; opacity:0.85;">All ${totalMembers} members checked in and eligible. Create a poll to coordinate!</p>
                     </div>
                 </div>`;
             pollsSection.style.display = 'block';
@@ -324,21 +381,36 @@ const CommunityManager = {
         } else {
             // Build detailed reason
             let reasonHTML = '';
-            notReadyMembers.forEach(m => {
+
+            // Members who haven't checked in yet
+            if (notCheckedIn.length > 0) {
+                notCheckedIn.forEach(m => {
+                    reasonHTML += `<div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+                        <span style="color:#f1c40f; flex-shrink:0;">⏳</span>
+                        <div>
+                            <strong>${m.name}${m.isMe ? ' (You)' : ''}</strong>
+                            <div style="font-size:0.82rem; opacity:0.8; margin-top:2px;">Hasn't opened Community today. Ask them to check in!</div>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            // Members checked-in but not ready
+            checkedInNotReady.forEach(m => {
                 const isMe = m.isMe;
                 let personalReason = '';
                 if (isMe && !this._hasData) {
                     personalReason = 'You haven\'t calculated attendance yet. Go back and calculate first, then reopen Community.';
                 } else if (isMe && m.projected !== null) {
                     if (m.projected < 75) {
-                        personalReason = `If you skip today, your attendance drops to ${m.projected.toFixed(1)}% (below 75% limit). Current: ${m.percentage.toFixed(1)}%`;
+                        personalReason = `If you skip today, attendance drops to ${m.projected.toFixed(1)}% (below 75% limit). Current: ${m.percentage.toFixed(1)}%`;
                     } else {
                         personalReason = `Current: ${m.percentage.toFixed(1)}%`;
                     }
                 } else {
                     personalReason = 'Their attendance is too low to safely skip today.';
                 }
-                reasonHTML += `<div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; ${notReadyMembers.length > 1 ? 'border-bottom:1px solid rgba(0,0,0,0.05);' : ''}">
+                reasonHTML += `<div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
                     <span style="color:#e74c3c; flex-shrink:0;">●</span>
                     <div>
                         <strong>${m.name}${isMe ? ' (You)' : ''}</strong>
@@ -354,7 +426,7 @@ const CommunityManager = {
                         <span style="font-size:1.5rem;">⛔</span>
                         <div>
                             <strong>Mass Bunk Locked</strong>
-                            <div style="font-size:0.82rem; opacity:0.8; margin-top:2px;">${readyCount}/${totalMembers} members ready — ALL must be eligible</div>
+                            <div style="font-size:0.82rem; opacity:0.8; margin-top:2px;">${checkedInCount}/${totalMembers} checked in, ${readyCount} ready — ALL must check in & be eligible</div>
                         </div>
                     </div>
                     <div style="background:rgba(0,0,0,0.03); border-radius:8px; padding:10px 12px; margin-top:8px;">

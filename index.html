@@ -6697,6 +6697,18 @@
 
                     saveToStorage();
 
+                    // Auto-register class membership in Supabase
+                    const importedSharedId = classes[finalName]?.sharedId;
+                    if (importedSharedId && window.supabaseClient && window.AuthManager?.user) {
+                        supabaseClient.from('class_memberships').upsert({
+                            shared_class_id: importedSharedId,
+                            user_id: AuthManager.user.id
+                        }, { onConflict: 'shared_class_id, user_id' }).then(({ error }) => {
+                            if (error) console.error('Membership reg failed:', error);
+                            else console.log('✅ Class membership registered:', importedSharedId);
+                        });
+                    }
+
                     // Mark onboarding complete
                     localStorage.setItem('hasCompletedOnboarding', 'true');
 
@@ -11885,6 +11897,15 @@ CRITICAL INSTRUCTIONS:
 
                         // Update storage and UI
                         saveToStorage();
+
+                        // Auto-register class membership
+                        if (classes[className]?.sharedId && window.supabaseClient && window.AuthManager?.user) {
+                            supabaseClient.from('class_memberships').upsert({
+                                shared_class_id: classes[className].sharedId,
+                                user_id: AuthManager.user.id
+                            }, { onConflict: 'shared_class_id, user_id' }).catch(e => console.error('Membership reg:', e));
+                        }
+
                         closeModal('addClassModal');
                         populateClassSelector();
                         document.getElementById('classSelector').value = className;
@@ -11926,6 +11947,15 @@ CRITICAL INSTRUCTIONS:
 
                 // Update storage and UI
                 saveToStorage();
+
+                // Auto-register class membership
+                if (classes[className]?.sharedId && window.supabaseClient && window.AuthManager?.user) {
+                    supabaseClient.from('class_memberships').upsert({
+                        shared_class_id: classes[className].sharedId,
+                        user_id: AuthManager.user.id
+                    }, { onConflict: 'shared_class_id, user_id' }).catch(e => console.error('Membership reg:', e));
+                }
+
                 closeModal('addClassModal');
                 populateClassSelector();
                 document.getElementById('classSelector').value = className;
