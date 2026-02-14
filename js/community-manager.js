@@ -126,17 +126,28 @@ const CommunityManager = {
     // ===================== PUBLISH STATUS =====================
     async publishStatus(classData) {
         const today = new Date().toISOString().split('T')[0];
-        const att = this.calculateAttendanceFromClass(classData);
 
-        // "Can I Skip" logic: if I skip one more class, will I still be ≥75%?
-        const projectedIfSkip = att.total === 0 ? 0 : (att.attended / (att.total + 1)) * 100;
-        const canMassBunk = projectedIfSkip >= 75.00;
+        // Use the app's own attendance calculation via bridge function
+        const summary = window.getAttendanceSummary ? window.getAttendanceSummary() : null;
+
+        let currentPercent = 0;
+        let projectedIfSkip = 0;
+        let canMassBunk = false;
+
+        if (summary) {
+            currentPercent = summary.currentPercent;
+            projectedIfSkip = summary.projectedIfSkip;
+            canMassBunk = summary.canSkipToday;
+            console.log(`📤 Using app's attendance: ${currentPercent.toFixed(1)}% | Skip→${projectedIfSkip.toFixed(1)}% | Eligible: ${canMassBunk}`);
+        } else {
+            console.warn("⚠️ No attendance data available (getAttendanceSummary returned null). User needs to calculate attendance first.");
+            this._noAttendanceData = true;
+        }
 
         this.isEligible = canMassBunk;
-        this._myPercentage = att.percentage;
+        this._myPercentage = currentPercent;
         this._myProjected = projectedIfSkip;
-
-        console.log(`📤 Publishing: ${att.percentage.toFixed(1)}% | Projected if skip: ${projectedIfSkip.toFixed(1)}% | Eligible: ${canMassBunk}`);
+        this._hasData = !!summary;
 
         const { error } = await supabaseClient
             .from('daily_class_status')
@@ -248,12 +259,14 @@ const CommunityManager = {
             const tag = m.isMe ? ' <span style="font-size:0.75rem; background:var(--primary-grad-start); color:white; padding:2px 8px; border-radius:10px; margin-left:6px;">You</span>' : '';
 
             let details = '';
-            if (m.isMe && m.percentage !== null) {
+            if (m.isMe && this._hasData && m.percentage !== null) {
                 details = `<div class="member-percent" style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.percentage.toFixed(1)}% attendance`;
                 if (!m.ready && m.projected !== null) {
                     details += ` → ${m.projected.toFixed(1)}% if skip (need ≥75%)`;
                 }
                 details += '</div>';
+            } else if (m.isMe && !this._hasData) {
+                details = `<div class="member-percent" style="font-size:0.8rem; color:#e67e22; margin-top:2px;">⚠️ Calculate attendance first (use main screen)</div>`;
             } else if (!m.isMe) {
                 details = `<div class="member-percent" style="font-size:0.8rem; color:var(--medium-text); margin-top:2px;">${m.ready ? 'Can safely bunk' : 'Cannot bunk today'}</div>`;
             }
@@ -293,16 +306,16 @@ const CommunityManager = {
             notReadyMembers.forEach(m => {
                 const isMe = m.isMe;
                 let personalReason = '';
-                if (isMe && m.projected !== null) {
-                    if (m.percentage === 0) {
-                        personalReason = 'No attendance data yet. Mark your attendance first.';
-                    } else if (m.projected < 75) {
-                        personalReason = `If you skip, attendance drops to ${m.projected.toFixed(1)}% (below 75% limit).`;
+                if (isMe && !this._hasData) {
+                    personalReason = 'You haven\'t calculated attendance yet. Go back and calculate first, then reopen Community.';
+                } else if (isMe && m.projected !== null) {
+                    if (m.projected < 75) {
+                        personalReason = `If you skip today, your attendance drops to ${m.projected.toFixed(1)}% (below 75% limit). Current: ${m.percentage.toFixed(1)}%`;
                     } else {
                         personalReason = `Current: ${m.percentage.toFixed(1)}%`;
                     }
                 } else {
-                    personalReason = 'Their attendance is below safe bunk threshold.';
+                    personalReason = 'Their attendance is too low to safely skip today.';
                 }
                 reasonHTML += `<div style="display:flex; align-items:flex-start; gap:8px; padding:6px 0; ${notReadyMembers.length > 1 ? 'border-bottom:1px solid rgba(0,0,0,0.05);' : ''}">
                     <span style="color:#e74c3c; flex-shrink:0;">●</span>

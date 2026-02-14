@@ -9186,6 +9186,53 @@
                 setTimeout(() => {
                     promptPortalUpdate();
                 }, 500); // Small delay to let results render first
+
+                // === Bridge for CommunityManager: expose attendance data ===
+                window.getAttendanceSummary = function () {
+                    if (!currentAnalysisData || currentAnalysisData.length === 0) return null;
+
+                    let totalAttended = 0, totalHeld = 0, totalRemaining = 0;
+                    currentAnalysisData.forEach(sub => {
+                        totalAttended += (sub.attended || 0);
+                        totalHeld += (sub.totalHeld || 0);
+                        totalRemaining += (sub.remaining || 0);
+                    });
+
+                    const currentPercent = totalHeld > 0 ? (totalAttended / totalHeld) * 100 : 0;
+                    const finalTotal = totalHeld + totalRemaining;
+                    const projectedMax = finalTotal > 0 ? ((totalAttended + totalRemaining) / finalTotal) * 100 : 0;
+
+                    // "Can I Skip Today" logic: check today's schedule
+                    const today = new Date(document.getElementById('currentDate')?.value || new Date().toISOString().split('T')[0]);
+                    const dayOfWeek = today.getDay();
+                    const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    let classesToday = 0;
+                    if (selectedClass && selectedClass.subjects) {
+                        selectedClass.subjects.forEach(s => {
+                            if (s.schedule && s.schedule[scheduleIndex]) {
+                                classesToday += s.schedule[scheduleIndex];
+                            }
+                        });
+                    }
+
+                    // If skip all today's classes, what's thefinal %?
+                    const projectedIfSkip = finalTotal > 0 ? ((totalAttended + totalRemaining - classesToday) / finalTotal) * 100 : 0;
+                    const minCriteria = getMinAttendanceCriteria() * 100; // e.g., 75
+                    const canSkipToday = projectedIfSkip >= minCriteria;
+
+                    return {
+                        totalAttended,
+                        totalHeld,
+                        totalRemaining,
+                        currentPercent,
+                        projectedMax,
+                        classesToday,
+                        projectedIfSkip,
+                        minCriteria,
+                        canSkipToday,
+                        subjectCount: currentAnalysisData.length
+                    };
+                };
             }
 
             function displayPerSubjectAnalysis() {
