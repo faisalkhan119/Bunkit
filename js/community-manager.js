@@ -101,8 +101,26 @@ const CommunityManager = {
             document.getElementById('pollsSection').style.display = 'none';
             return;
         }
+        // Use sharedId (SHA-256 hash) as the universal class identifier across users
+        const sharedId = classInfo.data.sharedId;
+        if (!sharedId) {
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            document.getElementById('communityStatusList').innerHTML = '';
+            alertBox.className = 'alert-box warning';
+            alertBox.innerHTML = `
+                <div style="text-align:center; padding: 10px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🔗</div>
+                    <strong>Class Not Shared Yet</strong>
+                    <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">This class needs to be shared first. Go to Edit/Share → Share via App Link to generate a shared class ID. Then ask classmates to import it.</p>
+                </div>`;
+            classNameDisplay.textContent = classInfo.name;
+            document.getElementById('pollsSection').style.display = 'none';
+            return;
+        }
 
-        this.currentClassId = classInfo.name;
+        this.currentClassId = sharedId;  // Use sharedId for DB queries
+        this._displayName = classInfo.name;  // Keep local name for display
         classNameDisplay.textContent = classInfo.name;
 
         try {
