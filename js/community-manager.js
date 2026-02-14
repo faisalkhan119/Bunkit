@@ -445,6 +445,31 @@ const CommunityManager = {
             pollsSection.style.pointerEvents = 'none';
             if (createBtn) createBtn.disabled = true;
         }
+
+        // Update Summary Stats (Override SocialManager with accurate data)
+        const activeCountEl = document.getElementById('activeBunkersCount');
+        const meterEl = document.getElementById('massBunkMeter');
+        const statusEl = document.getElementById('massBunkStatus');
+
+        if (activeCountEl) {
+            // Show Ready / Total (e.g., "3 / 5")
+            activeCountEl.innerHTML = `${readyCount} <span style="font-size:0.5em; opacity:0.7; vertical-align:middle;">/ ${totalMembers}</span>`;
+        }
+
+        if (meterEl && statusEl) {
+            // Calculate percentage based on TOTAL members
+            const percentage = totalMembers > 0 ? Math.round((readyCount / totalMembers) * 100) : 0;
+            meterEl.textContent = `${percentage}%`;
+
+            let statusText = "Low Chance ❄️";
+            if (percentage >= 100) statusText = "MASS BUNK! 🔥";
+            else if (percentage >= 75) statusText = "High Chance! 🚀";
+            else if (percentage >= 50) statusText = "Possible 🤔";
+
+            statusEl.textContent = statusText;
+        }
+
+        this.loadPolls();
     },
 
     // ===================== LOAD POLLS =====================
