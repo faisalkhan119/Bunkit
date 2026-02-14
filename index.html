@@ -11987,7 +11987,9 @@ CRITICAL INSTRUCTIONS:
                             supabaseClient.from('class_memberships').upsert({
                                 shared_class_id: classes[className].sharedId,
                                 user_id: AuthManager.user.id
-                            }, { onConflict: 'shared_class_id, user_id' }).catch(e => console.error('Membership reg:', e));
+                            }, { onConflict: 'shared_class_id, user_id' }).then(({ error }) => {
+                                if (error) console.error('Membership reg failed:', error);
+                            });
                         }
 
                         // 6. UI Cleanup
