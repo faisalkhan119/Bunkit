@@ -24,8 +24,8 @@ const CommunityManager = {
             return;
         }
 
-        // ALWAYS show modal first
-        modal.style.display = 'block';
+        // Use app's modal system (openModal sets display:flex + .active class)
+        openModal('communityModal');
         loading.style.display = 'block';
         content.style.display = 'none';
 
