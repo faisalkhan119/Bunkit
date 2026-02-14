@@ -187,10 +187,13 @@ const CommunityManager = {
     async checkClassEligibility() {
         const today = new Date().toISOString().split('T')[0];
 
+        // Query for both sharedId (new) and className (old entries) to find all members
+        const sharedId = this.currentClassId;
+        const className = this._displayName;
         const { data: statuses, error } = await supabaseClient
             .from('daily_class_status')
             .select('user_id, can_mass_bunk')
-            .eq('shared_class_id', this.currentClassId)
+            .or(`shared_class_id.eq.${sharedId},shared_class_id.eq.${className}`)
             .eq('date', today);
 
         if (error) throw error;
