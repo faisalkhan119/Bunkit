@@ -8441,15 +8441,9 @@
                                 <label for="newClassLastDate">Last Working Date *</label>
                                 <input type="date" id="newClassLastDate">
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div class="form-group">
-                                    <label for="wizSubjectCount">Number of Subjects *</label>
-                                    <input type="number" id="wizSubjectCount" min="1" max="20" value="5" placeholder="e.g., 8">
-                                </div>
-                                <div class="form-group">
-                                    <label for="wizPeriodCount">Periods per Day *</label>
-                                    <input type="number" id="wizPeriodCount" min="1" max="12" value="8" placeholder="e.g., 8">
-                                </div>
+                            <div class="form-group">
+                                <label for="wizPeriodCount">Periods per Day *</label>
+                                <input type="number" id="wizPeriodCount" min="1" max="12" value="8" placeholder="e.g., 8">
                             </div>
                             <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                                 <button class="btn primary-btn" onclick="wizardGoToStep(2)">Next →</button>
@@ -8462,6 +8456,7 @@
                                 Enter the name and code for each subject. Subject codes should match your college portal (e.g., 21CSC201J).
                             </p>
                             <div id="wizSubjectsContainer" style="max-height: 350px; overflow-y: auto;"></div>
+                            <button type="button" class="btn secondary-btn" onclick="addWizardSubject()" style="width: 100%; margin-top: 10px; border: 2px dashed var(--border-color); background: transparent; color: var(--primary-color); font-weight: 600;">＋ Add Subject</button>
                             <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                                 <button class="btn secondary-btn" onclick="wizardGoToStep(1)">← Back</button>
                                 <button class="btn primary-btn" onclick="wizardGoToStep(3)">Next →</button>
@@ -11106,15 +11101,9 @@ ${subjectLines.join('\n')}
                                 <label for="newClassLastDate">Last Working Date *</label>
                                 <input type="date" id="newClassLastDate">
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div class="form-group">
-                                    <label for="wizSubjectCount">Number of Subjects *</label>
-                                    <input type="number" id="wizSubjectCount" min="1" max="20" value="5" placeholder="e.g., 8">
-                                </div>
-                                <div class="form-group">
-                                    <label for="wizPeriodCount">Periods per Day *</label>
-                                    <input type="number" id="wizPeriodCount" min="1" max="12" value="8" placeholder="e.g., 8">
-                                </div>
+                            <div class="form-group">
+                                <label for="wizPeriodCount">Periods per Day *</label>
+                                <input type="number" id="wizPeriodCount" min="1" max="12" value="8" placeholder="e.g., 8">
                             </div>
                             <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
                                 <button class="btn primary-btn" onclick="wizardGoToStep(2)">Next →</button>
@@ -11127,6 +11116,7 @@ ${subjectLines.join('\n')}
                                 Enter the name and code for each subject. Subject codes should match your college portal (e.g., 21CSC201J).
                             </p>
                             <div id="wizSubjectsContainer" style="max-height: 350px; overflow-y: auto;"></div>
+                            <button type="button" class="btn secondary-btn" onclick="addWizardSubject()" style="width: 100%; margin-top: 10px; border: 2px dashed var(--border-color); background: transparent; color: var(--primary-color); font-weight: 600;">＋ Add Subject</button>
                             <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                                 <button class="btn secondary-btn" onclick="wizardGoToStep(1)">← Back</button>
                                 <button class="btn primary-btn" onclick="wizardGoToStep(3)">Next →</button>
@@ -11701,18 +11691,20 @@ CRITICAL INSTRUCTIONS:
                 if (step === 1) {
                     const className = document.getElementById('newClassName').value.trim();
                     const lastDate = document.getElementById('newClassLastDate').value;
-                    const subjectCount = parseInt(document.getElementById('wizSubjectCount').value) || 0;
                     const periodCount = parseInt(document.getElementById('wizPeriodCount').value) || 0;
 
                     if (!className) { showToast('⚠️ Please enter a class name', 'error'); return false; }
                     if (!lastDate) { showToast('⚠️ Please select a last working date', 'error'); return false; }
-                    if (subjectCount < 1 || subjectCount > 20) { showToast('⚠️ Enter 1-20 subjects', 'error'); return false; }
                     if (periodCount < 1 || periodCount > 12) { showToast('⚠️ Enter 1-12 periods per day', 'error'); return false; }
                     return true;
                 }
                 if (step === 2) {
                     const container = document.getElementById('wizSubjectsContainer');
                     const entries = container.querySelectorAll('.wiz-subject-entry');
+                    if (entries.length === 0) {
+                        showToast('⚠️ Add at least one subject', 'error');
+                        return false;
+                    }
                     for (let i = 0; i < entries.length; i++) {
                         const name = entries[i].querySelector('.wiz-subject-name').value.trim();
                         const code = entries[i].querySelector('.wiz-subject-code').value.trim();
@@ -11747,26 +11739,45 @@ CRITICAL INSTRUCTIONS:
             }
 
             function generateWizardSubjectsForm() {
-                const count = parseInt(document.getElementById('wizSubjectCount').value) || 5;
                 const container = document.getElementById('wizSubjectsContainer');
                 container.innerHTML = '';
 
-                for (let i = 0; i < count; i++) {
-                    const existing = wizardSubjectsData[i] || { name: '', code: '' };
-                    container.insertAdjacentHTML('beforeend', `
-                        <div class="wiz-subject-entry" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; margin-bottom: 10px; background: var(--light-bg); border-radius: 8px; border: 1px solid var(--border-color);">
-                            <div class="form-group" style="margin: 0;">
-                                <label style="font-size: 0.8rem; color: var(--medium-text);">Subject ${i + 1} Name</label>
-                                <input type="text" class="wiz-subject-name" value="${existing.name}" placeholder="e.g., Data Structures">
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <label style="font-size: 0.8rem; color: var(--medium-text);">Subject Code</label>
-                                <input type="text" class="wiz-subject-code" value="${existing.code}" placeholder="e.g., 21CSC201J">
-                            </div>
-                        </div>
-                    `);
-                }
+                const subjects = wizardSubjectsData.length > 0 ? wizardSubjectsData : [{ name: '', code: '' }];
+                subjects.forEach((existing, i) => {
+                    appendWizardSubjectRow(container, existing, i);
+                });
             }
+
+            function appendWizardSubjectRow(container, existing = { name: '', code: '' }, index = null) {
+                const i = index !== null ? index : container.querySelectorAll('.wiz-subject-entry').length;
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="wiz-subject-entry" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; padding: 10px; margin-bottom: 10px; background: var(--light-bg); border-radius: 8px; border: 1px solid var(--border-color); align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.8rem; color: var(--medium-text);">Subject Name</label>
+                            <input type="text" class="wiz-subject-name" value="${existing.name}" placeholder="e.g., Data Structures">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.8rem; color: var(--medium-text);">Subject Code</label>
+                            <input type="text" class="wiz-subject-code" value="${existing.code}" placeholder="e.g., 21CSC201J">
+                        </div>
+                        <button type="button" onclick="removeWizardSubject(this)" style="background: none; border: none; color: var(--danger-color, #e74c3c); font-size: 1.3rem; cursor: pointer; padding: 8px; line-height: 1;" title="Remove subject">✕</button>
+                    </div>
+                `);
+            }
+
+            function addWizardSubject() {
+                const container = document.getElementById('wizSubjectsContainer');
+                appendWizardSubjectRow(container);
+                // Scroll to the new entry
+                container.scrollTop = container.scrollHeight;
+            }
+            window.addWizardSubject = addWizardSubject;
+
+            function removeWizardSubject(btn) {
+                const entry = btn.closest('.wiz-subject-entry');
+                if (entry) entry.remove();
+            }
+            window.removeWizardSubject = removeWizardSubject;
 
             function generateWizardTimetableGrid() {
                 const periodCount = parseInt(document.getElementById('wizPeriodCount').value) || 8;
@@ -12250,11 +12261,9 @@ CRITICAL INSTRUCTIONS:
                 // Step 1: Basic info
                 const nameEl = document.getElementById('newClassName');
                 const dateEl = document.getElementById('newClassLastDate');
-                const subjectCountEl = document.getElementById('wizSubjectCount');
                 if (nameEl) nameEl.value = className;
                 if (dateEl) dateEl.value = classData.lastDate || '';
                 if (document.getElementById('newClassStartDate')) document.getElementById('newClassStartDate').value = classData.portalSetup?.semesterStartDate || '';
-                if (subjectCountEl) subjectCountEl.value = classData.subjects?.length || 5;
 
                 // Determine period count from timetable arrangement
                 const ta = JSON.parse(localStorage.getItem(`timetable_arrangement_${className}`) || '{}');
