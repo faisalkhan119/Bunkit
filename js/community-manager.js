@@ -3,193 +3,273 @@
 
 const CommunityManager = {
     // State
-    currentClassId: null, // derived from class name
+    currentClassId: null,
     members: [],
     polls: [],
-    isEligible: false, // Is the current user eligible?
-    isClassReady: false, // Is the WHOLE class ready?
+    isEligible: false,
+    isClassReady: false,
 
-    // Constants
-    TABLES: {
-        STATUS: 'daily_class_status',
-        POLLS: 'mass_bunk_polls',
-        VOTES: 'mass_bunk_votes',
-        PROFILES: 'profiles'
-    },
+    // ===================== OPEN MODAL =====================
+    async openCommunityModal() {
+        console.log("🗳️ Open Community Clicked");
 
-    // 1. Initialize & Subscribe
-    async init() {
-        if (!AuthManager.user || !window.selectedClass) return;
+        const modal = document.getElementById('communityModal');
+        const loading = document.getElementById('communityLoading');
+        const content = document.getElementById('communityContent');
+        const alertBox = document.getElementById('communityAlert');
+        const classNameDisplay = document.getElementById('communityClassName');
 
-        // Generate shared ID (for now, just the class name)
-        // In future, this could be a UUID from the class object if we implement strict class linking
+        if (!modal) {
+            console.error("communityModal element not found!");
+            return;
+        }
+
+        // ALWAYS show modal first
+        modal.style.display = 'block';
+        loading.style.display = 'block';
+        content.style.display = 'none';
+
+        // Guard: Not logged in
+        if (!window.AuthManager || !AuthManager.user) {
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            document.getElementById('communityStatusList').innerHTML = '';
+            alertBox.className = 'alert-box warning';
+            alertBox.innerHTML = '🔐 <strong>Sign in required.</strong> Please sign in to access Community features.';
+            classNameDisplay.textContent = 'Community';
+            document.getElementById('pollsSection').style.display = 'none';
+            return;
+        }
+
+        // Guard: No class selected
+        if (!window.selectedClass) {
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            document.getElementById('communityStatusList').innerHTML = '';
+            alertBox.className = 'alert-box warning';
+            alertBox.innerHTML = '📚 <strong>No class selected.</strong> Please select a class first from the main screen.';
+            classNameDisplay.textContent = 'Community';
+            document.getElementById('pollsSection').style.display = 'none';
+            return;
+        }
+
+        // Set class ID
         this.currentClassId = window.selectedClass.name;
+        classNameDisplay.textContent = this.currentClassId;
 
-        console.log(`🗳️ Community Manager initialized for ${this.currentClassId}`);
+        try {
+            // Step 1: Publish own status
+            await this.publishStatus();
 
-        // Publish my status immediately
-        await this.publishStatus();
+            // Step 2: Check all members
+            await this.checkClassEligibility();
 
-        // Load data
-        await this.checkClassEligibility();
+            // Step 3: Render dashboard
+            this.renderDashboard();
+
+        } catch (e) {
+            console.error("❌ Community init error:", e);
+            loading.style.display = 'none';
+            content.style.display = 'block';
+            alertBox.className = 'alert-box danger';
+            alertBox.innerHTML = '❌ <strong>Error loading community data.</strong> ' + (e.message || 'Please try again.');
+        }
     },
 
-    // 2. Publish Current User Status
+    // ===================== PUBLISH STATUS =====================
     async publishStatus() {
-        if (!AuthManager.user || !window.selectedClass) return;
-
-        // Use today's date for status tracking
         const today = new Date().toISOString().split('T')[0];
 
-        // Calculate Eligibility Logic
+        // Calculate from DOM (existing attendance display)
         const total = parseInt(document.getElementById('totalClasses')?.textContent || '0');
         const attended = parseInt(document.getElementById('attendedClasses')?.textContent || '0');
 
-        // Real percentage calculation
         const currentPercentage = total === 0 ? 0 : (attended / total * 100);
+        const projectedIfSkip = total === 0 ? 0 : (attended / (total + 1)) * 100;
+        const canMassBunk = projectedIfSkip >= 75.00;
 
-        // "Can I Skip Today" Calculation (Simulated)
-        // We need to know if skipping TODAY drops them below 75%
-        // projected = attended / (total + 1) * 100
-        const projectedIfSkip = (attended / (total + 1)) * 100;
-        const SafeLimit = 75.00;
+        console.log(`📤 Publishing: ${currentPercentage.toFixed(1)}% | Safe to skip: ${canMassBunk}`);
 
-        const canMassBunk = projectedIfSkip >= SafeLimit;
+        const { error } = await supabaseClient
+            .from('daily_class_status')
+            .upsert({
+                shared_class_id: this.currentClassId,
+                user_id: AuthManager.user.id,
+                date: today,
+                can_mass_bunk: canMassBunk,
+                current_percentage: parseFloat(currentPercentage.toFixed(2)),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id, date, shared_class_id' });
 
-        // Logs Check: Does user have data for today? Not strictly checking logs here
-        // as we assume the local state reflects their current standing.
-
-        console.log(`📤 Publishing Status: ${currentPercentage.toFixed(2)}% | Can Bunk: ${canMassBunk}`);
-
-        try {
-            const { error } = await supabaseClient
-                .from('daily_class_status')
-                .upsert({
-                    shared_class_id: this.currentClassId,
-                    user_id: AuthManager.user.id,
-                    date: today,
-                    can_mass_bunk: canMassBunk, // Strict: Must be high attendance
-                    current_percentage: parseFloat(currentPercentage.toFixed(2)),
-                    updated_at: new Date()
-                }, { onConflict: 'user_id, date, shared_class_id' });
-
-            if (error) {
-                console.error("❌ Failed to publish status:", error);
-            }
-        } catch (e) {
-            console.error("❌ Exception publishing status:", e);
+        if (error) {
+            console.error("❌ Publish status error:", error);
+            throw error;
         }
     },
 
-    // 3. Check Whole Class Eligibility
+    // ===================== CHECK CLASS ELIGIBILITY =====================
     async checkClassEligibility() {
-        if (!this.currentClassId) return { isReady: false, members: [] };
-
         const today = new Date().toISOString().split('T')[0];
 
-        try {
-            // Fetch status of ALL users for this class for TODAY
-            // Note: We need to join with profiles to get names
-            const { data: statuses, error } = await supabaseClient
-                .from('daily_class_status')
-                .select(`
-                    user_id, 
-                    can_mass_bunk, 
-                    current_percentage,
-                    user_id_profile:profiles!inner(full_name)
-                `)
-                .eq('shared_class_id', this.currentClassId)
-                .eq('date', today);
+        // Step 1: Fetch all status entries for this class today
+        const { data: statuses, error } = await supabaseClient
+            .from('daily_class_status')
+            .select('user_id, can_mass_bunk, current_percentage')
+            .eq('shared_class_id', this.currentClassId)
+            .eq('date', today);
 
-            if (error) throw error;
+        if (error) throw error;
 
-            this.members = statuses.map(s => ({
-                id: s.user_id,
-                name: s.user_id_profile?.full_name || 'Student',
-                percentage: s.current_percentage,
-                ready: s.can_mass_bunk
-            }));
+        // Step 2: Fetch profile names in a separate query
+        const userIds = statuses.map(s => s.user_id);
+        let profileMap = {};
 
-            // STRICT RULE: ALL active members must be ready
+        if (userIds.length > 0) {
+            const { data: profiles, error: pErr } = await supabaseClient
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', userIds);
 
-            const totalActive = this.members.length;
-            const readyCount = this.members.filter(m => m.ready).length;
+            if (!pErr && profiles) {
+                profiles.forEach(p => { profileMap[p.id] = p.full_name; });
+            }
+        }
 
-            this.isClassReady = (totalActive > 0 && totalActive === readyCount);
+        // Step 3: Build members list
+        this.members = statuses.map(s => ({
+            id: s.user_id,
+            name: profileMap[s.user_id] || 'Student',
+            percentage: s.current_percentage || 0,
+            ready: s.can_mass_bunk
+        }));
 
-            console.log(`👥 Class Status: ${readyCount}/${totalActive} ready.`);
+        const totalActive = this.members.length;
+        const readyCount = this.members.filter(m => m.ready).length;
+        this.isClassReady = (totalActive > 0 && totalActive === readyCount);
 
-            return {
-                isReady: this.isClassReady,
-                members: this.members
-            };
+        console.log(`👥 Class: ${readyCount}/${totalActive} ready. ClassReady: ${this.isClassReady}`);
+    },
 
-        } catch (e) {
-            console.error("❌ Failed to check class eligibility:", e);
-            return { isReady: false, members: [] };
+    // ===================== RENDER DASHBOARD =====================
+    renderDashboard() {
+        const loading = document.getElementById('communityLoading');
+        const content = document.getElementById('communityContent');
+        const list = document.getElementById('communityStatusList');
+        const alertBox = document.getElementById('communityAlert');
+        const pollsSection = document.getElementById('pollsSection');
+        const createBtn = document.getElementById('createPollBtn');
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+
+        // Render member list
+        list.innerHTML = '';
+
+        if (this.members.length === 0) {
+            alertBox.className = 'alert-box warning';
+            alertBox.innerHTML = '⏳ <strong>No class members found for today.</strong> You are the first one here! Ask your classmates to open Community too.';
+            pollsSection.style.display = 'none';
+            return;
+        }
+
+        this.members.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'member-item ' + (m.ready ? 'status-ready' : 'status-not-ready');
+
+            const icon = m.ready ? '✅' : '❌';
+            div.innerHTML = `
+                <div class="member-info">
+                    <span class="member-status-icon">${icon}</span>
+                    <div>
+                        <div class="member-name">${m.name}</div>
+                        <div class="member-percent">${m.percentage}% Attendance</div>
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+
+        // Update alert and poll section
+        if (this.isClassReady) {
+            alertBox.className = 'alert-box success';
+            alertBox.innerHTML = '🎉 <strong>Mass Bunk Unlocked!</strong> All members are eligible.';
+
+            pollsSection.style.display = 'block';
+            pollsSection.style.opacity = '1';
+            pollsSection.style.pointerEvents = 'auto';
+            createBtn.disabled = false;
+
+            // Load polls
+            this.loadPolls();
+        } else {
+            alertBox.className = 'alert-box danger';
+            const notReady = this.members.filter(m => !m.ready).map(m => m.name).join(', ');
+            alertBox.innerHTML = `⛔ <strong>Mass Bunk Locked.</strong> Not eligible: ${notReady}`;
+
+            pollsSection.style.display = 'block';
+            pollsSection.style.opacity = '0.5';
+            pollsSection.style.pointerEvents = 'none';
+            createBtn.disabled = true;
         }
     },
 
-    // 4. Load Polls (Only if Class is Ready)
+    // ===================== LOAD POLLS =====================
     async loadPolls() {
         if (!this.currentClassId) return [];
 
         console.log("📥 Loading polls...");
         try {
-            // Fetch Polls
             const { data: polls, error } = await supabaseClient
                 .from('mass_bunk_polls')
-                .select(`
-                    *,
-                    initiator:initiator_uid(full_name)
-                `)
+                .select('*')
                 .eq('shared_class_id', this.currentClassId)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            console.log(`📥 Loaded ${polls.length} polls.`);
+            // Fetch initiator names
+            const initiatorIds = [...new Set(polls.map(p => p.initiator_uid))];
+            let nameMap = {};
+            if (initiatorIds.length > 0) {
+                const { data: profiles } = await supabaseClient
+                    .from('profiles').select('id, full_name').in('id', initiatorIds);
+                if (profiles) profiles.forEach(p => { nameMap[p.id] = p.full_name; });
+            }
 
-            // Fetch Votes for these polls
+            // Fetch votes
             const pollIds = polls.map(p => p.id);
             let votes = [];
             if (pollIds.length > 0) {
-                const { data: v, error: vError } = await supabaseClient
+                const { data: v } = await supabaseClient
                     .from('mass_bunk_votes')
-                    .select('poll_id, vote, user_id') // we can join profile if we want names
+                    .select('poll_id, vote, user_id')
                     .in('poll_id', pollIds);
-
-                if (!vError) votes = v;
+                if (v) votes = v;
             }
 
-            // Merge Data
+            // Build poll data
             this.polls = polls.map(p => {
                 const pollVotes = votes.filter(v => v.poll_id === p.id);
                 return {
                     ...p,
-                    initiatorName: p.initiator?.full_name || 'Unknown',
+                    initiatorName: nameMap[p.initiator_uid] || 'Unknown',
                     yesCount: pollVotes.filter(v => v.vote === 'yes').length,
                     noCount: pollVotes.filter(v => v.vote === 'no').length,
                     myVote: pollVotes.find(v => v.user_id === AuthManager.user.id)?.vote || null,
-                    // Calculate expiry (Auto-expire at end of target date)
                     isExpired: new Date() > new Date(p.date + 'T23:59:59')
                 };
             });
 
-            // Render Polls
-            if (typeof renderPolls === 'function') {
-                renderPolls(this.polls);
-            }
-
+            if (typeof renderPolls === 'function') renderPolls(this.polls);
             return this.polls;
 
         } catch (e) {
-            console.error("❌ Failed to load polls:", e);
+            console.error("❌ Load polls error:", e);
             return [];
         }
     },
 
-    // 5. Create Poll
+    // ===================== CREATE POLL =====================
     async createPoll(subject, targetDate, message) {
         if (!this.isClassReady) {
             alert("⚠️ Class is not ready for Mass Bunk yet!");
@@ -211,25 +291,17 @@ const CommunityManager = {
             if (error) throw error;
 
             alert("✅ Poll Created!");
-            // Reload
             this.loadPolls();
-
-            // Close Create Modal (if exists)
             if (typeof closeModal === 'function') closeModal('createPollModal');
 
         } catch (e) {
-            console.error("❌ Failed to create poll:", e);
+            console.error("❌ Create poll error:", e);
             alert("Error creating poll: " + e.message);
         }
     },
 
-    // 6. Vote
+    // ===================== VOTE =====================
     async vote(pollId, voteType) {
-        if (!this.isClassReady) {
-            alert("⚠️ Usage blocked. Class eligibility changed.");
-            return;
-        }
-
         try {
             const { error } = await supabaseClient
                 .from('mass_bunk_votes')
@@ -237,35 +309,23 @@ const CommunityManager = {
                     poll_id: pollId,
                     user_id: AuthManager.user.id,
                     vote: voteType,
-                    updated_at: new Date()
+                    updated_at: new Date().toISOString()
                 }, { onConflict: 'poll_id, user_id' });
 
             if (error) throw error;
-
-            // Refresh polls to show updated counts
-            this.loadPolls();
+            this.loadPolls(); // Refresh
 
         } catch (e) {
-            console.error("❌ Vote failed:", e);
+            console.error("❌ Vote error:", e);
+            alert("Vote failed: " + e.message);
         }
     },
 
-    // UI Helpers
+    // UI Helper
     openCreatePollModal() {
         if (typeof openCreatePollModal === 'function') openCreatePollModal();
-    },
-
-    // Open Modal Logic to be implemented in UI chunk
-    async openCommunityModal() {
-        console.log("Open Community Clicked");
-        await this.init(); // Refresh data
-
-        // This function will be defined in index.html script or helper
-        if (typeof renderCommunityModal === 'function') {
-            renderCommunityModal();
-        }
     }
 };
 
-// Expose
+// Expose globally
 window.CommunityManager = CommunityManager;
