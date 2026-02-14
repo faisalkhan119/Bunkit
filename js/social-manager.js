@@ -32,12 +32,13 @@ const SocialManager = {
         }).join('|');
 
         // 2. Meta Fingerprint
-        // CRITICAL FIX: Exclude startDate/lastDate as they vary per user (lastDate changes daily!)
+        const startDate = classData.startDate || '';
+        const lastDate = classData.lastDate || '';
         // Only Holidays define the 'structural' calendar of the class
         const holidays = (classData.holidays || []).sort().join(',');
 
         // 3. Final String
-        const fingerPrint = `${timetableStr}||${holidays}`;
+        const fingerPrint = `${timetableStr}||${startDate}||${lastDate}||${holidays}`;
 
         // 4. Hash (SHA-256)
         const msgBuffer = new TextEncoder().encode(fingerPrint);
