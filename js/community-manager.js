@@ -24,8 +24,7 @@ const CommunityManager = {
             return;
         }
 
-        // Use app's modal system (openModal sets display:flex + .active class)
-        openModal('communityModal');
+        // Modal is already opened by sidebar onclick - just set loading state
         loading.style.display = 'block';
         content.style.display = 'none';
 

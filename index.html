@@ -5611,7 +5611,7 @@
 
         <!-- Community Option -->
         <a href="#"
-            onclick="try { SocialManager.openCommunityDashboard(); } catch(e) { alert('Community Error: ' + e.message); } closeNav();">🗳️
+            onclick="closeNav(); setTimeout(function(){ openModal('communityModal'); if(typeof CommunityManager !== 'undefined') CommunityManager.openCommunityModal(); }, 350);">🗳️
             Community</a>
 
         <!-- File Options -->
