@@ -430,7 +430,7 @@ const CommunityManager = {
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                         <span style="font-size:1.5rem;">⛔</span>
                         <div>
-                            <strong>Mass Bunk Locked</strong>
+                            <strong>Mass Bunk Locked (v1.2)</strong>
                             <div style="font-size:0.82rem; opacity:0.8; margin-top:2px;">${checkedInCount}/${totalMembers} checked in, ${readyCount} ready — ALL must check in & be eligible</div>
                         </div>
                     </div>
