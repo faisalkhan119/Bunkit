@@ -469,6 +469,17 @@ const CommunityManager = {
             statusEl.textContent = statusText;
         }
 
+        // Add Debug Footer (Class ID)
+        const footer = document.createElement('div');
+        footer.style.cssText = 'text-align:center; font-size:0.7em; color:#aaa; margin-top:20px; border-top:1px solid #eee; padding-top:10px;';
+        footer.innerHTML = `Class ID: <span style="font-family:monospace; background:#eee; padding:2px 4px; border-radius:4px;">${this.currentClassId ? this.currentClassId.substring(0, 8) : '????'}...</span> (Check if friends have same ending)`;
+
+        // Append footer if not exists
+        const existingFooter = document.getElementById('communityDebugFooter');
+        if (existingFooter) existingFooter.remove();
+        footer.id = 'communityDebugFooter';
+        document.getElementById('communityDashboardSection').appendChild(footer);
+
         this.loadPolls();
     },
 
