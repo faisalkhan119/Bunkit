@@ -11283,12 +11283,10 @@ ${subjectLines.join('\n')}
                     if (title) title.textContent = '➕ Add New Class';
                     const nameEl = document.getElementById('newClassName');
                     const dateEl = document.getElementById('newClassLastDate');
-                    const subjectCountEl = document.getElementById('wizSubjectCount');
                     const periodCountEl = document.getElementById('wizPeriodCount');
                     if (nameEl) nameEl.value = '';
                     if (dateEl) dateEl.value = '';
                     if (document.getElementById('newClassStartDate')) document.getElementById('newClassStartDate').value = '';
-                    if (subjectCountEl) subjectCountEl.value = '5';
                     if (periodCountEl) periodCountEl.value = '8';
                     if (typeof populateHolidaysInModal === 'function') populateHolidaysInModal([]);
 
@@ -12716,7 +12714,6 @@ CRITICAL INSTRUCTIONS:
                         if (document.getElementById('newClassStartDate')) document.getElementById('newClassStartDate').value = classData.semesterStartDate || '';
 
                         // Populate Wizard Data
-                        document.getElementById('wizSubjectCount').value = classData.subjects.length;
                         wizardSubjectsData = classData.subjects.map(s => ({
                             name: s.name,
                             code: s.code,
