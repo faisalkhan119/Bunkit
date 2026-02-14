@@ -31,21 +31,26 @@ const CommunityManager = {
         if (!classData || !classData.subjects) return { total: 0, attended: 0, percentage: 0 };
 
         let total = 0, attended = 0;
-        classData.subjects.forEach(sub => {
-            total += (sub.total || 0);
-            attended += (sub.attended || 0);
-        });
+
+        // Subjects array uses "present" field (not "attended")
+        if (Array.isArray(classData.subjects)) {
+            classData.subjects.forEach(sub => {
+                total += (sub.total || 0);
+                attended += (sub.present || 0);  // KEY: field is "present" not "attended"
+            });
+        }
 
         // Also add portal baseline if exists
         if (classData.portalSetup && classData.portalSetup.active && classData.portalSetup.baseline) {
             const baseline = classData.portalSetup.baseline;
             Object.values(baseline).forEach(b => {
                 total += (b.total || 0);
-                attended += (b.attended || 0);
+                attended += (b.attended || 0);  // baseline uses "attended"
             });
         }
 
         const percentage = total === 0 ? 0 : (attended / total * 100);
+        console.log(`📊 Attendance calc: ${attended}/${total} = ${percentage.toFixed(1)}%`);
         return { total, attended, percentage };
     },
 
