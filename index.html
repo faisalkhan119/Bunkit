@@ -11872,94 +11872,117 @@ CRITICAL INSTRUCTIONS:
             }
 
             async function submitClassFromWizard() {
-                // Final save of grid data
-                saveTimetableFromGrid();
+                try {
+                    console.log("💾 submitClassFromWizard triggered");
 
-                // Collect all data
-                let className = document.getElementById('newClassName').value.trim();
-                const lastDate = document.getElementById('newClassLastDate').value;
-                const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort();
-                const semesterStartDate = document.getElementById('newClassStartDate').value;
+                    // Final save of grid data
+                    saveTimetableFromGrid();
 
-                // Calculate schedule counts from timetable grid
-                wizardSubjectsData.forEach(sub => {
-                    sub.shortName = sub.shortName || getSubjectShortName(sub.name);
-                    sub.schedule = [0, 0, 0, 0, 0, 0, 0];
+                    // Collect all data
+                    let className = document.getElementById('newClassName').value.trim();
+                    const lastDate = document.getElementById('newClassLastDate').value;
+                    const holidays = [...document.getElementById('holidayList').querySelectorAll('span')].map(span => span.textContent).sort();
+                    const semesterStartDate = document.getElementById('newClassStartDate').value;
+
+                    if (!className) throw new Error("Please enter a Class Name.");
+                    if (!lastDate) throw new Error("Please select a Last Working Date.");
+
+                    // Calculate schedule counts from timetable grid
+                    const currentWizardSubjects = JSON.parse(JSON.stringify(wizardSubjectsData)); // Deep copy to avoid reference issues
+                    currentWizardSubjects.forEach(sub => {
+                        sub.shortName = sub.shortName || getSubjectShortName(sub.name);
+                        sub.schedule = [0, 0, 0, 0, 0, 0, 0];
+                        for (let d = 0; d < 7; d++) {
+                            (wizardTimetableData[d] || []).forEach(code => {
+                                if (code === sub.code) sub.schedule[d]++;
+                            });
+                        }
+                    });
+
+                    // Build timetable arrangement (period-based)
+                    const tempTimetableArrangement = {};
                     for (let d = 0; d < 7; d++) {
-                        (wizardTimetableData[d] || []).forEach(code => {
-                            if (code === sub.code) sub.schedule[d]++;
+                        tempTimetableArrangement[d] = (wizardTimetableData[d] || []).map(code => {
+                            if (!code) return null;
+                            const sub = currentWizardSubjects.find(s => s.code === code);
+                            return sub ? { code: sub.code, name: sub.name, shortName: getSubjectShortName(sub.name) } : null;
                         });
                     }
-                });
 
-                // Build timetable arrangement (period-based)
-                const timetableArrangement = {};
-                for (let d = 0; d < 7; d++) {
-                    timetableArrangement[d] = (wizardTimetableData[d] || []).map(code => {
-                        if (!code) return null;
-                        const sub = wizardSubjectsData.find(s => s.code === code);
-                        return sub ? { code: sub.code, name: sub.name, shortName: getSubjectShortName(sub.name) } : null;
-                    });
-                }
-
-                // Check for duplicates (only for new class, not edit)
-                if (!editingClassName) {
-                    const dupResult = checkWizardClassDuplicate(className, wizardSubjectsData, timetableArrangement);
-                    if (dupResult.status === 'exact_duplicate') {
-                        alert(`⚠️ Class "${className}" already exists with this exact schedule!`);
-                        return;
-                    }
-                    if (dupResult.status === 'name_conflict') {
-                        if (confirm(`⚠️ Class "${className}" already exists but has a different schedule.\n\nSave as "${dupResult.suggestedName}" instead?`)) {
-                            className = dupResult.suggestedName;
-                        } else {
+                    // Check for duplicates (New Class or Rename to Existing)
+                    if (!editingClassName || (editingClassName && editingClassName !== className)) {
+                        const dupResult = checkWizardClassDuplicate(className, currentWizardSubjects, tempTimetableArrangement);
+                        if (dupResult.status === 'exact_duplicate') {
+                            alert(`⚠️ Class "${className}" already exists with this exact schedule!`);
                             return;
                         }
-                    }
-                }
-
-                // Handle class rename (migrate localStorage keys)
-                if (editingClassName && editingClassName !== className) {
-                    const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_'];
-                    keyPrefixes.forEach(prefix => {
-                        const oldData = localStorage.getItem(`${prefix}${editingClassName}`);
-                        if (oldData) {
-                            localStorage.setItem(`${prefix}${className}`, oldData);
-                            localStorage.removeItem(`${prefix}${editingClassName}`);
+                        if (dupResult.status === 'name_conflict') {
+                            if (confirm(`⚠️ Class "${className}" already exists but has a different schedule.\n\nSave as "${dupResult.suggestedName}" instead?`)) {
+                                className = dupResult.suggestedName;
+                            } else {
+                                return;
+                            }
                         }
-                    });
-                    delete classes[editingClassName];
-                }
+                    }
 
-                // Check if timetable changed in edit mode - show effective date modal
-                const isEditMode = !!editingClassName;
-                const timetableChanged = isEditMode && hasTimetableChanged(editingClassName, timetableArrangement);
+                    // CAPTURE STATE
+                    const originalName = editingClassName;
+                    const isEditMode = !!originalName;
+                    const existingClassData = originalName ? (classes[originalName] || {}) : {};
 
-                if (timetableChanged) {
-                    // Define the callback for after effective date modal confirms
-                    const completeSave = async () => {
-                        // Save class data
-                        const existingClass = classes[editingClassName] || classes[className] || {};
+                    // Check Timetable Change (Compare NEW arrangement vs OLD stored arrangement)
+                    let timetableChanged = false;
+                    if (isEditMode) {
+                        timetableChanged = hasTimetableChanged(originalName, tempTimetableArrangement);
+                        console.log(`Timetable changed: ${timetableChanged}`);
+                    }
+
+                    // Define Save Operation
+                    const completeSaveOperation = async () => {
+                        console.log("Executing Final Save...");
+
+                        // 1. Handle Rename
+                        if (originalName && originalName !== className) {
+                            console.log(`Renaming "${originalName}" to "${className}"`);
+                            const keyPrefixes = ['notificationSettings_', 'timetable_arrangement_', 'periodTimes_', 'custom_schedules_'];
+                            keyPrefixes.forEach(prefix => {
+                                const oldData = localStorage.getItem(`${prefix}${originalName}`);
+                                if (oldData) {
+                                    localStorage.setItem(`${prefix}${className}`, oldData);
+                                    localStorage.removeItem(`${prefix}${originalName}`);
+                                }
+                            });
+                            delete classes[originalName];
+                        }
+
+                        // 2. Save Class Object
                         classes[className] = {
-                            ...existingClass,
+                            ...existingClassData, // Preserve ID, portalSetup, etc.
                             lastDate,
-                            subjects: wizardSubjectsData,
+                            subjects: currentWizardSubjects,
                             holidays,
+                            updatedAt: Date.now(),
                             portalSetup: {
-                                ...(existingClass.portalSetup || {}),
+                                ...(existingClassData.portalSetup || {}),
                                 semesterStartDate
                             }
                         };
 
-                        // Generate Shared ID
-                        if (window.SocialManager) {
+                        // Ensure ID
+                        if (!classes[className].id) classes[className].id = crypto.randomUUID();
+
+                        // Shared ID
+                        if (window.SocialManager && !classes[className].sharedId) {
                             classes[className].sharedId = await window.SocialManager.generateSharedClassId(classes[className]);
                         }
 
-                        // Update storage and UI
+                        // 3. Save Timetable Arrangement
+                        saveTimetableArrangement(className, tempTimetableArrangement);
+
+                        // 4. Persist
                         saveToStorage();
 
-                        // Auto-register class membership
+                        // 5. Membership
                         if (classes[className]?.sharedId && window.supabaseClient && window.AuthManager?.user) {
                             supabaseClient.from('class_memberships').upsert({
                                 shared_class_id: classes[className].sharedId,
@@ -11967,67 +11990,31 @@ CRITICAL INSTRUCTIONS:
                             }, { onConflict: 'shared_class_id, user_id' }).catch(e => console.error('Membership reg:', e));
                         }
 
+                        // 6. UI Cleanup
                         closeModal('addClassModal');
                         populateClassSelector();
                         document.getElementById('classSelector').value = className;
                         onClassChange();
+                        showToast(`✅ Class "${className}" saved successfully!`, 'success');
 
-                        // Reset wizard state
+                        // Reset
                         wizardCurrentStep = 1;
                         wizardSubjectsData = [];
                         wizardTimetableData = {};
                         editingClassName = null;
                     };
 
-                    // Open the effective date modal
-                    openEffectiveDateModal(className, timetableArrangement, completeSave);
-                    return; // Don't continue - modal will handle save
-                }
-
-                // Normal save (new class or no timetable change)
-                // Save class data
-                const existingClass = classes[editingClassName] || classes[className] || {};
-                classes[className] = {
-                    ...existingClass,
-                    lastDate,
-                    subjects: wizardSubjectsData,
-                    holidays,
-                    portalSetup: {
-                        ...(existingClass.portalSetup || {}),
-                        semesterStartDate
+                    // Execute
+                    if (timetableChanged) {
+                        openEffectiveDateModal(className, tempTimetableArrangement, completeSaveOperation);
+                    } else {
+                        await completeSaveOperation();
                     }
-                };
 
-                // Generate Shared ID
-                if (window.SocialManager) {
-                    classes[className].sharedId = await window.SocialManager.generateSharedClassId(classes[className]);
+                } catch (error) {
+                    console.error("❌ Error in submitClassFromWizard:", error);
+                    alert("An error occurred while saving:\n" + error.message);
                 }
-
-                // Save timetable arrangement
-                saveTimetableArrangement(className, timetableArrangement);
-
-                // Update storage and UI
-                saveToStorage();
-
-                // Auto-register class membership
-                if (classes[className]?.sharedId && window.supabaseClient && window.AuthManager?.user) {
-                    supabaseClient.from('class_memberships').upsert({
-                        shared_class_id: classes[className].sharedId,
-                        user_id: AuthManager.user.id
-                    }, { onConflict: 'shared_class_id, user_id' }).catch(e => console.error('Membership reg:', e));
-                }
-
-                closeModal('addClassModal');
-                populateClassSelector();
-                document.getElementById('classSelector').value = className;
-                onClassChange();
-                showToast(`✅ Class "${className}" saved successfully!`, 'success');
-
-                // Reset wizard state
-                wizardCurrentStep = 1;
-                wizardSubjectsData = [];
-                wizardTimetableData = {};
-                editingClassName = null;
             }
             window.submitClassFromWizard = submitClassFromWizard;
 
