@@ -300,7 +300,11 @@ const CommunityManager = {
                 <div style="text-align:center; padding: 10px;">
                     <div style="font-size: 2rem; margin-bottom: 10px;">👋</div>
                     <strong>No classmates found yet</strong>
-                    <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">Share your class with classmates — they'll appear here automatically after importing it.</p>
+                    <p style="margin-top:8px; font-size:0.9rem; opacity:0.8;">Share your class with classmates. They will appear here automatically after they open the app.</p>
+                    <button onclick="window.CommunityManager.registerMembership('${this.currentClassId}').then(() => alert('Membership synced! Reload the page.'))" 
+                        style="margin-top:10px; background:none; border:1px solid #666; padding:4px 10px; border-radius:6px; font-size:0.8rem; cursor:pointer;">
+                        🔄 Sync Membership
+                    </button>
                 </div>`;
             pollsSection.style.display = 'none';
             return;
@@ -532,25 +536,26 @@ const CommunityManager = {
 window.CommunityManager = CommunityManager;
 
 // ===================== STARTUP AUTO-REGISTER =====================
-// Register membership for ALL classes with sharedId when app loads
-// This backfills memberships for users who imported classes before this feature existed
 (function autoRegisterMemberships() {
-    const REGISTER_DELAY = 3000; // Wait for auth + classes to load
+    const REGISTER_DELAY = 5000; // Increased to 5s to ensure everything loads
 
     setTimeout(async () => {
+        console.log("🔄 Auto-registering memberships...");
         try {
-            // Check if user is logged in and Supabase is available
-            if (!window.supabaseClient || !window.AuthManager?.user) return;
-            if (!window.classes || Object.keys(window.classes).length === 0) return;
-
-            // Only auto-register once per session to avoid spamming
-            if (sessionStorage.getItem('membershipRegistered')) return;
+            if (!window.supabaseClient) { console.warn("⚠️ Supabase not loaded"); return; }
+            if (!window.AuthManager?.user) { console.warn("⚠️ User not logged in"); return; }
+            if (!window.classes) { console.warn("⚠️ window.classes not found"); return; }
 
             const userId = AuthManager.user.id;
             const registrations = [];
 
+            console.log("📂 Classes found:", Object.keys(window.classes).length);
+
             for (const className in window.classes) {
                 const classData = window.classes[className];
+                // Debug log for each class
+                // console.log(`Checking ${className}: sharedId=${classData.sharedId}`);
+
                 if (classData.sharedId) {
                     registrations.push({
                         shared_class_id: classData.sharedId,
@@ -559,20 +564,24 @@ window.CommunityManager = CommunityManager;
                 }
             }
 
-            if (registrations.length === 0) return;
+            if (registrations.length === 0) {
+                console.log("ℹ️ No shared classes to register.");
+                return;
+            }
+
+            console.log(`🚀 Registering ${registrations.length} memberships...`);
 
             const { error } = await supabaseClient
                 .from('class_memberships')
                 .upsert(registrations, { onConflict: 'shared_class_id, user_id' });
 
             if (error) {
-                console.error('Auto-register memberships error:', error);
+                console.error('❌ Auto-register failed:', error);
             } else {
-                console.log(`✅ Auto-registered ${registrations.length} class membership(s)`);
-                sessionStorage.setItem('membershipRegistered', 'true');
+                console.log(`✅ Success! Registered ${registrations.length} classes.`);
             }
         } catch (e) {
-            console.error('Auto-register memberships failed:', e);
+            console.error('❌ Auto-register crash:', e);
         }
     }, REGISTER_DELAY);
 })();
