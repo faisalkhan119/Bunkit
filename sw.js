@@ -57,6 +57,7 @@ const ASSETS_TO_CACHE = [
     './js/auth-manager.js',
     './js/sync-manager.js',
     './js/social-manager.js',
+    './css/styles.css',
     './js/pull-to-refresh.js',
     './js/pwa-compat.js'
 ];
