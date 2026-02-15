@@ -59,7 +59,8 @@ const ASSETS_TO_CACHE = [
     './js/social-manager.js',
     './css/styles.css',
     './js/pull-to-refresh.js',
-    './js/pwa-compat.js'
+    './js/pwa-compat.js',
+    './js/app.js'
 ];
 
 // External assets to cache at runtime
