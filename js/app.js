@@ -11657,8 +11657,14 @@ function stopTabScanner() {
     }
 }
 
-function handleQRFileUploadInTab(input) {
+async function handleQRFileUploadInTab(input) {
     if (input.files.length === 0) return;
+
+    // Lazy-load jsQR library
+    try { await loadScript(CDN.JSQR); } catch (e) {
+        alert('⚠️ Failed to load QR scanner library. Check your internet connection.');
+        return;
+    }
 
     const file = input.files[0];
     const reader = new FileReader();

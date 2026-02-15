@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // ==================== END FIREBASE CLOUD MESSAGING ====================
 
-const CACHE_NAME = 'bunkit-v2.2';
+const CACHE_NAME = 'bunkit-v2.3';
 const ASSETS_TO_CACHE = [
     // NOTE: index.html intentionally NOT cached to prevent stale data issues
     // The service worker will still serve it via network-first strategy
@@ -57,6 +57,8 @@ const ASSETS_TO_CACHE = [
     './js/auth-manager.js',
     './js/sync-manager.js',
     './js/social-manager.js',
+    './js/community-manager.js',
+    './js/supabase-config.js',
     './css/styles.css',
     './js/pull-to-refresh.js',
     './js/pwa-compat.js',
@@ -67,7 +69,7 @@ const ASSETS_TO_CACHE = [
 const EXTERNAL_ASSETS = [
     'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
     'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'
 ];
