@@ -532,12 +532,8 @@
     </script>
     <!-- Confetti Animation Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
-    <!-- LZ-String for URL Compression -->
+    <!-- CDN Libraries: Loaded on-demand by js/app.js when feature is used -->
+    <!-- LZ-String for URL Compression (needed immediately for class import links) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <!-- Google Identity Services for OAuth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -2057,6 +2053,11 @@
                     // === TESSERACT FALLBACK ===
                     async function processImageWithTesseract(imageFile) {
                         console.log('📄 Processing with Tesseract (offline)...');
+                        // Lazy-load Tesseract library
+                        try { await window.loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js'); } catch (e) {
+                            console.error('Failed to load Tesseract library:', e);
+                            throw new Error('Tesseract library failed to load. Check your internet connection.');
+                        }
 
                         const { data: { text } } = await Tesseract.recognize(imageFile, 'eng', {
                             logger: m => console.log(m)
