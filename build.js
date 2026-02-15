@@ -31,7 +31,36 @@ if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
 }
 
-console.log('📦 Starting optimized build...\n');
+const JavaScriptObfuscator = require('javascript-obfuscator');
+
+console.log('📦 Starting optimized + obfuscated build...\n');
+
+// ========== OBFUSCATION CONFIG ==========
+const obfuscatorConfig = {
+    compact: true,
+    controlFlowFlattening: false,        // Disabled — too slow for 600KB+ files
+    deadCodeInjection: false,            // Disabled — increases file size too much
+    identifierNamesGenerator: 'hexadecimal',
+    renameGlobals: false,                // Keep globals accessible for inline scripts
+    selfDefending: false,                // Disabled — can break in strict mode
+    stringArray: true,
+    stringArrayEncoding: ['base64'],
+    stringArrayThreshold: 0.5,           // Encode 50% of strings
+    splitStrings: true,
+    splitStringsChunkLength: 10,
+    transformObjectKeys: true,
+    unicodeEscapeSequence: false
+};
+
+// Lighter config for small scripts
+const lightObfuscatorConfig = {
+    compact: true,
+    identifierNamesGenerator: 'hexadecimal',
+    renameGlobals: false,
+    stringArray: true,
+    stringArrayThreshold: 0.3,
+    transformObjectKeys: true
+};
 
 // ========== MINIFICATION HELPERS ==========
 
@@ -44,27 +73,36 @@ function minifyCSS(css) {
         .trim();
 }
 
-function minifyJS(js) {
-    // Preserve string literals by replacing them with placeholders
-    const strings = [];
-    let result = js.replace(/(["'`])(?:(?!\1|\\).|\\.)*\1/g, (match) => {
-        strings.push(match);
-        return `___STR${strings.length - 1}___`;
-    });
-
-    result = result
-        .replace(/\/\/.*$/gm, '')                   // Remove single-line comments
-        .replace(/\/\*[\s\S]*?\*\//g, '')            // Remove multi-line comments
-        .replace(/\s+/g, ' ')                        // Collapse whitespace
-        .replace(/\s*([{}();,=+\-*/<>!&|?:])\s*/g, '$1')  // Remove space around operators
-        .trim();
-
-    // Restore string literals
-    result = result.replace(/___STR(\d+)___/g, (_, i) => strings[i]);
-    return result;
+function obfuscateJS(js, filename) {
+    try {
+        const isLargeFile = js.length > 100000;
+        const config = isLargeFile ? obfuscatorConfig : lightObfuscatorConfig;
+        const result = JavaScriptObfuscator.obfuscate(js, config);
+        return result.getObfuscatedCode();
+    } catch (e) {
+        console.warn(`⚠️ Obfuscation failed for ${filename}: ${e.message}. Using basic minification.`);
+        // Fallback: basic whitespace removal
+        return js
+            .replace(/\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
 }
 
-function minifyHTML(html) {
+function minifyAndObfuscateHTML(html) {
+    // 1. Extract and obfuscate inline <script> blocks
+    html = html.replace(/<script>([\s\S]*?)<\/script>/g, (match, code) => {
+        if (code.trim().length < 20) return match; // Skip tiny scripts
+        try {
+            const obfuscated = obfuscateJS(code, 'inline-script');
+            return `<script>${obfuscated}</script>`;
+        } catch (e) {
+            return match; // Keep original on failure
+        }
+    });
+
+    // 2. Minify HTML structure
     return html
         .replace(/<!--[\s\S]*?-->/g, '')             // Remove HTML comments
         .replace(/>\s+</g, '><')                     // Collapse whitespace between tags
@@ -83,8 +121,8 @@ function copyFile(src, dest, minify = false) {
             let minified = content;
 
             if (ext === '.css') minified = minifyCSS(content);
-            else if (ext === '.js') minified = minifyJS(content);
-            else if (ext === '.html') minified = minifyHTML(content);
+            else if (ext === '.js') minified = obfuscateJS(content, path.basename(src));
+            else if (ext === '.html') minified = minifyAndObfuscateHTML(content);
 
             const saved = content.length - minified.length;
             totalSaved += saved;
