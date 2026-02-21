@@ -9,25 +9,39 @@ export const AuthProvider = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        // Check active sessions and sets the user
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) checkAdmin(session.user.email);
-            setLoading(false);
-        });
+        let mounted = true;
 
-        // Listen for changes on auth state (sign in, sign out, etc.)
+        // Safety timeout to prevent infinite loading state
+        const timeoutId = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('⚠️ Auth initialization timed out');
+                setLoading(false);
+            }
+        }, 8000);
+
+        // Single path for initialization and auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await checkAdmin(session.user.email);
+            if (!mounted) return;
+
+            console.log('📡 Auth State Change:', event);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                await checkAdmin(currentUser.email);
             } else {
                 setIsAdmin(false);
             }
+
             setLoading(false);
+            clearTimeout(timeoutId);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            clearTimeout(timeoutId);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const checkAdmin = async (email) => {
