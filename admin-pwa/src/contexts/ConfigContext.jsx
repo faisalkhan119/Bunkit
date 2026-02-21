@@ -62,8 +62,10 @@ export const ConfigProvider = ({ children }) => {
     const refreshConfig = () => fetchAllConfig();
 
     const updateConfig = async (key, value) => {
+        console.log(`💾 Saving config [${key}]...`);
         try {
-            const { error: upsertError } = await supabase
+            // 10 second timeout for save
+            const savePromise = supabase
                 .from('app_config')
                 .upsert({
                     key,
@@ -71,13 +73,20 @@ export const ConfigProvider = ({ children }) => {
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'key' });
 
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Save timeout after 10s')), 10000)
+            );
+
+            const { error: upsertError } = await Promise.race([savePromise, timeoutPromise]);
+
             if (upsertError) throw upsertError;
 
             // Optimistic update
             setConfig(prev => ({ ...prev, [key]: value }));
+            console.log(`✅ Config [${key}] saved successfully`);
             return { success: true };
         } catch (err) {
-            console.error(`Error updating config [${key}]:`, err);
+            console.error(`🚫 Error updating config [${key}]:`, err);
             return { success: false, error: err.message };
         }
     };
