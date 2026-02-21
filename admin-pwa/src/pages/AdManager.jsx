@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
-import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdManager = () => {
@@ -62,6 +62,29 @@ const AdManager = () => {
         setSaving(false);
     };
 
+    const applyToBoth = async () => {
+        setSaving(true);
+        setStatus(null);
+
+        console.log('🔄 Applying current ad config to both types...');
+
+        // Save to daily_ad
+        const dailyResult = await updateConfig('daily_ad', adData);
+        // Save to calculate_ad
+        const calcResult = await updateConfig('calculate_ad', adData);
+
+        if (dailyResult.success && calcResult.success) {
+            setStatus({ type: 'success', message: 'Configuration applied to both Daily & Calculation ads!' });
+            setTimeout(() => setStatus(null), 4000);
+        } else {
+            setStatus({
+                type: 'error',
+                message: `Partial failure: Daily(${dailyResult.success ? 'OK' : 'Fail'}), Calc(${calcResult.success ? 'OK' : 'Fail'})`
+            });
+        }
+        setSaving(false);
+    };
+
     const addCta = () => {
         if (adData.cta_buttons.length >= 3) return;
         setAdData({
@@ -99,14 +122,25 @@ const AdManager = () => {
                     <p className="text-muted mt-1">Configure and preview app advertisements</p>
                 </div>
 
-                <button
-                    onClick={saveAd}
-                    disabled={saving}
-                    className="btn-primary flex items-center gap-2"
-                >
-                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Save Changes
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={applyToBoth}
+                        disabled={saving}
+                        title="Apply this exact configuration to both Daily and Calculation ads"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-sm font-semibold flex items-center gap-2 text-muted hover:text-white"
+                    >
+                        <Copy className="w-4 h-4" />
+                        Apply to Both
+                    </button>
+                    <button
+                        onClick={saveAd}
+                        disabled={saving}
+                        className="btn-primary flex items-center gap-2"
+                    >
+                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        Save Changes
+                    </button>
+                </div>
             </div>
 
             <div className="flex gap-4 p-1 bg-white/5 rounded-2xl w-fit">
