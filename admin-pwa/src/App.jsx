@@ -5,7 +5,7 @@ import { Loader2, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AppContent = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, logout, hardReset } = useAuth();
 
   if (loading) {
     return (
@@ -30,7 +30,6 @@ const AppContent = () => {
   }
 
   if (!isAdmin) {
-    const { logout } = useAuth();
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center p-6 text-center">
         <motion.div
@@ -43,20 +42,30 @@ const AppContent = () => {
           </div>
           <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
           <p className="text-muted leading-relaxed mb-8">
-            Your email (<span className="text-white font-medium">{user.email}</span>) is not on the authorized admin whitelist. Please contact the system owner if you believe this is a mistake.
+            Your email (<span className="text-white font-medium">{user.email}</span>) is not on the authorized admin whitelist.
           </p>
-          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-primary w-full sm:w-auto"
+              >
+                Retry Check
+              </button>
+              <button
+                onClick={logout}
+                className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/10 transition-all w-full sm:w-auto"
+              >
+                Sign Out
+              </button>
+            </div>
+
             <button
-              onClick={() => window.location.reload()}
-              className="btn-primary"
+              onClick={hardReset}
+              className="text-[10px] text-muted hover:text-red-400 transition-colors uppercase tracking-widest mt-4"
             >
-              Retry Check
-            </button>
-            <button
-              onClick={logout}
-              className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/10 transition-all"
-            >
-              Sign Out
+              ⚠️ STUCK? Perform Hard Reset
             </button>
           </div>
         </motion.div>

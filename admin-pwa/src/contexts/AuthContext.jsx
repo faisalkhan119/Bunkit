@@ -102,12 +102,40 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        try {
+            console.log('🚪 Logging out...');
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+        } catch (err) {
+            console.error('Logout error:', err);
+            // Fallback: manually clear session
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+        }
     };
 
+    const hardReset = () => {
+        console.warn('⚠️ Performing Hard Reset...');
+        localStorage.clear();
+        sessionStorage.clear();
+        // Clear Supabase session specifically if possible
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.includes('supabase.auth.token')) {
+                localStorage.removeItem(key);
+            }
+        }
+        window.location.href = window.location.origin;
+    };
+
+    // Expose for console debugging
+    useEffect(() => {
+        window.DEV_AUTH = { user, isAdmin, loading, checkAdmin, hardReset };
+    }, [user, isAdmin, loading]);
+
     return (
-        <AuthContext.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, logout }}>
+        <AuthContext.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, logout, hardReset }}>
             {children}
         </AuthContext.Provider>
     );
