@@ -4,6 +4,12 @@ import { motion } from 'framer-motion';
 
 const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
     const { user, logout } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+    };
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,8 +36,8 @@ const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
                         key={item.id}
                         onClick={() => handleTabClick(item.id)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id
-                                ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
-                                : 'text-muted hover:bg-white/5 hover:text-white'
+                            ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
+                            : 'text-muted hover:bg-white/5 hover:text-white'
                             }`}
                     >
                         <item.icon className="w-5 h-5" />
@@ -58,11 +64,21 @@ const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
                 </div>
 
                 <button
-                    onClick={logout}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all font-medium"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all font-medium disabled:opacity-50"
                 >
-                    <LogOut className="w-5 h-5" />
-                    Logout
+                    {isLoggingOut ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Logging out...</span>
+                        </>
+                    ) : (
+                        <>
+                            <LogOut className="w-5 h-5" />
+                            <span>Logout</span>
+                        </>
+                    )}
                 </button>
             </div>
         </aside>

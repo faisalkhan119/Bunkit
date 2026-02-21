@@ -5,28 +5,30 @@ import { useAuth } from './AuthContext';
 const ConfigContext = createContext({});
 
 export const ConfigProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, authLoading } = useAuth();
     const [config, setConfig] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchAllConfig = async () => {
+        // Wait for Auth to finish initializing before deciding what to do
+        if (authLoading) return;
+
         if (!user) {
+            console.log('👤 No user session, skipping config fetch');
             setConfig({});
             setLoading(false);
             return;
         }
 
         setLoading(true);
-        console.log('📦 Fetching all configs...');
+        console.log('📦 Fetching all configs for user:', user.email);
 
-        // Safety timeout for config fetch
+        // Safety timeout to prevent infinite spinner
         const timeoutId = setTimeout(() => {
-            if (loading) {
-                console.warn('⚠️ Config fetch timed out');
-                setLoading(false);
-            }
-        }, 6000);
+            console.warn('⚠️ Config fetch timed out after 7s');
+            setLoading(false);
+        }, 7000);
 
         try {
             const { data, error: supabaseError } = await supabase
@@ -36,25 +38,26 @@ export const ConfigProvider = ({ children }) => {
             if (supabaseError) throw supabaseError;
 
             const configMap = (data || []).reduce((acc, item) => {
-                acc[item.key] = item.value;
+                if (item.key) acc[item.key] = item.value;
                 return acc;
             }, {});
 
-            console.log('✅ Configs loaded:', Object.keys(configMap));
+            console.log('✅ Configs sync complete');
             setConfig(configMap);
             setError(null);
         } catch (err) {
-            console.error('🚫 Error fetching config:', err);
+            console.error('🚫 Config fetch failed:', err);
             setError(err.message);
+            // Even on error, we must allow the app to render with whatever it has
         } finally {
-            setLoading(false);
             clearTimeout(timeoutId);
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchAllConfig();
-    }, [user?.id]); // Re-fetch when user changes
+    }, [user?.id, authLoading]); // Re-run when session settles or user changes
 
     const refreshConfig = () => fetchAllConfig();
 

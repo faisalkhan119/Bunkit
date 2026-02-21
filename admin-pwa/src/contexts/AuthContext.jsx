@@ -102,45 +102,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        console.log('🚪 Initializing Aggressive Logout...');
+
+        // Immediate UI feedback/cleanup
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+
         try {
-            console.log('🚪 Logging out...');
-            await supabase.auth.signOut();
+            // Attempt clean sign out but don't wait forever
+            await Promise.race([
+                supabase.auth.signOut(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Signout timeout')), 2000))
+            ]);
         } catch (err) {
-            console.error('Logout error:', err);
+            console.warn('⚠️ signOut had issues, proceeding with manual cleanup:', err);
         } finally {
-            // Aggressive cleanup: clear all storage and reload
+            // Destruction of all local state
             localStorage.clear();
             sessionStorage.clear();
-            // Specifically remove any supabase keys just in case
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key?.includes('supabase')) localStorage.removeItem(key);
-            }
+
+            // Clear all possible cookies (security measure)
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            console.log('🚀 Redirecting to login...');
             window.location.href = window.location.origin;
         }
     };
 
     const hardReset = () => {
-        console.warn('⚠️ Performing Hard Reset...');
+        console.warn('⚠️ Performing Manual Hard Reset...');
         localStorage.clear();
         sessionStorage.clear();
-        // Clear Supabase session specifically if possible
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.includes('supabase.auth.token')) {
-                localStorage.removeItem(key);
-            }
-        }
         window.location.href = window.location.origin;
     };
 
-    // Expose for console debugging
-    useEffect(() => {
-        window.DEV_AUTH = { user, isAdmin, loading, checkAdmin, hardReset };
-    }, [user, isAdmin, loading]);
-
     return (
-        <AuthContext.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, logout, hardReset }}>
+        <AuthContext.Provider value={{ user, isAdmin, loading, authLoading: loading, login, loginWithGoogle, logout, hardReset }}>
             {children}
         </AuthContext.Provider>
     );
