@@ -130,15 +130,6 @@ const AdManager = () => {
 
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={applyToBoth}
-                        disabled={saving || applying}
-                        title="Apply this exact configuration to both Daily and Calculation ads"
-                        className="px-5 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl hover:bg-indigo-500/20 transition-all text-xs font-bold flex items-center gap-2 text-indigo-400 hover:text-indigo-300 shadow-lg shadow-indigo-500/5 group"
-                    >
-                        {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
-                        Apply to Both
-                    </button>
-                    <button
                         onClick={saveAd}
                         disabled={saving || applying}
                         className="btn-primary px-6 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl shadow-primary/20"
@@ -149,20 +140,34 @@ const AdManager = () => {
                 </div>
             </div>
 
-            <div className="flex gap-4 p-1 bg-white/5 rounded-2xl w-fit">
+            <div className="flex items-center gap-4">
+                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
+                    <button
+                        onClick={() => setActiveTab('daily_ad')}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'daily_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
+                            }`}
+                    >
+                        Daily Ad
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('calculate_ad')}
+                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'calculate_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
+                            }`}
+                    >
+                        Calculation Ad
+                    </button>
+                </div>
+
+                <div className="h-8 w-[1px] bg-white/10 mx-1" />
+
                 <button
-                    onClick={() => setActiveTab('daily_ad')}
-                    className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'daily_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
-                        }`}
+                    onClick={applyToBoth}
+                    disabled={saving || applying}
+                    title="Copy this current configuration to both Daily and Calculation ads"
+                    className="px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/10 rounded-xl hover:bg-indigo-500/20 transition-all font-semibold flex items-center gap-2 text-indigo-400 hover:text-indigo-300 group"
                 >
-                    Daily Ad
-                </button>
-                <button
-                    onClick={() => setActiveTab('calculate_ad')}
-                    className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'calculate_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
-                        }`}
-                >
-                    Calculation Ad
+                    {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
+                    Apply to Both
                 </button>
             </div>
 
