@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
-import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles, Copy } from 'lucide-react';
+import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles, Copy, Instagram, MessageCircle, Coffee, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdManager = () => {
@@ -339,18 +339,26 @@ const AdManager = () => {
                                     </p>
 
                                     <div className="space-y-2.5">
-                                        {adData.cta_buttons.map((btn, i) => (
-                                            <div
-                                                key={i}
-                                                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 ${btn.type === 'instagram' ? 'bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600' :
-                                                    btn.type === 'whatsapp' ? 'bg-[#25D366]' :
-                                                        btn.type === 'buymeacoffee' ? 'bg-[#FFDD00] text-black' :
-                                                            'bg-primary'
-                                                    }`}
-                                            >
-                                                {btn.label || 'Visit Website'} <ExternalLink className="w-3 h-3" />
-                                            </div>
-                                        ))}
+                                        {adData.cta_buttons.map((btn, i) => {
+                                            const Icon = btn.type === 'instagram' ? Instagram :
+                                                btn.type === 'whatsapp' ? MessageCircle :
+                                                    btn.type === 'buymeacoffee' ? Coffee :
+                                                        Globe;
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 ${btn.type === 'instagram' ? 'bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600' :
+                                                        btn.type === 'whatsapp' ? 'bg-[#25D366]' :
+                                                            btn.type === 'buymeacoffee' ? 'bg-[#FFDD00] text-black' :
+                                                                'bg-primary'
+                                                        }`}
+                                                >
+                                                    <Icon className="w-3.5 h-3.5" />
+                                                    {btn.label || 'Visit Website'}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     <button disabled className="mt-5 w-fit mx-auto px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-muted">

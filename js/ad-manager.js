@@ -219,22 +219,27 @@ class BunkitAdManager {
                     let btnBg = 'linear-gradient(135deg,#6c63ff,#4f46e5)'; // Default Primary
                     let btnShadow = '0 4px 16px rgba(79,70,229,0.35)';
                     let btnTextColor = '#fff';
+                    let btnIconClass = 'fa-solid fa-globe'; // Default icon
 
                     // Match colors from Admin AdManager.jsx
                     if (cta.type === 'instagram') {
                         btnBg = 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)';
                         btnShadow = '0 4px 16px rgba(188,24,136,0.3)';
+                        btnIconClass = 'fa-brands fa-instagram';
                     } else if (cta.type === 'whatsapp') {
                         btnBg = '#25D366';
                         btnShadow = '0 4px 12px rgba(37,211,102,0.3)';
+                        btnIconClass = 'fa-brands fa-whatsapp';
                     } else if (cta.type === 'buymeacoffee') {
                         btnBg = '#FFDD00';
                         btnShadow = '0 4px 12px rgba(255,221,0,0.3)';
                         btnTextColor = '#000';
+                        btnIconClass = 'fa-solid fa-mug-hot';
                     }
 
                     btn.style.cssText = [
-                        'display:block;text-align:center;',
+                        'display:flex;align-items:center;justify-content:center;gap:8px;',
+                        'text-align:center;',
                         'padding:13px 20px;',
                         `background:${btnBg};`,
                         `color:${btnTextColor};text-decoration:none;`,
@@ -242,6 +247,11 @@ class BunkitAdManager {
                         'transition:opacity 0.2s,transform 0.2s;',
                         `box-shadow:${btnShadow};`
                     ].join('');
+
+                    // Add icon if available
+                    const icon = document.createElement('i');
+                    icon.className = btnIconClass;
+                    btn.prepend(icon);
 
                     btn.onclick = () => {
                         this._trackEvent(adType, 'click', cta.label, cta.url);
