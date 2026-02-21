@@ -7,6 +7,7 @@ const AdManager = () => {
     const { config, updateConfig, loading: configLoading } = useConfig();
     const [activeTab, setActiveTab] = useState('daily_ad');
     const [saving, setSaving] = useState(false);
+    const [applying, setApplying] = useState(false);
     const [status, setStatus] = useState(null);
 
     const [adData, setAdData] = useState({
@@ -63,26 +64,31 @@ const AdManager = () => {
     };
 
     const applyToBoth = async () => {
-        setSaving(true);
+        setApplying(true);
         setStatus(null);
 
         console.log('🔄 Applying current ad config to both types...');
 
-        // Save to daily_ad
-        const dailyResult = await updateConfig('daily_ad', adData);
-        // Save to calculate_ad
-        const calcResult = await updateConfig('calculate_ad', adData);
+        try {
+            // Save to daily_ad
+            const dailyResult = await updateConfig('daily_ad', adData);
+            // Save to calculate_ad
+            const calcResult = await updateConfig('calculate_ad', adData);
 
-        if (dailyResult.success && calcResult.success) {
-            setStatus({ type: 'success', message: 'Configuration applied to both Daily & Calculation ads!' });
-            setTimeout(() => setStatus(null), 4000);
-        } else {
-            setStatus({
-                type: 'error',
-                message: `Partial failure: Daily(${dailyResult.success ? 'OK' : 'Fail'}), Calc(${calcResult.success ? 'OK' : 'Fail'})`
-            });
+            if (dailyResult.success && calcResult.success) {
+                setStatus({ type: 'success', message: 'Configuration synced to both Daily & Calculation ads!' });
+                setTimeout(() => setStatus(null), 4000);
+            } else {
+                setStatus({
+                    type: 'error',
+                    message: `Sync failed: Daily(${dailyResult.success ? 'OK' : 'Fail'}), Calc(${calcResult.success ? 'OK' : 'Fail'})`
+                });
+            }
+        } catch (err) {
+            setStatus({ type: 'error', message: 'Sync operation failed' });
+        } finally {
+            setApplying(false);
         }
-        setSaving(false);
     };
 
     const addCta = () => {
@@ -125,17 +131,17 @@ const AdManager = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={applyToBoth}
-                        disabled={saving}
+                        disabled={saving || applying}
                         title="Apply this exact configuration to both Daily and Calculation ads"
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-sm font-semibold flex items-center gap-2 text-muted hover:text-white"
+                        className="px-5 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl hover:bg-indigo-500/20 transition-all text-xs font-bold flex items-center gap-2 text-indigo-400 hover:text-indigo-300 shadow-lg shadow-indigo-500/5 group"
                     >
-                        <Copy className="w-4 h-4" />
+                        {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
                         Apply to Both
                     </button>
                     <button
                         onClick={saveAd}
-                        disabled={saving}
-                        className="btn-primary flex items-center gap-2"
+                        disabled={saving || applying}
+                        className="btn-primary px-6 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl shadow-primary/20"
                     >
                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                         Save Changes
