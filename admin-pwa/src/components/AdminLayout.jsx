@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import AdManager from '../pages/AdManager';
 import DashboardHome from '../pages/DashboardHome';
 import SettingsPage from '../pages/SettingsPage';
+import AnalyticsPage from '../pages/AnalyticsPage';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,6 +16,7 @@ const AdminLayout = () => {
             case 'dashboard': return <DashboardHome setActiveTab={setActiveTab} />;
             case 'ads': return <AdManager />;
             case 'settings': return <SettingsPage />;
+            case 'analytics': return <AnalyticsPage />;
             default: return <DashboardHome setActiveTab={setActiveTab} />;
         }
     };

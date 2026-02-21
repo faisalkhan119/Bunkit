@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Megaphone, Settings, LogOut, User, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Settings, LogOut, User, Loader2, BarChart2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -15,6 +15,7 @@ const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'ads', label: 'Ad Manager', icon: Megaphone },
+        { id: 'analytics', label: 'Analytics', icon: BarChart2 },
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
