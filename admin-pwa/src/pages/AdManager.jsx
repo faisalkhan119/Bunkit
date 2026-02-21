@@ -140,31 +140,31 @@ const AdManager = () => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
-                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex gap-1.5 p-1 bg-white/5 rounded-2xl w-full sm:w-fit border border-white/5">
                     <button
                         onClick={() => setActiveTab('daily_ad')}
-                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'daily_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
+                        className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'daily_ad' ? 'bg-white/10 text-white shadow-xl ring-1 ring-white/10' : 'text-muted hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Daily Ad
                     </button>
                     <button
                         onClick={() => setActiveTab('calculate_ad')}
-                        className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${activeTab === 'calculate_ad' ? 'bg-white/10 text-white shadow-lg' : 'text-muted hover:text-white'
+                        className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'calculate_ad' ? 'bg-white/10 text-white shadow-xl ring-1 ring-white/10' : 'text-muted hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Calculation Ad
                     </button>
                 </div>
 
-                <div className="h-8 w-[1px] bg-white/10 mx-1" />
+                <div className="hidden sm:block h-8 w-[1px] bg-white/10 mx-1" />
 
                 <button
                     onClick={applyToBoth}
                     disabled={saving || applying}
                     title="Copy this current configuration to both Daily and Calculation ads"
-                    className="px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/10 rounded-xl hover:bg-indigo-500/20 transition-all font-semibold flex items-center gap-2 text-indigo-400 hover:text-indigo-300 group"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/20 transition-all font-bold text-sm flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-300 group shadow-lg shadow-indigo-500/5"
                 >
                     {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
                     Apply to Both
