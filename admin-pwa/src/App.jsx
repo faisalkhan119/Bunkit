@@ -8,7 +8,8 @@ import { ConfigProvider } from './contexts/ConfigContext';
 const AppContent = () => {
   const { user, isAdmin, loading, logout } = useAuth();
 
-  if (loading) {
+  // Show loader if still initializing OR if user is found but admin check is pending
+  if (loading || (user && isAdmin === null)) {
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
         <motion.div
@@ -30,8 +31,8 @@ const AppContent = () => {
     return <LoginGate />;
   }
 
-  // Bug fix #6: Gate on isAdmin — prevent non-whitelisted users from seeing dashboard
-  if (!isAdmin) {
+  // Bug fix #6: Gate on isAdmin — only show if explicitly false (not null)
+  if (isAdmin === false) {
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
         <motion.div

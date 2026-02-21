@@ -7,7 +7,7 @@ const VERSION = "2.0.0";
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(null); // changed from false to null
 
     useEffect(() => {
         let mounted = true;
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
                 console.warn('⚠️ Auth initialization timed out');
                 setLoading(false);
             }
-        }, 8000);
+        }, 10000);
 
         // Single path for initialization and auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
             setUser(currentUser);
 
             if (currentUser) {
+                // Ensure we await admin check before stopping the loader
                 await checkAdmin(currentUser.email);
             } else {
                 setIsAdmin(false);
