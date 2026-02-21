@@ -216,14 +216,31 @@ class BunkitAdManager {
                     btn.rel = 'noopener noreferrer';
                     btn.textContent = cta.label || 'Visit';
                     btn.className = 'bk-cta-btn';
+                    let btnBg = 'linear-gradient(135deg,#6c63ff,#4f46e5)'; // Default Primary
+                    let btnShadow = '0 4px 16px rgba(79,70,229,0.35)';
+                    let btnTextColor = '#fff';
+
+                    // Match colors from Admin AdManager.jsx
+                    if (cta.type === 'instagram') {
+                        btnBg = 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)';
+                        btnShadow = '0 4px 16px rgba(188,24,136,0.3)';
+                    } else if (cta.type === 'whatsapp') {
+                        btnBg = '#25D366';
+                        btnShadow = '0 4px 12px rgba(37,211,102,0.3)';
+                    } else if (cta.type === 'buymeacoffee') {
+                        btnBg = '#FFDD00';
+                        btnShadow = '0 4px 12px rgba(255,221,0,0.3)';
+                        btnTextColor = '#000';
+                    }
+
                     btn.style.cssText = [
                         'display:block;text-align:center;',
                         'padding:13px 20px;',
-                        'background:linear-gradient(135deg,#6c63ff,#4f46e5);',
-                        'color:#fff;text-decoration:none;',
+                        `background:${btnBg};`,
+                        `color:${btnTextColor};text-decoration:none;`,
                         'border-radius:14px;font-weight:600;font-size:14px;',
                         'transition:opacity 0.2s,transform 0.2s;',
-                        'box-shadow:0 4px 16px rgba(79,70,229,0.35);'
+                        `box-shadow:${btnShadow};`
                     ].join('');
 
                     btn.onclick = () => {
