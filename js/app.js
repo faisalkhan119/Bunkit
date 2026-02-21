@@ -3063,6 +3063,12 @@ function calculateAttendance(attendanceData) {
     // If yes, prompt user to update portal data
     setTimeout(() => {
         promptPortalUpdate();
+
+        // [NEW] Trigger Calculation Ad
+        if (window.bunkitAdManager) {
+            console.log('📊 Calculation complete — triggering ad check');
+            window.bunkitAdManager.showCalculateAd();
+        }
     }, 500); // Small delay to let results render first
 
     // === Bridge for CommunityManager: expose attendance data ===

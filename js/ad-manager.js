@@ -308,6 +308,11 @@ class BunkitAdManager {
 
     // ----- Show calculate_ad — called from bunk/calc feature -----
     async showCalculateAd() {
+        // Guard: Don't show if onboarding not complete
+        if (localStorage.getItem('hasCompletedOnboarding') !== 'true') {
+            console.log('[AdManager] Onboarding not complete — skipping calculation ad');
+            return;
+        }
         await this.show('calculate_ad');
     }
 }
