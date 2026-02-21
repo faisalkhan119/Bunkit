@@ -32,6 +32,10 @@
             "destination": "/support.html"
         },
         {
+            "source": "/admin",
+            "destination": "/admin.html"
+        },
+        {
             "source": "/api/gemini",
             "destination": "/api/gemini.js"
         }
