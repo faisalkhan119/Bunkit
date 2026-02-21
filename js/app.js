@@ -8651,6 +8651,8 @@ function saveDailyLog() {
 
     // Immediate update without refresh
     if (selectedClass.portalSetup && selectedClass.portalSetup.active) {
+        // Show ad during portal calculation
+        if (window.AdManager) AdManager.showForCalculation();
         calculateFromPortal(); // Calculate FIRST to update currentAnalysisData
         renderPortalDashboard(); // Then refresh notification
 
@@ -10424,6 +10426,8 @@ function switchBackToPortal() {
 
     // Refresh portal dashboard and recalculate based on portal data
     renderPortalDashboard();
+    // Show ad when portal is first activated
+    if (window.AdManager) AdManager.showForCalculation();
     calculateFromPortal();
 
     // Scroll to portal dashboard
