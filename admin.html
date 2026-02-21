@@ -555,19 +555,95 @@
         <div class="login-box">
             <h1>🔐 Admin Panel</h1>
             <p>Bunkit Ad Manager</p>
-            <input type="password" id="adminPasswordInput" placeholder="Enter admin password"
-                onkeydown="if(event.key==='Enter') adminLogin()">
-            <button onclick="adminLogin()">Login</button>
-            <div class="login-error" id="loginError">Incorrect password</div>
+
+            <!-- Email/Password Login -->
+            <div id="loginForm">
+                <input type="email" id="adminEmailInput" placeholder="Admin email"
+                    onkeydown="if(event.key==='Enter') document.getElementById('adminPasswordInput').focus()">
+                <input type="password" id="adminPasswordInput" placeholder="Password"
+                    onkeydown="if(event.key==='Enter') adminLogin()">
+                <button onclick="adminLogin()" id="loginBtn">Sign In</button>
+
+                <div style="margin: 16px 0 8px; display:flex; align-items:center; gap:8px;">
+                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.12);"></div>
+                    <span style="color:#64748b; font-size:0.8rem;">OR</span>
+                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.12);"></div>
+                </div>
+
+                <button onclick="adminGoogleLogin()"
+                    style="background:white; color:#333; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                        style="width:20px; height:20px;" alt="Google">
+                    Sign in with Google
+                </button>
+
+                <div style="margin-top:14px;">
+                    <span onclick="showForgotPassword()"
+                        style="color:#667eea; font-size:0.85rem; cursor:pointer; text-decoration:underline;">Forgot
+                        Password?</span>
+                </div>
+            </div>
+
+            <!-- Forgot Password -->
+            <div id="forgotForm" style="display:none;">
+                <p style="font-size:0.9rem; margin-bottom:16px;">Enter your admin email to receive a password reset
+                    link.</p>
+                <input type="email" id="resetEmailInput" placeholder="Admin email">
+                <button onclick="sendResetLink()">Send Reset Link</button>
+                <div style="margin-top:12px;">
+                    <span onclick="showLoginForm()" style="color:#667eea; font-size:0.85rem; cursor:pointer;">← Back to
+                        Login</span>
+                </div>
+            </div>
+
+            <!-- Change Password (after reset redirect) -->
+            <div id="changePasswordForm" style="display:none;">
+                <p style="font-size:0.9rem; margin-bottom:16px;">Set your new admin password.</p>
+                <input type="password" id="newPasswordInput" placeholder="New password (min 6 chars)">
+                <input type="password" id="confirmPasswordInput" placeholder="Confirm new password">
+                <button onclick="changePassword()">Update Password</button>
+            </div>
+
+            <div class="login-error" id="loginError"></div>
+            <div id="loginSuccess" style="color:#22c55e; font-size:0.85rem; margin-top:8px; display:none;"></div>
         </div>
     </div>
 
     <!-- ADMIN PANEL -->
     <div id="adminPanel">
         <div class="admin-header">
-            <h1>📢 Bunkit Ad Manager</h1>
-            <button class="logout-btn" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i>
-                Logout</button>
+            <div>
+                <h1>📢 Bunkit Ad Manager</h1>
+                <p id="adminEmailDisplay" style="color:#94a3b8; font-size:0.85rem; margin-top:4px;"></p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button onclick="showChangePasswordInline()"
+                    style="padding:10px 16px; background:rgba(102,126,234,0.2); border:1px solid rgba(102,126,234,0.4); border-radius:10px; color:#667eea; cursor:pointer; font-family:inherit; font-weight:600; font-size:0.85rem;"><i
+                        class="fa-solid fa-key"></i> Change Password</button>
+                <button class="logout-btn" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i>
+                    Logout</button>
+            </div>
+        </div>
+
+        <!-- Inline Change Password -->
+        <div id="inlineChangePassword" style="display:none; margin-bottom:24px;">
+            <div class="ad-form-card">
+                <h3 style="margin-bottom:16px;">🔑 Change Admin Password</h3>
+                <div class="form-row">
+                    <label>New Password</label>
+                    <input type="password" id="inlineNewPassword" placeholder="New password (min 6 chars)">
+                </div>
+                <div class="form-row">
+                    <label>Confirm Password</label>
+                    <input type="password" id="inlineConfirmPassword" placeholder="Confirm new password">
+                </div>
+                <div class="form-actions">
+                    <button class="btn-preview" onclick="hideChangePasswordInline()">Cancel</button>
+                    <button class="btn-save" onclick="changePasswordInline()"><i class="fa-solid fa-check"></i> Update
+                        Password</button>
+                </div>
+                <div class="save-status" id="passwordChangeStatus"></div>
+            </div>
         </div>
 
         <!-- Tabs -->
@@ -575,6 +651,7 @@
             <button class="tab-btn active" onclick="switchTab('daily')" id="tabDaily">📅 Daily Ad</button>
             <button class="tab-btn" onclick="switchTab('calculate')" id="tabCalculate">🧮 Calculate Ad</button>
         </div>
+
 
         <!-- Daily Ad Form -->
         <div id="formDaily" class="ad-form-card">
@@ -693,43 +770,218 @@
             alert('Failed to connect to Supabase: ' + e.message);
         }
 
-        // ===== ADMIN AUTH (SHA-256) =====
-        let adminHash = null;
+        // ===== ADMIN AUTH (Supabase Auth) =====
+        let adminEmails = [];
 
-        async function sha256(text) {
-            const data = new TextEncoder().encode(text);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        async function fetchAdminEmails() {
+            try {
+                const { data } = await sb.from('app_config').select('value').eq('key', 'admin_emails').single();
+                if (data && Array.isArray(data.value)) adminEmails = data.value.map(e => e.toLowerCase());
+            } catch (e) { console.error('Failed to fetch admin emails:', e); }
         }
 
-        async function fetchAdminHash() {
-            try {
-                const { data, error } = await sb.from('app_config').select('value').eq('key', 'admin_password').single();
-                if (data) adminHash = data.value.replace(/"/g, '');
-            } catch (e) { console.error('Failed to fetch admin hash:', e); }
+        function isAdminEmail(email) {
+            return adminEmails.includes(email.toLowerCase());
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('loginError');
+            err.textContent = msg;
+            err.style.display = 'block';
+            setTimeout(() => err.style.display = 'none', 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('loginSuccess');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showForgotPassword() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('forgotForm').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginSuccess').style.display = 'none';
+        }
+
+        function showLoginForm() {
+            document.getElementById('forgotForm').style.display = 'none';
+            document.getElementById('changePasswordForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginSuccess').style.display = 'none';
         }
 
         async function adminLogin() {
-            const pw = document.getElementById('adminPasswordInput').value;
-            if (!pw) return;
-            await fetchAdminHash();
-            const inputHash = await sha256(pw);
-            if (inputHash === adminHash) {
-                document.getElementById('loginGate').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                sessionStorage.setItem('admin_auth', 'true');
-                loadExistingAds();
-            } else {
-                const err = document.getElementById('loginError');
-                err.style.display = 'block';
-                setTimeout(() => err.style.display = 'none', 3000);
+            const email = document.getElementById('adminEmailInput').value.trim();
+            const password = document.getElementById('adminPasswordInput').value;
+            if (!email || !password) { showError('Please enter email and password'); return; }
+
+            const btn = document.getElementById('loginBtn');
+            btn.textContent = 'Signing in...';
+            btn.disabled = true;
+
+            try {
+                await fetchAdminEmails();
+
+                if (!isAdminEmail(email)) {
+                    showError('This email is not authorised as admin.');
+                    btn.textContent = 'Sign In'; btn.disabled = false;
+                    return;
+                }
+
+                const { data, error } = await sb.auth.signInWithPassword({ email, password });
+                if (error) {
+                    // If user doesn't exist yet, sign them up (first-time admin setup)
+                    if (error.message.includes('Invalid login')) {
+                        showError('Wrong password. Click "Forgot Password?" to reset.');
+                    } else {
+                        showError(error.message);
+                    }
+                    btn.textContent = 'Sign In'; btn.disabled = false;
+                    return;
+                }
+
+                grantAccess(data.user);
+            } catch (e) {
+                showError('Login failed: ' + e.message);
+                btn.textContent = 'Sign In'; btn.disabled = false;
             }
         }
 
-        function adminLogout() {
-            sessionStorage.removeItem('admin_auth');
+        async function adminGoogleLogin() {
+            try {
+                await fetchAdminEmails();
+                const { data, error } = await sb.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.href }
+                });
+                if (error) showError(error.message);
+                // After redirect, onAuthStateChange will handle the check
+            } catch (e) {
+                showError('Google login failed: ' + e.message);
+            }
+        }
+
+        async function sendResetLink() {
+            const email = document.getElementById('resetEmailInput').value.trim();
+            if (!email) { showError('Please enter your email'); return; }
+
+            await fetchAdminEmails();
+            if (!isAdminEmail(email)) {
+                showError('This email is not authorised as admin.');
+                return;
+            }
+
+            try {
+                const { error } = await sb.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + window.location.pathname
+                });
+                if (error) { showError(error.message); return; }
+                showSuccess('✅ Reset link sent! Check your email (also spam folder).');
+            } catch (e) {
+                showError('Failed to send reset link: ' + e.message);
+            }
+        }
+
+        async function changePassword() {
+            const newPw = document.getElementById('newPasswordInput').value;
+            const confirmPw = document.getElementById('confirmPasswordInput').value;
+
+            if (!newPw || newPw.length < 6) { showError('Password must be at least 6 characters'); return; }
+            if (newPw !== confirmPw) { showError('Passwords do not match'); return; }
+
+            try {
+                const { error } = await sb.auth.updateUser({ password: newPw });
+                if (error) { showError(error.message); return; }
+                showSuccess('✅ Password updated! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = window.location.pathname;
+                }, 1500);
+            } catch (e) {
+                showError('Failed to update password: ' + e.message);
+            }
+        }
+
+        function showChangePasswordInline() {
+            document.getElementById('inlineChangePassword').style.display = 'block';
+            document.getElementById('inlineNewPassword').value = '';
+            document.getElementById('inlineConfirmPassword').value = '';
+            document.getElementById('passwordChangeStatus').textContent = '';
+        }
+
+        function hideChangePasswordInline() {
+            document.getElementById('inlineChangePassword').style.display = 'none';
+        }
+
+        async function changePasswordInline() {
+            const newPw = document.getElementById('inlineNewPassword').value;
+            const confirmPw = document.getElementById('inlineConfirmPassword').value;
+            const status = document.getElementById('passwordChangeStatus');
+
+            if (!newPw || newPw.length < 6) { status.textContent = '❌ Password must be at least 6 characters'; status.style.color = '#ef4444'; return; }
+            if (newPw !== confirmPw) { status.textContent = '❌ Passwords do not match'; status.style.color = '#ef4444'; return; }
+
+            try {
+                const { error } = await sb.auth.updateUser({ password: newPw });
+                if (error) { status.textContent = '❌ ' + error.message; status.style.color = '#ef4444'; return; }
+                status.textContent = '✅ Password updated successfully!';
+                status.style.color = '#22c55e';
+                setTimeout(() => hideChangePasswordInline(), 2000);
+            } catch (e) {
+                status.textContent = '❌ ' + e.message; status.style.color = '#ef4444';
+            }
+        }
+
+        function grantAccess(user) {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminEmailDisplay').textContent = '👤 ' + (user.email || '');
+            loadExistingAds();
+        }
+
+        async function adminLogout() {
+            await sb.auth.signOut();
             location.reload();
         }
+
+        // ===== AUTO-SESSION CHECK ON LOAD =====
+        (async function checkSession() {
+            await fetchAdminEmails();
+
+            // Check if this is a password reset redirect
+            const hash = window.location.hash;
+            if (hash && hash.includes('type=recovery')) {
+                // Password reset flow — show change password form
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('changePasswordForm').style.display = 'block';
+                return;
+            }
+
+            // Check existing session
+            const { data: { session } } = await sb.auth.getSession();
+            if (session && session.user) {
+                if (isAdminEmail(session.user.email)) {
+                    grantAccess(session.user);
+                } else {
+                    showError('This email (' + session.user.email + ') is not authorised as admin.');
+                    await sb.auth.signOut();
+                }
+            }
+
+            // Listen for OAuth redirect
+            sb.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session && session.user) {
+                    if (!isAdminEmail(session.user.email)) {
+                        showError('This email (' + session.user.email + ') is not authorised as admin.');
+                        await sb.auth.signOut();
+                        return;
+                    }
+                    grantAccess(session.user);
+                }
+            });
+        })();
 
         // ===== TAB SWITCHING =====
         function switchTab(tab) {
