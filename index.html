@@ -5085,27 +5085,6 @@ Answer helpfully using this context.`;
                     }
                 </style>
 
-                <!-- ===== AD OVERLAY ===== -->
-                <div id="adOverlay"
-                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,15,0.95); backdrop-filter:blur(12px); z-index:99998; justify-content:center; align-items:center; padding:20px;">
-                    <div
-                        style="background:rgba(20,20,40,0.95); border:1px solid rgba(255,255,255,0.12); border-radius:24px; max-width:380px; width:100%; overflow:hidden; animation:adCardSlide 0.4s cubic-bezier(0.16,1,0.3,1);">
-                        <img id="adOverlayImage" src=""
-                            style="width:100%; max-height:220px; object-fit:cover; display:none;">
-                        <div style="padding:24px; text-align:center;">
-                            <h3 id="adOverlayTitle"
-                                style="font-size:1.3rem; font-weight:700; margin-bottom:8px; color:#e2e8f0;"></h3>
-                            <p id="adOverlayMessage"
-                                style="color:#94a3b8; font-size:0.95rem; line-height:1.5; margin-bottom:20px;"></p>
-                            <div id="adOverlayButtons"
-                                style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
-                            <button id="adOverlaySkipBtn" disabled onclick="AdManager.dismiss()"
-                                style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; padding:10px 24px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;">
-                                Skip (4s)
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <script>
                     // ===== AD MANAGER =====
@@ -5331,6 +5310,28 @@ Answer helpfully using this context.`;
                     }
                     window.addEventListener('load', _waitForSupabaseAndInitAds);
                 </script>
+
+                <!-- ===== AD OVERLAY — direct body child so position:fixed always works ===== -->
+                <div id="adOverlay"
+                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,15,0.95); backdrop-filter:blur(12px); z-index:99998; justify-content:center; align-items:center; padding:20px;">
+                    <div
+                        style="background:rgba(20,20,40,0.95); border:1px solid rgba(255,255,255,0.12); border-radius:24px; max-width:380px; width:100%; overflow:hidden; animation:adCardSlide 0.4s cubic-bezier(0.16,1,0.3,1);">
+                        <img id="adOverlayImage" src=""
+                            style="width:100%; max-height:220px; object-fit:cover; display:none;">
+                        <div style="padding:24px; text-align:center;">
+                            <h3 id="adOverlayTitle"
+                                style="font-size:1.3rem; font-weight:700; margin-bottom:8px; color:#e2e8f0;"></h3>
+                            <p id="adOverlayMessage"
+                                style="color:#94a3b8; font-size:0.95rem; line-height:1.5; margin-bottom:20px;"></p>
+                            <div id="adOverlayButtons"
+                                style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
+                            <button id="adOverlaySkipBtn" disabled onclick="AdManager.dismiss()"
+                                style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; padding:10px 24px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;">
+                                Skip (4s)
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
 </body>
 
