@@ -733,7 +733,9 @@
                     </p>
                 </div>
 
+                <div id="authStatusMsg" style="display:none;"></div>
                 <button class="primary-auth-btn" id="emailAuthBtn" onclick="handleEmailSubmit()">Sign In</button>
+
 
                 <div class="toggle-auth-mode" onclick="toggleAuthMode()" id="authModeToggle">
                     New here? Create an account
@@ -3957,10 +3959,36 @@ Answer helpfully using this context.`;
                                     return;
                                 }
 
-                                const { error } = await AuthManager.signUp(email, password, name);
+                                const { data: signUpData, error } = await AuthManager.signUp(email, password, name);
+
+                                // Supabase duplicate email detection:
+                                // When email already exists, Supabase may return NO error but with
+                                // an empty `identities` array — this is a confirmed duplicate.
+                                const isDuplicate =
+                                    (error && (error.message?.toLowerCase().includes('already registered') ||
+                                        error.message?.toLowerCase().includes('already exists') ||
+                                        error.code === 'user_already_exists')) ||
+                                    (!error && signUpData?.user && signUpData.user.identities?.length === 0);
+
+                                if (isDuplicate) {
+                                    // Switch to Sign In mode and show helpful message
+                                    if (window.isSignupMode) window.toggleAuthMode();
+                                    const authStatus = document.getElementById('authStatusMsg');
+                                    if (authStatus) {
+                                        authStatus.style.cssText = 'color:#ef4444;font-size:0.85rem;text-align:center;margin-top:8px;';
+                                        authStatus.textContent = '⚠️ An account with this email already exists. Please sign in.';
+                                    } else {
+                                        alert('An account with this email already exists. Please sign in instead.');
+                                    }
+                                    btn.disabled = false;
+                                    btn.textContent = 'Create Account';
+                                    return;
+                                }
+
                                 if (error) throw error;
                                 alert('Signup successful! Please enter the 6-digit verification code from your email.');
                                 if (window.openVerifyEmailModal) window.openVerifyEmailModal(email);
+
                             } else {
                                 const { error } = await AuthManager.signIn(email, password);
                                 if (error) throw error;
