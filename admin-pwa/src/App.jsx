@@ -4,9 +4,54 @@ import AdminLayout from './components/AdminLayout';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ConfigProvider } from './contexts/ConfigContext';
+import { useState, useEffect } from 'react';
+import { WifiOff } from 'lucide-react';
+
+const useOnlineStatus = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+};
 
 const AppContent = () => {
   const { user, isAdmin, loading, logout } = useAuth();
+  const isOnline = useOnlineStatus();
+
+  if (!isOnline) {
+    return (
+      <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-6 text-center max-w-md px-8"
+        >
+          <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center">
+            <WifiOff className="w-10 h-10 text-orange-400 animate-pulse" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-orange-400 mb-2">You are offline</h2>
+            <p className="text-muted text-sm">
+              The Admin Panel requires an active internet connection to verify your permissions and load configurations.
+            </p>
+            <p className="text-muted text-sm mt-4 font-medium">Waiting for network...</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Show loader if still initializing OR if user is found but admin check is pending
   if (loading || (user && isAdmin === null)) {
