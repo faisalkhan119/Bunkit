@@ -19,15 +19,20 @@ class BunkitAdManager {
         const client = window.supabaseClient;
         if (!client) { console.warn('[AdManager] No Supabase client — skipping track'); return; }
         try {
-            await client.from('ad_events').insert({
+            // Supabase JS v2 NEVER throws — errors come back as { error }
+            const { error } = await client.from('ad_events').insert({
                 ad_type: adType,
                 event_type: eventType,
                 button_label: buttonLabel,
                 button_url: buttonUrl
             });
-            console.log(`[AdManager] Tracked: ${adType} → ${eventType}`, buttonLabel || '');
+            if (error) {
+                console.warn(`[AdManager] ❌ Insert failed (${adType}/${eventType}):`, error.message, '|code:', error.code);
+            } else {
+                console.log(`[AdManager] ✅ Tracked: ${adType} → ${eventType}`, buttonLabel || '');
+            }
         } catch (e) {
-            console.warn('[AdManager] Track error:', e.message);
+            console.warn('[AdManager] Track exception:', e.message);
         }
     }
 
