@@ -77,7 +77,10 @@ export const AuthProvider = ({ children }) => {
             if (mounted && loading) {
                 console.warn('⚠️ Auth initialization timed out (25s)');
                 setLoading(false);
-                if (isAdmin === null) setIsAdmin(false);
+                if (isAdmin === null) {
+                    setAdminCheckError("INIT_TIMEOUT: The 25-second global initialization timeout was reached. Network or database is unresponsive.");
+                    setIsAdmin(false);
+                }
             }
         }, 25000);
 
@@ -93,11 +96,15 @@ export const AuthProvider = ({ children }) => {
                 if (currentUser) {
                     await checkAdmin(currentUser.email);
                 } else {
+                    setAdminCheckError("NO_USER: Session exists but currentUser is null.");
                     setIsAdmin(false);
                 }
             } catch (err) {
                 console.error('Portal: Session fetch failed:', err);
-                if (mounted) setIsAdmin(false);
+                if (mounted) {
+                    setAdminCheckError(`SESSION_FETCH_ERROR: ${err.message}`);
+                    setIsAdmin(false);
+                }
             } finally {
                 if (mounted) {
                     authStateFetched = true;
@@ -121,10 +128,12 @@ export const AuthProvider = ({ children }) => {
                 if (currentUser) {
                     await checkAdmin(currentUser.email);
                 } else {
+                    setAdminCheckError("AUTH_EVENT_NO_USER: Auth state changed, but user is null.");
                     setIsAdmin(false);
                 }
             } catch (err) {
                 console.error('Portal: Auth event logic failed:', err);
+                setAdminCheckError(`AUTH_EVENT_ERROR: ${err.message}`);
                 setIsAdmin(false);
             } finally {
                 if (mounted) {
