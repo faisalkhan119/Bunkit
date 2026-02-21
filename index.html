@@ -5117,15 +5117,43 @@ Answer helpfully using this context.`;
 
                         async init() {
                             try {
-                                if (!window.supabaseClient) return;
-                                const { data } = await supabaseClient.from('app_config').select('*').in('key', ['daily_ad', 'calculate_ad']);
-                                if (data) {
+                                if (!window.supabaseClient) {
+                                    console.warn('🔴 AdManager: supabaseClient not ready, falling back to cache.');
+                                    try { this.dailyAd = JSON.parse(localStorage.getItem('cached_daily_ad')); } catch (x) { }
+                                    try { this.calcAd = JSON.parse(localStorage.getItem('cached_calc_ad')); } catch (x) { }
+                                    this.showDailyIfDue();
+                                    return;
+                                }
+                                console.log('🟡 AdManager: Fetching ads from Supabase...');
+                                const { data, error } = await window.supabaseClient.from('app_config').select('*').in('key', ['daily_ad', 'calculate_ad']);
+                                console.log('🟡 AdManager: Supabase response:', { data, error });
+                                if (error) throw error;
+                                if (data && data.length > 0) {
+                                    // Deduplicate: build a map, last row with enabled=true wins
+                                    const adMap = {};
                                     data.forEach(row => {
-                                        if (row.key === 'daily_ad') { this.dailyAd = row.value; localStorage.setItem('cached_daily_ad', JSON.stringify(row.value)); }
-                                        if (row.key === 'calculate_ad') { this.calcAd = row.value; localStorage.setItem('cached_calc_ad', JSON.stringify(row.value)); }
+                                        if (!adMap[row.key] || (row.value && row.value.enabled)) {
+                                            adMap[row.key] = row.value;
+                                        }
                                     });
+                                    if (adMap['daily_ad']) {
+                                        this.dailyAd = adMap['daily_ad'];
+                                        localStorage.setItem('cached_daily_ad', JSON.stringify(this.dailyAd));
+                                        console.log('✅ AdManager: daily_ad loaded:', this.dailyAd);
+                                    }
+                                    if (adMap['calculate_ad']) {
+                                        this.calcAd = adMap['calculate_ad'];
+                                        localStorage.setItem('cached_calc_ad', JSON.stringify(this.calcAd));
+                                        console.log('✅ AdManager: calculate_ad loaded:', this.calcAd);
+                                    }
+                                } else {
+                                    console.warn('🔴 AdManager: No rows returned. RLS may be blocking reads or table is empty.');
+                                    // Fallback to cache
+                                    try { this.dailyAd = JSON.parse(localStorage.getItem('cached_daily_ad')); } catch (x) { }
+                                    try { this.calcAd = JSON.parse(localStorage.getItem('cached_calc_ad')); } catch (x) { }
                                 }
                             } catch (e) {
+                                console.error('🔴 AdManager init error:', e);
                                 // Offline fallback
                                 try { this.dailyAd = JSON.parse(localStorage.getItem('cached_daily_ad')); } catch (x) { }
                                 try { this.calcAd = JSON.parse(localStorage.getItem('cached_calc_ad')); } catch (x) { }
@@ -5134,10 +5162,16 @@ Answer helpfully using this context.`;
                         },
 
                         showDailyIfDue() {
-                            if (!this.dailyAd || !this.dailyAd.enabled) return;
+                            console.log('🟡 AdManager.showDailyIfDue: dailyAd =', this.dailyAd);
+                            if (!this.dailyAd) { console.warn('🔴 AdManager: dailyAd is null/undefined. Skipping.'); return; }
+                            if (!this.dailyAd.enabled) { console.warn('🔴 AdManager: dailyAd.enabled is false. Skipping.'); return; }
+                            // Show once per day
                             const today = new Date().toDateString();
-                            if (localStorage.getItem('ad_last_shown_date') === today) return;
-                            // Small delay so app finishes loading first
+                            if (localStorage.getItem('ad_last_shown_date') === today) {
+                                console.log('🔴 AdManager: Ad already shown today. Skipping.');
+                                return;
+                            }
+                            console.log('✅ AdManager: Scheduling daily ad...');
                             setTimeout(() => this.show(this.dailyAd, 'daily'), 1500);
                         },
 
@@ -5246,8 +5280,37 @@ Answer helpfully using this context.`;
                             if (this._processingObserver) { this._processingObserver.disconnect(); this._processingObserver = null; }
                             // Mark daily as shown
                             localStorage.setItem('ad_last_shown_date', new Date().toDateString());
+                        },
+
+                        // Debug helper — call window.AdManager.debug() in DevTools console
+                        async debug() {
+                            console.group('🔍 AdManager Debug');
+                            console.log('supabaseClient:', !!window.supabaseClient);
+                            console.log('dailyAd (in memory):', this.dailyAd);
+                            console.log('calcAd (in memory):', this.calcAd);
+                            console.log('cached_daily_ad (localStorage):', localStorage.getItem('cached_daily_ad'));
+                            console.log('ad_last_shown_date:', localStorage.getItem('ad_last_shown_date'));
+                            console.log('Today:', new Date().toDateString());
+                            if (window.supabaseClient) {
+                                const { data, error } = await window.supabaseClient.from('app_config').select('*').in('key', ['daily_ad', 'calculate_ad']);
+                                console.log('Live Supabase rows:', data, 'error:', error);
+                            }
+                            console.groupEnd();
+                        },
+
+                        // Force show the daily ad right now (ignores "shown today" check)
+                        forceShow() {
+                            localStorage.removeItem('ad_last_shown_date');
+                            if (this.dailyAd && this.dailyAd.enabled) {
+                                this.show(this.dailyAd, 'daily');
+                            } else {
+                                console.warn('No enabled dailyAd to show. Run AdManager.debug() for details.');
+                            }
                         }
                     };
+
+                    // Make globally accessible
+                    window.AdManager = AdManager;
 
                     // Initialize ads after app loads
                     window.addEventListener('load', () => {

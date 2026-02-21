@@ -1085,7 +1085,7 @@
                     key: key,
                     value: data,
                     updated_at: new Date().toISOString()
-                });
+                }, { onConflict: 'key' });
                 if (error) throw error;
                 statusEl.style.color = '#22c55e';
                 statusEl.textContent = '✅ Saved successfully!';
