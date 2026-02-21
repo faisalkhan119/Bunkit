@@ -20,11 +20,13 @@ const AdManager = () => {
 
     // Synchronize local form data with global config when tab or config changes
     useEffect(() => {
-        const data = config[activeTab];
-        console.log(`🔌 [v1.5.5] AdManager Hydration Link [Tab: ${activeTab}]:`, data ? 'Data Found' : 'No Data');
+        // CRITICAL: only sync after config has finished loading from Supabase
+        // Otherwise we reset to empty defaults while data is still being fetched
+        if (configLoading) return;
 
-        if (data && typeof data === 'object') {
-            console.log('📝 Applying Config to Form State:', data.title);
+        const data = config[activeTab];
+        if (data) {
+            console.log(`📋 Loading ${activeTab} data into form:`, data);
             setAdData({
                 enabled: data.enabled ?? false,
                 image_url: data.image_url ?? '',
@@ -34,7 +36,8 @@ const AdManager = () => {
                 skip_delay_sec: data.skip_delay_sec ?? 4
             });
         } else {
-            // Reset to defaults if no data found to prevent showing stale data from previous tab
+            // No data for this tab yet — reset to blanks only when explicitly switching tabs
+            console.log(`ℹ️ No saved config for ${activeTab}, resetting form to defaults`);
             setAdData({
                 enabled: false,
                 image_url: '',
@@ -44,7 +47,7 @@ const AdManager = () => {
                 skip_delay_sec: 4
             });
         }
-    }, [activeTab, config]);
+    }, [activeTab, config, configLoading]);
 
     const saveAd = async () => {
         setSaving(true);
