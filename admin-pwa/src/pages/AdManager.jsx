@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useConfig } from '../contexts/ConfigContext';
 import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdManager = () => {
+    const { config, updateConfig, loading: configLoading } = useConfig();
     const [activeTab, setActiveTab] = useState('daily_ad');
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState(null);
 
@@ -18,58 +18,32 @@ const AdManager = () => {
         skip_delay_sec: 4
     });
 
+    // Synchronize local form data with global config when tab or config changes
     useEffect(() => {
-        fetchAd();
-    }, [activeTab]);
-
-    const fetchAd = async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('app_config')
-                .select('value')
-                .eq('key', activeTab)
-                .single();
-
-            if (error && error.code !== 'PGRST116') throw error;
-
-            if (data?.value) {
-                setAdData({
-                    enabled: data.value.enabled ?? false,
-                    image_url: data.value.image_url ?? '',
-                    title: data.value.title ?? '',
-                    message: data.value.message ?? '',
-                    cta_buttons: data.value.cta_buttons ?? [],
-                    skip_delay_sec: data.value.skip_delay_sec ?? 4
-                });
-            }
-        } catch (err) {
-            console.error('Error fetching ad:', err);
-        } finally {
-            setLoading(false);
+        const data = config[activeTab];
+        if (data) {
+            setAdData({
+                enabled: data.enabled ?? false,
+                image_url: data.image_url ?? '',
+                title: data.title ?? '',
+                message: data.message ?? '',
+                cta_buttons: data.cta_buttons ?? [],
+                skip_delay_sec: data.skip_delay_sec ?? 4
+            });
         }
-    };
+    }, [activeTab, config]);
 
     const saveAd = async () => {
         setSaving(true);
         setStatus(null);
-        try {
-            const { error } = await supabase
-                .from('app_config')
-                .upsert({
-                    key: activeTab,
-                    value: adData,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'key' });
-
-            if (error) throw error;
+        const { success, error } = await updateConfig(activeTab, adData);
+        if (success) {
             setStatus({ type: 'success', message: 'Ad configuration saved successfully!' });
             setTimeout(() => setStatus(null), 3000);
-        } catch (err) {
-            setStatus({ type: 'error', message: err.message || 'Failed to save configuration' });
-        } finally {
-            setSaving(false);
+        } else {
+            setStatus({ type: 'error', message: error || 'Failed to save configuration' });
         }
+        setSaving(false);
     };
 
     const addCta = () => {
@@ -82,7 +56,7 @@ const AdManager = () => {
 
     const updateCta = (index, field, value) => {
         const newButtons = [...adData.cta_buttons];
-        newButtons[index][field] = value;
+        newButtons[index] = { ...newButtons[index], [field]: value };
         setAdData({ ...adData, cta_buttons: newButtons });
     };
 
@@ -91,7 +65,7 @@ const AdManager = () => {
         setAdData({ ...adData, cta_buttons: newButtons });
     };
 
-    if (loading) {
+    if (configLoading && !config[activeTab]) {
         return (
             <div className="flex items-center justify-center h-96">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />

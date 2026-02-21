@@ -1,62 +1,40 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useConfig } from '../contexts/ConfigContext';
 import { Settings, Users, ShieldCheck, Plus, Trash2, Loader2, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SettingsPage = () => {
+    const { config, updateConfig, loading: configLoading } = useConfig();
     const [emails, setEmails] = useState([]);
     const [newEmail, setNewEmail] = useState('');
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState(null);
 
     useEffect(() => {
-        fetchEmails();
-    }, []);
-
-    const fetchEmails = async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('app_config')
-                .select('value')
-                .eq('key', 'admin_emails')
-                .single();
-
-            if (error && error.code !== 'PGRST116') throw error;
-            setEmails(data?.value || []);
-        } catch (err) {
-            console.error('Error fetching admin emails:', err);
-        } finally {
-            setLoading(false);
+        const data = config['admin_emails'];
+        if (data) {
+            setEmails(Array.isArray(data) ? data : []);
         }
-    };
+    }, [config]);
 
     const saveEmails = async () => {
         setSaving(true);
-        try {
-            const { error } = await supabase
-                .from('app_config')
-                .upsert({
-                    key: 'admin_emails',
-                    value: emails,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'key' });
-
-            if (error) throw error;
+        setStatus(null);
+        const { success, error } = await updateConfig('admin_emails', emails);
+        if (success) {
             setStatus({ type: 'success', message: 'Admin whitelist updated!' });
             setTimeout(() => setStatus(null), 3000);
-        } catch (err) {
-            setStatus({ type: 'error', message: err.message });
-        } finally {
-            setSaving(false);
+        } else {
+            setStatus({ type: 'error', message: error });
         }
+        setSaving(false);
     };
 
     const addEmail = () => {
         if (!newEmail || !newEmail.includes('@')) return;
-        if (emails.includes(newEmail.toLowerCase())) return;
-        setEmails([...emails, newEmail.toLowerCase()]);
+        const normalized = newEmail.trim().toLowerCase();
+        if (emails.includes(normalized)) return;
+        setEmails([...emails, normalized]);
         setNewEmail('');
     };
 
@@ -64,7 +42,7 @@ const SettingsPage = () => {
         setEmails(emails.filter(e => e !== email));
     };
 
-    if (loading) {
+    if (configLoading && !config['admin_emails']) {
         return (
             <div className="flex items-center justify-center h-96">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />

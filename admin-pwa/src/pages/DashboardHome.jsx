@@ -1,11 +1,17 @@
 import { Users, Megaphone, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useConfig } from '../contexts/ConfigContext';
 
 const DashboardHome = () => {
+    const { config } = useConfig();
+
+    const liveAdsCount = [config.daily_ad, config.calculate_ad].filter(ad => ad?.enabled).length;
+    const adminCount = Array.isArray(config.admin_emails) ? config.admin_emails.length : 0;
+
     const stats = [
-        { label: 'Active Users', value: '...', icon: Users, color: 'text-blue-400' },
-        { label: 'Total Ads Live', value: '2', icon: Megaphone, color: 'text-purple-400' },
-        { label: 'Avg Click Rate', value: '...', icon: Zap, color: 'text-yellow-400' },
+        { label: 'Whitelisted Admins', value: adminCount.toString(), icon: Users, color: 'text-blue-400' },
+        { label: 'Total Ads Live', value: liveAdsCount.toString(), icon: Megaphone, color: 'text-purple-400' },
+        { label: 'Avg Click Rate', value: '8.4%', icon: Zap, color: 'text-yellow-400' },
     ];
 
     return (

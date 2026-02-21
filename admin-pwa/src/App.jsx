@@ -32,10 +32,14 @@ const AppContent = () => {
   return <AdminLayout />;
 };
 
+import { ConfigProvider } from './contexts/ConfigContext';
+
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ConfigProvider>
+        <AppContent />
+      </ConfigProvider>
     </AuthProvider>
   );
 }
