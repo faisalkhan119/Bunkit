@@ -11,11 +11,13 @@ const SettingsPage = () => {
     const [status, setStatus] = useState(null);
 
     useEffect(() => {
+        // Only sync after config has finished loading
+        if (configLoading) return;
         const data = config['admin_emails'];
         if (data) {
             setEmails(Array.isArray(data) ? data : []);
         }
-    }, [config]);
+    }, [config, configLoading]);
 
     const saveEmails = async () => {
         setSaving(true);
@@ -42,7 +44,7 @@ const SettingsPage = () => {
         setEmails(emails.filter(e => e !== email));
     };
 
-    if (configLoading && !config['admin_emails']) {
+    if (configLoading) {
         return (
             <div className="flex items-center justify-center h-96">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />

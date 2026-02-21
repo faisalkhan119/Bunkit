@@ -81,7 +81,7 @@ const AdManager = () => {
         setAdData({ ...adData, cta_buttons: newButtons });
     };
 
-    if (configLoading && !config[activeTab]) {
+    if (configLoading) {
         return (
             <div className="flex items-center justify-center h-96">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />

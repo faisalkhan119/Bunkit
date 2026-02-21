@@ -2,8 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "1.5.4";
-
+const VERSION = "2.0.0";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -59,7 +58,6 @@ export const AuthProvider = ({ children }) => {
                 .single();
 
             if (error) {
-                // If it's a network error and we have retries left
                 if (retries > 0 && (error.message?.includes('fetch') || error.code === 'PGRST116')) {
                     console.warn('🔄 Retrying admin check...');
                     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -81,7 +79,6 @@ export const AuthProvider = ({ children }) => {
             return isWhitelisted;
         } catch (err) {
             console.error('🚫 Error checking admin status:', err);
-            // On error, we default to false for security, but we log it clearly
             setIsAdmin(false);
             return false;
         }
@@ -96,37 +93,33 @@ export const AuthProvider = ({ children }) => {
     const loginWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: {
-                redirectTo: window.location.origin
-            }
+            options: { redirectTo: window.location.href }
         });
         if (error) throw error;
     };
 
     const logout = async () => {
-        alert('🔄 Logging out [v' + VERSION + ']... App will reset.');
         console.log('🚪 Logout Initiated [v' + VERSION + ']');
-
         try {
-            // Give 1s to sign out from server, then move on anyway
             await Promise.race([
                 supabase.auth.signOut(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
             ]);
         } catch (err) {
-            console.warn('Signout delay/error, proceeding with local purge:', err);
+            console.warn('Signout timeout, proceeding with local purge:', err.message);
         } finally {
             localStorage.clear();
             sessionStorage.clear();
 
-            // Clear Service Workers
+            // Unregister service workers to force fresh load
             if ('serviceWorker' in navigator) {
                 const regs = await navigator.serviceWorker.getRegistrations();
-                for (let reg of regs) reg.unregister();
+                for (let reg of regs) await reg.unregister();
             }
 
-            // Forced reload with cache bust
-            window.location.href = window.location.origin + '?logout=' + Date.now();
+            // Reload the current admin panel URL (not the root app)
+            const baseUrl = window.location.href.split('?')[0];
+            window.location.href = baseUrl + '?logout=' + Date.now();
         }
     };
 
@@ -134,7 +127,8 @@ export const AuthProvider = ({ children }) => {
         console.warn('⚠️ Performing Manual Hard Reset...');
         localStorage.clear();
         sessionStorage.clear();
-        window.location.href = window.location.origin;
+        const baseUrl = window.location.href.split('?')[0];
+        window.location.href = baseUrl;
     };
 
     return (

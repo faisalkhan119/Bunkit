@@ -3,9 +3,10 @@ import LoginGate from './components/LoginGate';
 import AdminLayout from './components/AdminLayout';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ConfigProvider } from './contexts/ConfigContext';
 
 const AppContent = () => {
-  const { user, isAdmin, loading, logout, hardReset } = useAuth();
+  const { user, isAdmin, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -29,10 +30,38 @@ const AppContent = () => {
     return <LoginGate />;
   }
 
+  // Bug fix #6: Gate on isAdmin — prevent non-whitelisted users from seeing dashboard
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-6 text-center max-w-md px-8"
+        >
+          <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center">
+            <ShieldAlert className="w-10 h-10 text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-red-400 mb-2">Access Denied</h2>
+            <p className="text-muted text-sm">
+              Your account (<span className="text-white font-mono text-xs">{user.email}</span>) is not on the admin whitelist.
+            </p>
+            <p className="text-muted text-sm mt-2">Contact an existing admin to add your email.</p>
+          </div>
+          <button
+            onClick={logout}
+            className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-sm font-medium"
+          >
+            Logout
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return <AdminLayout />;
 };
-
-import { ConfigProvider } from './contexts/ConfigContext';
 
 function App() {
   return (

@@ -12,10 +12,10 @@ const AdminLayout = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard': return <DashboardHome />;
+            case 'dashboard': return <DashboardHome setActiveTab={setActiveTab} />;
             case 'ads': return <AdManager />;
             case 'settings': return <SettingsPage />;
-            default: return <DashboardHome />;
+            default: return <DashboardHome setActiveTab={setActiveTab} />;
         }
     };
 

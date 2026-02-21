@@ -84,7 +84,7 @@ const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
 
                 <div className="mt-4 text-center">
                     <p className="text-[10px] text-muted-foreground opacity-50 font-mono">
-                        ENGINE VERSION: {version || 'v1.5.2'}
+                        ENGINE VERSION: {version || 'v2.0.0'}
                     </p>
                 </div>
             </div>

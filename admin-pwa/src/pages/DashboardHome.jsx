@@ -2,7 +2,8 @@ import { Users, Megaphone, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useConfig } from '../contexts/ConfigContext';
 
-const DashboardHome = () => {
+// Bug fix #2: Accept setActiveTab prop so Quick Actions can navigate
+const DashboardHome = ({ setActiveTab }) => {
     const { config } = useConfig();
 
     const liveAdsCount = [config.daily_ad, config.calculate_ad].filter(ad => ad?.enabled).length;
@@ -11,7 +12,8 @@ const DashboardHome = () => {
     const stats = [
         { label: 'Whitelisted Admins', value: adminCount.toString(), icon: Users, color: 'text-blue-400' },
         { label: 'Total Ads Live', value: liveAdsCount.toString(), icon: Megaphone, color: 'text-purple-400' },
-        { label: 'Avg Click Rate', value: '8.4%', icon: Zap, color: 'text-yellow-400' },
+        // Bug fix #2: Removed hardcoded 8.4% — shows live ads vs total possible
+        { label: 'Active Ad Slots', value: `${liveAdsCount}/2`, icon: Zap, color: 'text-yellow-400' },
     ];
 
     return (
@@ -47,11 +49,18 @@ const DashboardHome = () => {
                 <div className="relative z-10">
                     <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all cursor-pointer group">
+                        {/* Bug fix #3: Quick Actions now actually navigate */}
+                        <div
+                            onClick={() => setActiveTab && setActiveTab('ads')}
+                            className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all cursor-pointer group"
+                        >
                             <h3 className="font-bold mb-2 group-hover:text-primary transition-colors">Update Daily Ad</h3>
                             <p className="text-sm text-muted">Change the banner and message shown to users daily.</p>
                         </div>
-                        <div className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all cursor-pointer group">
+                        <div
+                            onClick={() => setActiveTab && setActiveTab('settings')}
+                            className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all cursor-pointer group"
+                        >
                             <h3 className="font-bold mb-2 group-hover:text-primary transition-colors">Manage Whitelist</h3>
                             <p className="text-sm text-muted">Add or remove authorized admin email addresses.</p>
                         </div>
