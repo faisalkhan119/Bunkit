@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "1.5.2";
+const VERSION = "1.5.3";
 
 
 export const AuthProvider = ({ children }) => {

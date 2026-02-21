@@ -9,6 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
+        id: 'bunkit-admin-portal',
         name: 'Bunkit Admin',
         short_name: 'Bunkit Admin',
         description: 'Bunkit Admin Panel for Ad Management',
