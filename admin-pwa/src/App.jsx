@@ -48,14 +48,22 @@ const AppContent = () => {
             <p className="text-muted text-sm">
               Your account (<span className="text-white font-mono text-xs">{user.email}</span>) is not on the admin whitelist.
             </p>
-            <p className="text-muted text-sm mt-2">Contact an existing admin to add your email.</p>
+            <p className="text-muted text-sm mt-2">If you just reopened the app and got this error, your network might still be connecting.</p>
           </div>
-          <button
-            onClick={logout}
-            className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-sm font-medium"
-          >
-            Logout
-          </button>
+          <div className="flex gap-4 mt-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all text-sm font-medium"
+            >
+              Retry Connection
+            </button>
+            <button
+              onClick={logout}
+              className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-sm font-medium"
+            >
+              Logout
+            </button>
+          </div>
         </motion.div>
       </div>
     );

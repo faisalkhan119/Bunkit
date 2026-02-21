@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(null);
 
-    const checkAdmin = async (email, retries = 2) => {
+    const checkAdmin = async (email, retries = 3) => {
         if (!email) {
             setIsAdmin(false);
             return false;
@@ -29,8 +29,12 @@ export const AuthProvider = ({ children }) => {
             ]);
 
             if (error) {
-                if (retries > 0 && (error.code === 'PGRST116' || error.code === 'TIMEOUT' || error.message?.includes('fetch') || error.message?.includes('network'))) {
-                    console.warn(`🔄 Retrying admin check... (${retries} retries left)`);
+                if (retries > 0) {
+                    console.warn(`🔄 Retrying admin check in 2s... (${retries} retries left)`);
+
+                    // Add 2-second sleep to allow mobile OS network to wake up on PWA resume 
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
                     return checkAdmin(email, retries - 1);
                 }
                 throw error;
