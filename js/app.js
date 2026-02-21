@@ -2802,6 +2802,9 @@ async function handleImageUpload(files) {
 
     loadingSection.style.display = 'block';
 
+    // Show calculate ad during image processing
+    if (window.AdManager) AdManager.showDuringProcessing();
+
     try {
         let mergedData = {};
 
@@ -3808,6 +3811,9 @@ function showInputMode(mode) { // mode can be 'upload', 'manual', 'json'
 
 function generateManualInputs() { const subjectsGrid = document.getElementById('subjectsGrid'); subjectsGrid.innerHTML = ''; if (!selectedClass) return; selectedClass.subjects.forEach((subject, index) => { subjectsGrid.innerHTML += `<div class="subject-input"><h4>${subject.name} (${subject.code})</h4><div class="manual-input-fields"><input type="number" id="manual_total_${index}" placeholder="Total Hours Held" min="0"><input type="number" id="manual_attended_${index}" placeholder="Hours Attended" min="0"></div></div>`; }); }
 function calculateFromManual() {
+    // Show calculate ad with skip delay
+    if (window.AdManager) AdManager.showForCalculation();
+
     const attendanceData = [];
     if (!selectedClass) return;
     selectedClass.subjects.forEach((subject, index) => {
@@ -3854,6 +3860,9 @@ function submitPartialEntry() {
 }
 
 function calculateFromJson() {
+    // Show calculate ad with skip delay
+    if (window.AdManager) AdManager.showForCalculation();
+
     const jsonInput = document.getElementById('attendanceJsonPasteArea');
     const jsonString = jsonInput ? jsonInput.value : '';
 

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunkit Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0a0a14;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ===== LOGIN GATE ===== */
+        #loginGate {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(30, 30, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .login-box h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .login-box p {
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-family: inherit;
+            margin-bottom: 16px;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .login-box button:hover {
+            opacity: 0.9;
+        }
+
+        .login-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* ===== ADMIN PANEL ===== */
+        #adminPanel {
+            display: none;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 10px;
+            color: #ef4444;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+        }
+
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        /* Form Card */
+        .ad-form-card {
+            background: rgba(30, 30, 50, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(12px);
+        }
+
+        .form-row {
+            margin-bottom: 18px;
+        }
+
+        .form-row label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-row input,
+        .form-row textarea,
+        .form-row select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .form-row input:focus,
+        .form-row textarea:focus,
+        .form-row select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .toggle-row span {
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 28px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: #667eea;
+        }
+
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        /* CTA Buttons Editor */
+        .cta-list {
+            margin-top: 8px;
+        }
+
+        .cta-item {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr auto auto;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .cta-item input,
+        .cta-item select {
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .cta-add-btn,
+        .cta-remove-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .cta-add-btn {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            border: 1px dashed rgba(102, 126, 234, 0.4);
+            margin-top: 8px;
+        }
+
+        .cta-remove-btn {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Slider */
+        .delay-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .delay-slider input[type="range"] {
+            flex: 1;
+            accent-color: #667eea;
+            background: transparent;
+        }
+
+        .delay-slider .delay-val {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        /* Action Buttons */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-preview,
+        .btn-save {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .btn-preview {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-preview:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        .save-status {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* ===== AD PREVIEW OVERLAY ===== */
+        #previewOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 15, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #previewOverlay.visible {
+            display: flex;
+        }
+
+        .ad-preview-card {
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            max-width: 380px;
+            width: 100%;
+            overflow: hidden;
+            animation: adSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes adSlideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .ad-preview-card img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+            display: none;
+        }
+
+        .ad-preview-card img.has-src {
+            display: block;
+        }
+
+        .ad-preview-body {
+            padding: 24px;
+            text-align: center;
+        }
+
+        .ad-preview-body h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .ad-preview-body p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .ad-preview-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .ad-cta-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+
+        .ad-cta-btn.instagram {
+            background: linear-gradient(135deg, #ff6b35, #e1306c, #833ab4);
+            color: white;
+        }
+
+        .ad-cta-btn.whatsapp {
+            background: #25d366;
+            color: white;
+        }
+
+        .ad-cta-btn.buymeacoffee {
+            background: #ffdd00;
+            color: #0d0d0d;
+        }
+
+        .ad-cta-btn.website {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .ad-cta-btn.custom {
+            background: rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ad-skip-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94a3b8;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .ad-skip-btn:not(:disabled):hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #e2e8f0;
+        }
+
+        .ad-skip-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .preview-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 600px) {
+            .cta-item {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN GATE -->
+    <div id="loginGate">
+        <div class="login-box">
+            <h1>🔐 Admin Panel</h1>
+            <p>Bunkit Ad Manager</p>
+            <input type="password" id="adminPasswordInput" placeholder="Enter admin password"
+                onkeydown="if(event.key==='Enter') adminLogin()">
+            <button onclick="adminLogin()">Login</button>
+            <div class="login-error" id="loginError">Incorrect password</div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="adminPanel">
+        <div class="admin-header">
+            <h1>📢 Bunkit Ad Manager</h1>
+            <button class="logout-btn" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i>
+                Logout</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('daily')" id="tabDaily">📅 Daily Ad</button>
+            <button class="tab-btn" onclick="switchTab('calculate')" id="tabCalculate">🧮 Calculate Ad</button>
+        </div>
+
+        <!-- Daily Ad Form -->
+        <div id="formDaily" class="ad-form-card">
+            <div class="toggle-row">
+                <span>Enable Daily Ad</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dailyEnabled">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-row">
+                <label>Image URL (optional)</label>
+                <input type="url" id="dailyImageUrl" placeholder="https://example.com/banner.jpg">
+            </div>
+            <div class="form-row">
+                <label>Title</label>
+                <input type="text" id="dailyTitle" placeholder="Support the Developer ☕">
+            </div>
+            <div class="form-row">
+                <label>Message</label>
+                <textarea id="dailyMessage"
+                    placeholder="If Bunkit helped you manage your attendance, consider supporting!"></textarea>
+            </div>
+            <div class="form-row">
+                <label>CTA Buttons</label>
+                <div class="cta-list" id="dailyCtaList"></div>
+                <button class="cta-add-btn" onclick="addCtaRow('daily')"><i class="fa-solid fa-plus"></i> Add
+                    Button</button>
+            </div>
+            <div class="form-row">
+                <label>Skip Delay (seconds)</label>
+                <div class="delay-slider">
+                    <input type="range" min="3" max="10" value="4" id="dailySkipDelay"
+                        oninput="document.getElementById('dailyDelayVal').textContent=this.value+'s'">
+                    <span class="delay-val" id="dailyDelayVal">4s</span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-preview" onclick="previewAd('daily')"><i class="fa-solid fa-eye"></i>
+                    Preview</button>
+                <button class="btn-save" onclick="saveAd('daily')"><i class="fa-solid fa-floppy-disk"></i> Save Daily
+                    Ad</button>
+            </div>
+            <div class="save-status" id="dailySaveStatus"></div>
+        </div>
+
+        <!-- Calculate Ad Form -->
+        <div id="formCalculate" class="ad-form-card" style="display:none">
+            <div class="toggle-row">
+                <span>Enable Calculate Ad</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="calcEnabled">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-row">
+                <label>Image URL (optional)</label>
+                <input type="url" id="calcImageUrl" placeholder="https://example.com/banner.jpg">
+            </div>
+            <div class="form-row">
+                <label>Title</label>
+                <input type="text" id="calcTitle" placeholder="While you wait...">
+            </div>
+            <div class="form-row">
+                <label>Message</label>
+                <textarea id="calcMessage" placeholder="Check out our latest updates!"></textarea>
+            </div>
+            <div class="form-row">
+                <label>CTA Buttons</label>
+                <div class="cta-list" id="calcCtaList"></div>
+                <button class="cta-add-btn" onclick="addCtaRow('calc')"><i class="fa-solid fa-plus"></i> Add
+                    Button</button>
+            </div>
+            <div class="form-row">
+                <label>Skip Delay (seconds)</label>
+                <div class="delay-slider">
+                    <input type="range" min="3" max="10" value="4" id="calcSkipDelay"
+                        oninput="document.getElementById('calcDelayVal').textContent=this.value+'s'">
+                    <span class="delay-val" id="calcDelayVal">4s</span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-preview" onclick="previewAd('calc')"><i class="fa-solid fa-eye"></i> Preview</button>
+                <button class="btn-save" onclick="saveAd('calc')"><i class="fa-solid fa-floppy-disk"></i> Save Calculate
+                    Ad</button>
+            </div>
+            <div class="save-status" id="calcSaveStatus"></div>
+        </div>
+    </div>
+
+    <!-- PREVIEW OVERLAY -->
+    <div id="previewOverlay">
+        <div class="ad-preview-card">
+            <span class="preview-badge">PREVIEW</span>
+            <img id="prevImage" src="">
+            <div class="ad-preview-body">
+                <h3 id="prevTitle"></h3>
+                <p id="prevMessage"></p>
+                <div class="ad-preview-buttons" id="prevButtons"></div>
+                <button class="ad-skip-btn" id="prevSkipBtn" onclick="closePreview()">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // ===== CONFIG =====
+        const SUPABASE_URL = 'https://rqajrgqpfuqfvwveyqdh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYWpyZ3FwZnVxZnZ3dmV5cWRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTU0NjksImV4cCI6MjA4NDgzMTQ2OX0.cz-FFffaB44rnvvoII755TZbxdJ9asIRFvEenDl2QdQ';
+        let sb = null;
+
+        try {
+            sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            alert('Failed to connect to Supabase: ' + e.message);
+        }
+
+        // ===== ADMIN AUTH (SHA-256) =====
+        let adminHash = null;
+
+        async function sha256(text) {
+            const data = new TextEncoder().encode(text);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function fetchAdminHash() {
+            try {
+                const { data, error } = await sb.from('app_config').select('value').eq('key', 'admin_password').single();
+                if (data) adminHash = data.value.replace(/"/g, '');
+            } catch (e) { console.error('Failed to fetch admin hash:', e); }
+        }
+
+        async function adminLogin() {
+            const pw = document.getElementById('adminPasswordInput').value;
+            if (!pw) return;
+            await fetchAdminHash();
+            const inputHash = await sha256(pw);
+            if (inputHash === adminHash) {
+                document.getElementById('loginGate').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                sessionStorage.setItem('admin_auth', 'true');
+                loadExistingAds();
+            } else {
+                const err = document.getElementById('loginError');
+                err.style.display = 'block';
+                setTimeout(() => err.style.display = 'none', 3000);
+            }
+        }
+
+        function adminLogout() {
+            sessionStorage.removeItem('admin_auth');
+            location.reload();
+        }
+
+        // ===== TAB SWITCHING =====
+        function switchTab(tab) {
+            document.getElementById('tabDaily').classList.toggle('active', tab === 'daily');
+            document.getElementById('tabCalculate').classList.toggle('active', tab === 'calculate');
+            document.getElementById('formDaily').style.display = tab === 'daily' ? 'block' : 'none';
+            document.getElementById('formCalculate').style.display = tab === 'calculate' ? 'block' : 'none';
+        }
+
+        // ===== CTA BUTTON MANAGEMENT =====
+        function addCtaRow(prefix, data = {}) {
+            const list = document.getElementById(prefix + 'CtaList');
+            const row = document.createElement('div');
+            row.className = 'cta-item';
+            row.innerHTML = `
+                <input type="text" placeholder="Label" value="${data.label || ''}" class="cta-label">
+                <input type="url" placeholder="URL" value="${data.url || ''}" class="cta-url">
+                <select class="cta-type">
+                    <option value="website" ${data.type === 'website' ? 'selected' : ''}>🌐 Website</option>
+                    <option value="instagram" ${data.type === 'instagram' ? 'selected' : ''}>📸 Instagram</option>
+                    <option value="whatsapp" ${data.type === 'whatsapp' ? 'selected' : ''}>💬 WhatsApp</option>
+                    <option value="buymeacoffee" ${data.type === 'buymeacoffee' ? 'selected' : ''}>☕ Coffee</option>
+                    <option value="custom" ${data.type === 'custom' ? 'selected' : ''}>🔗 Custom</option>
+                </select>
+                <button class="cta-remove-btn" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            list.appendChild(row);
+        }
+
+        function getCtaButtons(prefix) {
+            const rows = document.querySelectorAll('#' + prefix + 'CtaList .cta-item');
+            return Array.from(rows).map(row => ({
+                label: row.querySelector('.cta-label').value,
+                url: row.querySelector('.cta-url').value,
+                type: row.querySelector('.cta-type').value
+            })).filter(b => b.label && b.url);
+        }
+
+        // ===== COLLECT FORM DATA =====
+        function getFormData(prefix) {
+            const idMap = prefix === 'daily'
+                ? { enabled: 'dailyEnabled', imageUrl: 'dailyImageUrl', title: 'dailyTitle', message: 'dailyMessage', delay: 'dailySkipDelay' }
+                : { enabled: 'calcEnabled', imageUrl: 'calcImageUrl', title: 'calcTitle', message: 'calcMessage', delay: 'calcSkipDelay' };
+
+            return {
+                enabled: document.getElementById(idMap.enabled).checked,
+                image_url: document.getElementById(idMap.imageUrl).value.trim(),
+                title: document.getElementById(idMap.title).value.trim(),
+                message: document.getElementById(idMap.message).value.trim(),
+                cta_buttons: getCtaButtons(prefix === 'daily' ? 'daily' : 'calc'),
+                skip_delay_sec: parseInt(document.getElementById(idMap.delay).value)
+            };
+        }
+
+        // ===== FILL FORM FROM DATA =====
+        function fillForm(prefix, data) {
+            if (!data) return;
+            const idMap = prefix === 'daily'
+                ? { enabled: 'dailyEnabled', imageUrl: 'dailyImageUrl', title: 'dailyTitle', message: 'dailyMessage', delay: 'dailySkipDelay', delayVal: 'dailyDelayVal' }
+                : { enabled: 'calcEnabled', imageUrl: 'calcImageUrl', title: 'calcTitle', message: 'calcMessage', delay: 'calcSkipDelay', delayVal: 'calcDelayVal' };
+
+            document.getElementById(idMap.enabled).checked = data.enabled || false;
+            document.getElementById(idMap.imageUrl).value = data.image_url || '';
+            document.getElementById(idMap.title).value = data.title || '';
+            document.getElementById(idMap.message).value = data.message || '';
+            document.getElementById(idMap.delay).value = data.skip_delay_sec || 4;
+            document.getElementById(idMap.delayVal).textContent = (data.skip_delay_sec || 4) + 's';
+
+            // CTA
+            const ctaPrefix = prefix === 'daily' ? 'daily' : 'calc';
+            document.getElementById(ctaPrefix + 'CtaList').innerHTML = '';
+            if (data.cta_buttons && data.cta_buttons.length > 0) {
+                data.cta_buttons.forEach(btn => addCtaRow(ctaPrefix, btn));
+            }
+        }
+
+        // ===== LOAD EXISTING ADS FROM SUPABASE =====
+        async function loadExistingAds() {
+            try {
+                const { data, error } = await sb.from('app_config').select('*').in('key', ['daily_ad', 'calculate_ad']);
+                if (data) {
+                    data.forEach(row => {
+                        if (row.key === 'daily_ad') fillForm('daily', row.value);
+                        if (row.key === 'calculate_ad') fillForm('calc', row.value);
+                    });
+                }
+            } catch (e) { console.error('Load ads failed:', e); }
+        }
+
+        // ===== SAVE AD TO SUPABASE =====
+        async function saveAd(prefix) {
+            const key = prefix === 'daily' ? 'daily_ad' : 'calculate_ad';
+            const data = getFormData(prefix);
+            const statusEl = document.getElementById(prefix === 'daily' ? 'dailySaveStatus' : 'calcSaveStatus');
+
+            statusEl.style.color = '#94a3b8';
+            statusEl.textContent = 'Saving...';
+
+            try {
+                const { error } = await sb.from('app_config').upsert({
+                    key: key,
+                    value: data,
+                    updated_at: new Date().toISOString()
+                });
+                if (error) throw error;
+                statusEl.style.color = '#22c55e';
+                statusEl.textContent = '✅ Saved successfully!';
+            } catch (e) {
+                statusEl.style.color = '#ef4444';
+                statusEl.textContent = '❌ Save failed: ' + e.message;
+            }
+            setTimeout(() => statusEl.textContent = '', 4000);
+        }
+
+        // ===== PREVIEW =====
+        function previewAd(prefix) {
+            const data = getFormData(prefix);
+            const overlay = document.getElementById('previewOverlay');
+            const img = document.getElementById('prevImage');
+            const title = document.getElementById('prevTitle');
+            const msg = document.getElementById('prevMessage');
+            const btns = document.getElementById('prevButtons');
+            const skipBtn = document.getElementById('prevSkipBtn');
+
+            // Image
+            if (data.image_url) {
+                img.src = data.image_url;
+                img.classList.add('has-src');
+            } else {
+                img.src = '';
+                img.classList.remove('has-src');
+            }
+
+            // Text
+            title.textContent = data.title || 'No Title';
+            msg.textContent = data.message || 'No message set.';
+
+            // CTA Buttons
+            btns.innerHTML = '';
+            (data.cta_buttons || []).forEach(btn => {
+                const a = document.createElement('a');
+                a.href = btn.url;
+                a.target = '_blank';
+                a.className = 'ad-cta-btn ' + (btn.type || 'custom');
+                a.innerHTML = btn.label;
+                btns.appendChild(a);
+            });
+
+            // Skip countdown
+            skipBtn.disabled = true;
+            let sec = data.skip_delay_sec || 4;
+            skipBtn.textContent = `Skip (${sec}s)`;
+            const timer = setInterval(() => {
+                sec--;
+                if (sec <= 0) {
+                    clearInterval(timer);
+                    skipBtn.disabled = false;
+                    skipBtn.textContent = 'Skip ✕';
+                } else {
+                    skipBtn.textContent = `Skip (${sec}s)`;
+                }
+            }, 1000);
+
+            overlay.classList.add('visible');
+            overlay._timer = timer;
+        }
+
+        function closePreview() {
+            const overlay = document.getElementById('previewOverlay');
+            if (overlay._timer) clearInterval(overlay._timer);
+            overlay.classList.remove('visible');
+        }
+
+        // Close preview on overlay click (outside card)
+        document.getElementById('previewOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closePreview();
+        });
+
+        // Auto-restore session
+        if (sessionStorage.getItem('admin_auth') === 'true') {
+            document.getElementById('loginGate').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadExistingAds();
+        }
+    </script>
+</body>
+
+</html>

@@ -5084,6 +5084,177 @@ Answer helpfully using this context.`;
                         color: #721c24;
                     }
                 </style>
+
+                <!-- ===== AD OVERLAY ===== -->
+                <div id="adOverlay"
+                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,15,0.95); backdrop-filter:blur(12px); z-index:99998; justify-content:center; align-items:center; padding:20px;">
+                    <div
+                        style="background:rgba(20,20,40,0.95); border:1px solid rgba(255,255,255,0.12); border-radius:24px; max-width:380px; width:100%; overflow:hidden; animation:adCardSlide 0.4s cubic-bezier(0.16,1,0.3,1);">
+                        <img id="adOverlayImage" src=""
+                            style="width:100%; max-height:220px; object-fit:cover; display:none;">
+                        <div style="padding:24px; text-align:center;">
+                            <h3 id="adOverlayTitle"
+                                style="font-size:1.3rem; font-weight:700; margin-bottom:8px; color:#e2e8f0;"></h3>
+                            <p id="adOverlayMessage"
+                                style="color:#94a3b8; font-size:0.95rem; line-height:1.5; margin-bottom:20px;"></p>
+                            <div id="adOverlayButtons"
+                                style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
+                            <button id="adOverlaySkipBtn" disabled onclick="AdManager.dismiss()"
+                                style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; padding:10px 24px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;">
+                                Skip (4s)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    // ===== AD MANAGER =====
+                    const AdManager = {
+                        dailyAd: null,
+                        calcAd: null,
+                        _skipTimer: null,
+                        _processingObserver: null,
+
+                        async init() {
+                            try {
+                                if (!window.supabaseClient) return;
+                                const { data } = await supabaseClient.from('app_config').select('*').in('key', ['daily_ad', 'calculate_ad']);
+                                if (data) {
+                                    data.forEach(row => {
+                                        if (row.key === 'daily_ad') { this.dailyAd = row.value; localStorage.setItem('cached_daily_ad', JSON.stringify(row.value)); }
+                                        if (row.key === 'calculate_ad') { this.calcAd = row.value; localStorage.setItem('cached_calc_ad', JSON.stringify(row.value)); }
+                                    });
+                                }
+                            } catch (e) {
+                                // Offline fallback
+                                try { this.dailyAd = JSON.parse(localStorage.getItem('cached_daily_ad')); } catch (x) { }
+                                try { this.calcAd = JSON.parse(localStorage.getItem('cached_calc_ad')); } catch (x) { }
+                            }
+                            this.showDailyIfDue();
+                        },
+
+                        showDailyIfDue() {
+                            if (!this.dailyAd || !this.dailyAd.enabled) return;
+                            const today = new Date().toDateString();
+                            if (localStorage.getItem('ad_last_shown_date') === today) return;
+                            // Small delay so app finishes loading first
+                            setTimeout(() => this.show(this.dailyAd, 'daily'), 1500);
+                        },
+
+                        showForCalculation() {
+                            if (!this.calcAd || !this.calcAd.enabled) return;
+                            this.show(this.calcAd, 'calculate');
+                        },
+
+                        showDuringProcessing() {
+                            if (!this.calcAd || !this.calcAd.enabled) return;
+                            // Show ad, but skip button only enables when processing finishes
+                            this.show(this.calcAd, 'processing');
+
+                            // Watch loadingSection — when it hides, enable skip
+                            const loadSec = document.getElementById('loadingSection');
+                            if (loadSec) {
+                                this._processingObserver = new MutationObserver(() => {
+                                    if (loadSec.style.display === 'none' || !loadSec.offsetParent) {
+                                        this._enableSkip();
+                                        if (this._processingObserver) { this._processingObserver.disconnect(); this._processingObserver = null; }
+                                    }
+                                });
+                                this._processingObserver.observe(loadSec, { attributes: true, attributeFilter: ['style', 'class'] });
+                            }
+                        },
+
+                        show(adData, context) {
+                            const overlay = document.getElementById('adOverlay');
+                            const img = document.getElementById('adOverlayImage');
+                            const title = document.getElementById('adOverlayTitle');
+                            const msg = document.getElementById('adOverlayMessage');
+                            const btns = document.getElementById('adOverlayButtons');
+                            const skipBtn = document.getElementById('adOverlaySkipBtn');
+
+                            if (!overlay) return;
+
+                            // Image
+                            if (adData.image_url) {
+                                img.src = adData.image_url;
+                                img.style.display = 'block';
+                            } else {
+                                img.src = '';
+                                img.style.display = 'none';
+                            }
+
+                            // Text
+                            title.textContent = adData.title || '';
+                            msg.textContent = adData.message || '';
+
+                            // CTA Buttons
+                            btns.innerHTML = '';
+                            const typeStyles = {
+                                instagram: 'background:linear-gradient(135deg,#ff6b35,#e1306c,#833ab4); color:white;',
+                                whatsapp: 'background:#25d366; color:white;',
+                                buymeacoffee: 'background:#ffdd00; color:#0d0d0d;',
+                                website: 'background:linear-gradient(135deg,#667eea,#764ba2); color:white;',
+                                custom: 'background:rgba(255,255,255,0.12); color:#e2e8f0; border:1px solid rgba(255,255,255,0.2);'
+                            };
+                            (adData.cta_buttons || []).forEach(btn => {
+                                const a = document.createElement('a');
+                                a.href = btn.url;
+                                a.target = '_blank';
+                                a.rel = 'noopener';
+                                a.style.cssText = (typeStyles[btn.type] || typeStyles.custom) +
+                                    'padding:12px 20px; border:none; border-radius:12px; font-size:0.95rem; font-weight:600; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;';
+                                a.textContent = btn.label;
+                                btns.appendChild(a);
+                            });
+
+                            // Skip button
+                            skipBtn.disabled = true;
+                            if (context === 'processing') {
+                                // Skip stays disabled until processing completes (handled by MutationObserver)
+                                skipBtn.textContent = 'Processing...';
+                            } else {
+                                let sec = adData.skip_delay_sec || 4;
+                                skipBtn.textContent = `Skip (${sec}s)`;
+                                if (this._skipTimer) clearInterval(this._skipTimer);
+                                this._skipTimer = setInterval(() => {
+                                    sec--;
+                                    if (sec <= 0) {
+                                        this._enableSkip();
+                                    } else {
+                                        skipBtn.textContent = `Skip (${sec}s)`;
+                                    }
+                                }, 1000);
+                            }
+
+                            overlay.style.display = 'flex';
+                        },
+
+                        _enableSkip() {
+                            if (this._skipTimer) { clearInterval(this._skipTimer); this._skipTimer = null; }
+                            const skipBtn = document.getElementById('adOverlaySkipBtn');
+                            if (skipBtn) {
+                                skipBtn.disabled = false;
+                                skipBtn.textContent = 'Skip ✕';
+                                skipBtn.style.cursor = 'pointer';
+                            }
+                        },
+
+                        dismiss() {
+                            const overlay = document.getElementById('adOverlay');
+                            if (overlay) overlay.style.display = 'none';
+                            if (this._skipTimer) { clearInterval(this._skipTimer); this._skipTimer = null; }
+                            if (this._processingObserver) { this._processingObserver.disconnect(); this._processingObserver = null; }
+                            // Mark daily as shown
+                            localStorage.setItem('ad_last_shown_date', new Date().toDateString());
+                        }
+                    };
+
+                    // Initialize ads after app loads
+                    window.addEventListener('load', () => {
+                        setTimeout(() => AdManager.init(), 2000);
+                    });
+                </script>
+
 </body>
 
 </html>
