@@ -5312,10 +5312,24 @@ Answer helpfully using this context.`;
                     // Make globally accessible
                     window.AdManager = AdManager;
 
-                    // Initialize ads after app loads
-                    window.addEventListener('load', () => {
-                        setTimeout(() => AdManager.init(), 2000);
-                    });
+                    // Initialize ads — wait for supabaseClient to be ready (CDN may be slow)
+                    function _waitForSupabaseAndInitAds() {
+                        const MAX_WAIT_MS = 10000;
+                        const POLL_MS = 300;
+                        let elapsed = 0;
+                        function tryInit() {
+                            if (window.supabaseClient || elapsed >= MAX_WAIT_MS) {
+                                console.log(`🟡 AdManager: supabaseClient ready after ${elapsed}ms — calling init()`);
+                                AdManager.init();
+                            } else {
+                                elapsed += POLL_MS;
+                                setTimeout(tryInit, POLL_MS);
+                            }
+                        }
+                        // Small initial delay so page settles, then poll
+                        setTimeout(tryInit, 500);
+                    }
+                    window.addEventListener('load', _waitForSupabaseAndInitAds);
                 </script>
 
 </body>
