@@ -27,7 +27,7 @@ const useOnlineStatus = () => {
 };
 
 const AppContent = () => {
-  const { user, isAdmin, loading, logout, adminCheckError } = useAuth();
+  const { user, isAdmin, loading, logout, adminCheckError, version } = useAuth();
   const isOnline = useOnlineStatus();
 
   if (!isOnline) {
@@ -113,6 +113,9 @@ const AppContent = () => {
             >
               Logout
             </button>
+          </div>
+          <div className="mt-8">
+            <p className="text-[#333340] font-mono text-[10px] tracking-wider uppercase">Portal Ver: {version}</p>
           </div>
         </motion.div>
       </div>

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "2.0.1";
+const VERSION = "2.0.2";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -191,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAdmin, loading, authLoading: loading, login, loginWithGoogle, logout, hardReset, version: VERSION }}>
+        <AuthContext.Provider value={{ user, isAdmin, loading, authLoading: loading, adminCheckError, login, loginWithGoogle, logout, hardReset, version: VERSION }}>
             {children}
         </AuthContext.Provider>
     );
