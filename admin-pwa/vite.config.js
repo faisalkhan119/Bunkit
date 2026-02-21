@@ -10,7 +10,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Bunkit Admin',
-        short_name: 'Admin',
+        short_name: 'Bunkit Admin',
         description: 'Bunkit Admin Panel for Ad Management',
         theme_color: '#0a0a14',
         background_color: '#0a0a14',
