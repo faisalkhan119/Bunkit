@@ -283,7 +283,7 @@ const AdManager = () => {
                         <Sparkles className="w-4 h-4 text-yellow-500" /> Live App Preview
                     </div>
 
-                    <div className="relative aspect-[9/16] max-w-[340px] mx-auto rounded-[3rem] border-[8px] border-zinc-800 bg-[#050510] overflow-hidden shadow-2xl">
+                    <div className="relative aspect-[9/16] max-w-[340px] mx-auto rounded-[3rem] border-[8px] border-zinc-800 bg-[#050510] overflow-hidden shadow-2xl scale-[0.8] sm:scale-100 origin-top">
                         {/* Phone Notch/Speaker */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-zinc-800 rounded-b-2xl z-50"></div>
 

@@ -2,7 +2,7 @@ import { LayoutDashboard, Megaphone, Settings, LogOut, User } from 'lucide-react
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
     const { user, logout } = useAuth();
 
     const menuItems = [
@@ -11,8 +11,13 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
+    const handleTabClick = (id) => {
+        setActiveTab(id);
+        if (onClose) onClose();
+    };
+
     return (
-        <aside className="w-64 glass border-r-0 rounded-r-3xl h-[calc(100vh-32px)] my-4 ml-4 flex flex-col p-4">
+        <aside className="w-64 glass border-r-0 rounded-r-3xl h-full flex flex-col p-4">
             <div className="p-4 mb-8">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
                     Bunkit Admin
@@ -23,10 +28,10 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
                 {menuItems.map((item) => (
                     <button
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => handleTabClick(item.id)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id
-                            ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
-                            : 'text-muted hover:bg-white/5 hover:text-white'
+                                ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
+                                : 'text-muted hover:bg-white/5 hover:text-white'
                             }`}
                     >
                         <item.icon className="w-5 h-5" />
@@ -43,7 +48,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
 
             <div className="mt-auto p-4 border-t border-white/5">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                         <User className="text-primary w-5 h-5" />
                     </div>
                     <div className="overflow-hidden">
