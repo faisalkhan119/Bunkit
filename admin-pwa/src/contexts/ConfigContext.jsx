@@ -12,6 +12,7 @@ export const ConfigProvider = ({ children }) => {
 
     const fetchAllConfig = async () => {
         if (!user) {
+            setConfig({});
             setLoading(false);
             return;
         }

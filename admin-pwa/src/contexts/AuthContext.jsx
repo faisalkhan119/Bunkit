@@ -104,14 +104,19 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             console.log('🚪 Logging out...');
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
+            await supabase.auth.signOut();
         } catch (err) {
             console.error('Logout error:', err);
-            // Fallback: manually clear session
+        } finally {
+            // Aggressive cleanup: clear all storage and reload
             localStorage.clear();
             sessionStorage.clear();
-            window.location.reload();
+            // Specifically remove any supabase keys just in case
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.includes('supabase')) localStorage.removeItem(key);
+            }
+            window.location.href = window.location.origin;
         }
     };
 
