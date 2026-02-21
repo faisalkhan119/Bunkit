@@ -145,13 +145,14 @@ class BunkitAdManager {
             const skipBtn = document.createElement('button');
             skipBtn.className = 'bk-skip-btn';
             skipBtn.style.cssText = [
-                'position:absolute;top:14px;right:14px;',
-                'background:rgba(255,255,255,0.07);',
-                'border:1px solid rgba(255,255,255,0.1);',
-                'color:#64748b;border-radius:999px;',
-                'padding:5px 13px;font-size:11px;font-weight:700;',
+                'position:fixed;top:20px;right:20px;', // Pinned to screen for consistency
+                'background:rgba(255,255,255,0.1);',
+                'border:1px solid rgba(255,255,255,0.2);',
+                'color:#fff;border-radius:999px;',
+                'padding:8px 16px;font-size:12px;font-weight:700;',
                 'cursor:not-allowed;transition:all 0.2s;',
-                'letter-spacing:0.02em;'
+                'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
+                'z-index:2147483647;'
             ].join('');
             skipBtn.disabled = true;
             skipBtn.textContent = `Skip in ${skipDelay}s`;
@@ -164,7 +165,7 @@ class BunkitAdManager {
                     this._skipTimer = null;
                     skipBtn.disabled = false;
                     skipBtn.style.cursor = 'pointer';
-                    skipBtn.style.color = '#94a3b8';
+                    skipBtn.style.background = 'rgba(255,255,255,0.2)';
                     skipBtn.textContent = 'Skip ✕';
                 } else {
                     skipBtn.textContent = `Skip in ${remaining}s`;
@@ -245,8 +246,8 @@ class BunkitAdManager {
                 card.appendChild(btnWrap);
             }
 
-            card.appendChild(skipBtn);
             overlay.appendChild(card);
+            overlay.appendChild(skipBtn); // Outside card for better Visibility
             document.body.appendChild(overlay);
             this._activeOverlayEl = overlay;
 
@@ -260,6 +261,13 @@ class BunkitAdManager {
 
     // ----- Show daily_ad — throttled to once per calendar day -----
     async showDailyAdIfNeeded() {
+        // ---- BUG FIX: Don't show if onboarding is not yet completed ----
+        // This effectively blocks ads on Login Screen and during first-time setup
+        if (localStorage.getItem('hasCompletedOnboarding') !== 'true') {
+            console.log('[AdManager] Onboarding not complete — skipping ad check');
+            return;
+        }
+
         const today = new Date().toDateString();
         const key = 'bunkit_daily_ad_date';
         if (localStorage.getItem(key) === today) {
@@ -277,17 +285,8 @@ class BunkitAdManager {
     }
 }
 
-// Initialize and attach to window so app.js can call it
+// Initialize and attach to window
 window.bunkitAdManager = new BunkitAdManager();
 
-// Show daily ad after page is stable.
-// Script is loaded with `defer` so DOM is ready by now.
-// Wait 2s for supabase-config.js to have set window.supabaseClient.
-setTimeout(() => {
-    if (window.supabaseClient) {
-        window.bunkitAdManager.showDailyAdIfNeeded();
-    } else {
-        // Supabase CDN still loading — retry once
-        setTimeout(() => window.bunkitAdManager.showDailyAdIfNeeded(), 3000);
-    }
-}, 2000);
+// NO AUTOMATIC STARTUP TRIGGER
+// Triggering is now exclusively handled by onboarding/login events

@@ -496,7 +496,12 @@ function importClassFromURL(encodedData) {
             // So we just reload to show the existing class
             localStorage.setItem('hasCompletedOnboarding', 'true');
             localStorage.setItem('selectedClass', inputName);
-            location.reload();
+
+            // Show ad before reload or after init logic? 
+            // Better to trigger specifically if we were in onboarding
+            if (window.bunkitAdManager) window.bunkitAdManager.showDailyAdIfNeeded();
+
+            setTimeout(() => location.reload(), 1500); // Slight delay for ad to potentially show or track
             return;
         }
 
@@ -571,6 +576,7 @@ function importClassFromURL(encodedData) {
 
         // Mark onboarding complete
         localStorage.setItem('hasCompletedOnboarding', 'true');
+        if (window.bunkitAdManager) window.bunkitAdManager.showDailyAdIfNeeded();
 
         // Clear pending import
         sessionStorage.removeItem('pendingClassImport');
@@ -833,6 +839,7 @@ function useExampleClass() {
     closeModal('onboardingClassModal');
 
     localStorage.setItem('hasCompletedOnboarding', 'true');
+    if (window.bunkitAdManager) window.bunkitAdManager.showDailyAdIfNeeded();
 
     // Explicitly Add Example Class
     const exampleClassName = 'CSE Core - H';
@@ -881,6 +888,7 @@ function handleCreateNewClass() {
     // Close onboarding modal with animation
     closeModal('onboardingClassModal');
     localStorage.setItem('hasCompletedOnboarding', 'true');
+    if (window.bunkitAdManager) window.bunkitAdManager.showDailyAdIfNeeded();
 
     // ZOMBIE TRIGGER REMOVED:
     // if (typeof openAddClassModal === 'function') openAddClassModal();
@@ -1084,7 +1092,7 @@ function createTutorialOverlay() {
                         <div class="bunkmate-cloud-text" id="bunkmateCloudText"></div>
                         <div class="bunkmate-progress" id="bunkmateProgress"></div>
                         <div class="bunkmate-cloud-actions">
-                            <button class="bunkmate-btn bunkmate-btn-skip" onclick="closeBunkmateTutorial()">Skip</button>
+                            <button class="bunkmate-btn bunkmate-btn-skip" onclick="closeBunkmateTutorial()">Got it</button>
                             <button class="bunkmate-btn bunkmate-btn-next" onclick="showNextCloud()" id="bunkmateNextBtn">Next →</button>
                         </div>
                     </div>

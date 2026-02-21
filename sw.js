@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // ==================== END FIREBASE CLOUD MESSAGING ====================
 
-const CACHE_NAME = 'bunkit-v2.5';
+const CACHE_NAME = 'bunkit-v2.6';
 
 const ASSETS_TO_CACHE = [
     // NOTE: index.html intentionally NOT cached to prevent stale data issues
@@ -114,6 +114,7 @@ self.addEventListener('fetch', (event) => {
     // EXCLUDE Supabase and Admin PWA from SW interception (DIRECT NETWORK)
     if (event.request.url.includes('supabase.co') ||
         event.request.url.includes('/admin-pwa/') ||
+        event.request.url.includes('googletagmanager.com') ||
         event.request.url.includes('manifest.webmanifest')) {
         return; // Let the browser handle these directly
     }

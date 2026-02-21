@@ -131,6 +131,14 @@ const AuthManager = {
                     if (window.checkFirstLoginPrompt) {
                         setTimeout(() => window.checkFirstLoginPrompt(), 500);
                     }
+
+                    // [NEW] Trigger Ad after stable login
+                    setTimeout(() => {
+                        if (window.bunkitAdManager) {
+                            console.log('👤 Login stable — triggering ad check');
+                            window.bunkitAdManager.showDailyAdIfNeeded();
+                        }
+                    }, 2000);
                 }
             }
 

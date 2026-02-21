@@ -10,19 +10,28 @@ export const AuthProvider = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(null);
 
     const checkAdmin = async (email, retries = 1) => {
-        if (!email) return false;
+        if (!email) {
+            setIsAdmin(false);
+            return false;
+        }
         try {
-            console.log(`🔐 Checking admin status for: ${email.trim().toLowerCase()}`);
-            const { data, error } = await supabase
+            console.log(`🔐 [Auth v${VERSION}] Checking admin: ${email.toLowerCase()}`);
+
+            // Add a per-request timeout to avoid hanging initialization
+            const fetchConfig = supabase
                 .from('app_config')
                 .select('value')
                 .eq('key', 'admin_emails')
                 .single();
 
+            const { data, error } = await Promise.race([
+                fetchConfig,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Admin check timeout')), 5000))
+            ]);
+
             if (error) {
-                if (retries > 0 && (error.message?.includes('fetch') || error.code === 'PGRST116')) {
+                if (retries > 0 && (error.code === 'PGRST116' || error.message?.includes('fetch'))) {
                     console.warn('🔄 Retrying admin check...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
                     return checkAdmin(email, retries - 1);
                 }
                 throw error;
@@ -39,7 +48,7 @@ export const AuthProvider = ({ children }) => {
             setIsAdmin(isWhitelisted);
             return isWhitelisted;
         } catch (err) {
-            console.error('🚫 Error checking admin status:', err);
+            console.error('🚫 Error checking admin status:', err.message);
             setIsAdmin(false);
             return false;
         }
@@ -47,19 +56,21 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         let mounted = true;
+        let authStateFetched = false;
 
         const timeoutId = setTimeout(() => {
             if (mounted && loading) {
-                console.warn('⚠️ Auth initialization timed out');
+                console.warn('⚠️ Auth initialization timed out (12s)');
                 setLoading(false);
                 if (isAdmin === null) setIsAdmin(false);
             }
         }, 12000);
 
         const initSession = async () => {
+            console.log('🏁 Portal Init started...');
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                if (!mounted) return;
+                if (!mounted || authStateFetched) return;
 
                 const currentUser = session?.user ?? null;
                 setUser(currentUser);
@@ -70,12 +81,14 @@ export const AuthProvider = ({ children }) => {
                     setIsAdmin(false);
                 }
             } catch (err) {
-                console.error('Portal: Initial session fetch failed:', err);
+                console.error('Portal: Session fetch failed:', err);
                 if (mounted) setIsAdmin(false);
             } finally {
                 if (mounted) {
+                    authStateFetched = true;
                     setLoading(false);
                     clearTimeout(timeoutId);
+                    console.log('🏁 Portal Init complete');
                 }
             }
         };
@@ -83,6 +96,9 @@ export const AuthProvider = ({ children }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
             console.log('📡 Auth State Change:', event);
+
+            // If it's the initial session event, don't overlap with initSession
+            if (event === 'INITIAL_SESSION' && authStateFetched) return;
 
             try {
                 const currentUser = session?.user ?? null;
@@ -96,8 +112,11 @@ export const AuthProvider = ({ children }) => {
                 console.error('Portal: Auth event logic failed:', err);
                 setIsAdmin(false);
             } finally {
-                setLoading(false);
-                clearTimeout(timeoutId);
+                if (mounted) {
+                    authStateFetched = true;
+                    setLoading(false);
+                    clearTimeout(timeoutId);
+                }
             }
         });
 
