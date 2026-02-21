@@ -30,6 +30,7 @@ const AppContent = () => {
   }
 
   if (!isAdmin) {
+    const { logout } = useAuth();
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center p-6 text-center">
         <motion.div
@@ -44,12 +45,20 @@ const AppContent = () => {
           <p className="text-muted leading-relaxed mb-8">
             Your email (<span className="text-white font-medium">{user.email}</span>) is not on the authorized admin whitelist. Please contact the system owner if you believe this is a mistake.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-          >
-            Go Back
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
+            >
+              Retry Check
+            </button>
+            <button
+              onClick={logout}
+              className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/10 transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
         </motion.div>
       </div>
     );
