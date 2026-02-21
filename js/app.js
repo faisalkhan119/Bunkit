@@ -3663,6 +3663,48 @@ function parseScheduleValue(scheduleValue) {
     return 0;
 }
 
+// Helper function to get classes for a subject on a given date (respects custom schedules and arrangements)
+function getSubjectClassCountForDate(dateStr, subjectCode) {
+    if (!selectedClass) return 0;
+    const date = parseLocalDate(dateStr);
+    const dayOfWeek = date.getDay();
+    const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    // Check custom schedule first
+    const className = document.getElementById('classSelector')?.value || selectedClass.name;
+    const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${className}`) || '{}');
+    const customSchedule = customSchedules[dateStr];
+
+    if (customSchedule) {
+        if (customSchedule._periods) {
+            // New period-based custom schedule
+            return customSchedule._periods.filter(code => code === subjectCode).length;
+        } else {
+            // Old count-based custom schedule
+            return customSchedule[subjectCode] || 0;
+        }
+    }
+
+    // Use timetable arrangement
+    const arrangement = getTimetableArrangement(className) || {};
+    const dayArrangement = arrangement[scheduleIndex] || [];
+
+    if (dayArrangement.length > 0) {
+        return dayArrangement.filter(item => {
+            const code = typeof item === 'object' ? item?.code : item;
+            return code === subjectCode;
+        }).length;
+    }
+
+    // Fallback to default schedule
+    const subject = selectedClass?.subjects?.find(s => s.code === subjectCode);
+    if (subject) {
+        return parseScheduleValue(subject.schedule[scheduleIndex]);
+    }
+
+    return 1; // Default fallback
+}
+
 function countClassesInRange(startDate, endDate, schedule, classHolidays, subjectCode) {
     let total = 0;
     if (!startDate || !endDate || startDate > endDate) return 0;
@@ -3670,13 +3712,12 @@ function countClassesInRange(startDate, endDate, schedule, classHolidays, subjec
     let current = new Date(startDate.getTime());
     const holidayTimestamps = new Set(classHolidays.map(h => h.setHours(0, 0, 0, 0)));
     while (current <= endDate) {
-        const dayOfWeek = current.getDay();
-        const isHolidayDay = holidayTimestamps.has(new Date(current).setHours(0, 0, 0, 0));
+        const dayTime = new Date(current).setHours(0, 0, 0, 0);
+        const isHolidayDay = holidayTimestamps.has(dayTime);
         if (!isHolidayDay) {
-            const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            let classesToday = parseScheduleValue(schedule[scheduleIndex]);
-
             const dateStr = formatLocalDate(current);
+            let classesToday = getSubjectClassCountForDate(dateStr, subjectCode);
+
             const dayLog = logs[dateStr];
             if (dayLog && dayLog[subjectCode] === 'Cancelled') {
                 classesToday = 0;
@@ -7427,8 +7468,9 @@ function calculateMaxSafeLeave() {
 
         let totalClassesOnDay = 0;
         const costs = {};
+        const dateStr = formatLocalDate(d);
         currentAnalysisData.forEach(subject => {
-            const classesOnDayForSubject = subject.schedule[scheduleIndex];
+            const classesOnDayForSubject = getSubjectClassCountForDate(dateStr, subject.code);
             if (classesOnDayForSubject > 0) {
                 costs[subject.code] = classesOnDayForSubject;
                 totalClassesOnDay += classesOnDayForSubject;
@@ -7716,8 +7758,9 @@ function calculateMaxPossibleBunk() {
 
         let totalClassesOnDay = 0;
         const costs = {};
+        const dateStr = formatLocalDate(d);
         currentAnalysisData.forEach(subject => {
-            const classesOnDay = subject.schedule[scheduleIndex];
+            const classesOnDay = getSubjectClassCountForDate(dateStr, subject.code);
             if (classesOnDay > 0) {
                 costs[subject.code] = classesOnDay;
                 totalClassesOnDay += classesOnDay;
@@ -10683,47 +10726,6 @@ function calculateFromPortal(previewOverrides = null) {
     // 1. Calculate sums of logs BEFORE or ON baseline date
     const pastLogStats = {};
 
-    // Helper function to get classes for a subject on a given date
-    function getSubjectClassCountForDate(dateStr, subjectCode) {
-        const date = parseLocalDate(dateStr);
-        const dayOfWeek = date.getDay();
-        const scheduleIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-
-        // Check custom schedule first
-        const className = document.getElementById('classSelector')?.value;
-        const customSchedules = JSON.parse(localStorage.getItem(`custom_schedules_${className}`) || '{}');
-        const customSchedule = customSchedules[dateStr];
-
-        if (customSchedule) {
-            if (customSchedule._periods) {
-                // New period-based custom schedule
-                return customSchedule._periods.filter(code => code === subjectCode).length;
-            } else {
-                // Old count-based custom schedule
-                return customSchedule[subjectCode] || 0;
-            }
-        }
-
-        // Use timetable arrangement
-        const arrangement = getTimetableArrangement(className) || {};
-        const dayArrangement = arrangement[scheduleIndex] || [];
-
-        if (dayArrangement.length > 0) {
-            return dayArrangement.filter(item => {
-                const code = typeof item === 'object' ? item?.code : item;
-                return code === subjectCode;
-            }).length;
-        }
-
-        // Fallback to default schedule
-        const subject = selectedClass?.subjects?.find(s => s.code === subjectCode);
-        if (subject) {
-            return parseScheduleValue(subject.schedule[scheduleIndex]);
-        }
-
-        return 1; // Default fallback
-    }
-
     Object.keys(logs).forEach(dateStr => {
         const logDate = parseLocalDate(dateStr);
         // Check if log is before or on baseline date
@@ -10838,38 +10840,13 @@ function calculateFromPortal(previewOverrides = null) {
             const dayOfWeek = currentDate.getDay();
             const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-            // Check for custom schedule first
-            const customSchedule = getCustomScheduleForDate(dateStr);
-
-            if (customSchedule && customSchedule._periods) {
-                // Period-based custom schedule
-                customSchedule._periods.forEach(code => {
-                    if (code && maxPossibleClasses[code] !== undefined) {
-                        maxPossibleClasses[code]++;
-                    }
-                });
-            } else if (customSchedule && typeof customSchedule === 'object') {
-                // Count-based custom schedule
-                Object.keys(customSchedule).filter(k => k !== '_periods').forEach(code => {
-                    if (maxPossibleClasses[code] !== undefined) {
-                        maxPossibleClasses[code] += customSchedule[code] || 0;
-                    }
-                });
-            } else if (arrangement[dayIndex] && arrangement[dayIndex].length > 0) {
-                // Use timetable arrangement
-                arrangement[dayIndex].forEach(item => {
-                    const code = typeof item === 'object' ? item?.code : item;
-                    if (code && maxPossibleClasses[code] !== undefined) {
-                        maxPossibleClasses[code]++;
-                    }
-                });
-            } else {
-                // Fallback to schedule counts
-                selectedClass.subjects.forEach(subject => {
-                    const count = parseScheduleValue(subject.schedule[dayIndex]);
+            // Use centralized helper to count classes for each subject
+            selectedClass.subjects.forEach(subject => {
+                const count = getSubjectClassCountForDate(dateStr, subject.code);
+                if (maxPossibleClasses[subject.code] !== undefined) {
                     maxPossibleClasses[subject.code] += count;
-                });
-            }
+                }
+            });
         }
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -10945,8 +10922,8 @@ function isHolidayOrNoClass(dateStr) {
         if (hasClassesInArrangement) return { isHoliday: false };
     }
 
-    // Fallback: Check count-based schedule
-    const hasClasses = selectedClass.subjects.some(s => s.schedule[dayIndex] > 0);
+    // Fallback: Check count-based schedule (smart)
+    const hasClasses = selectedClass.subjects.some(s => getSubjectClassCountForDate(dateStr, s.code) > 0);
     if (!hasClasses) return { isHoliday: true, reason: 'No Classes Scheduled (e.g., Sunday)' };
 
     return { isHoliday: false };
