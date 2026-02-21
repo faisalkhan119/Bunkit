@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // ==================== END FIREBASE CLOUD MESSAGING ====================
 
-const CACHE_NAME = 'bunkit-v3.1';
+const CACHE_NAME = 'bunkit-v3.2';
 
 const ASSETS_TO_CACHE = [
     // NOTE: index.html intentionally NOT cached to prevent stale data issues

@@ -319,6 +319,16 @@ class BunkitAdManager {
             console.log('[AdManager] Onboarding not complete — skipping calculation ad');
             return;
         }
+
+        const today = new Date().toDateString();
+        const key = 'bunkit_calc_ad_date';
+        if (localStorage.getItem(key) === today) {
+            console.log('[AdManager] Calculation ad already shown today');
+            return;
+        }
+        // Mark BEFORE showing
+        localStorage.setItem(key, today);
+
         await this.show('calculate_ad');
     }
 
