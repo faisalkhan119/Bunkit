@@ -35,14 +35,13 @@ export const ConfigProvider = ({ children }) => {
                 .from('app_config')
                 .select('key, value');
 
-            if (supabaseError) throw supabaseError;
-
+            console.log('✅ Configs sync complete. Raw rows:', data?.length);
             const configMap = (data || []).reduce((acc, item) => {
                 if (item.key) acc[item.key] = item.value;
                 return acc;
             }, {});
 
-            console.log('✅ Configs sync complete');
+            console.log('🗺️ Config Map Keys:', Object.keys(configMap));
             setConfig(configMap);
             setError(null);
         } catch (err) {

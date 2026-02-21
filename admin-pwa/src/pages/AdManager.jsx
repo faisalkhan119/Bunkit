@@ -21,14 +21,27 @@ const AdManager = () => {
     // Synchronize local form data with global config when tab or config changes
     useEffect(() => {
         const data = config[activeTab];
-        if (data) {
+        console.log(`🔌 [v1.5.5] AdManager Hydration Link [Tab: ${activeTab}]:`, data ? 'Data Found' : 'No Data');
+
+        if (data && typeof data === 'object') {
+            console.log('📝 Applying Config to Form State:', data.title);
             setAdData({
                 enabled: data.enabled ?? false,
                 image_url: data.image_url ?? '',
                 title: data.title ?? '',
                 message: data.message ?? '',
-                cta_buttons: data.cta_buttons ?? [],
+                cta_buttons: Array.isArray(data.cta_buttons) ? data.cta_buttons : [],
                 skip_delay_sec: data.skip_delay_sec ?? 4
+            });
+        } else {
+            // Reset to defaults if no data found to prevent showing stale data from previous tab
+            setAdData({
+                enabled: false,
+                image_url: '',
+                title: '',
+                message: '',
+                cta_buttons: [],
+                skip_delay_sec: 4
             });
         }
     }, [activeTab, config]);
