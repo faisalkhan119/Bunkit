@@ -36,7 +36,8 @@ messaging.onBackgroundMessage((payload) => {
 
 // ==================== END FIREBASE CLOUD MESSAGING ====================
 
-const CACHE_NAME = 'bunkit-v2.4';
+const CACHE_NAME = 'bunkit-v2.5';
+
 const ASSETS_TO_CACHE = [
     // NOTE: index.html intentionally NOT cached to prevent stale data issues
     // The service worker will still serve it via network-first strategy
@@ -110,6 +111,13 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event: Stale-While-Revalidate Strategy
 self.addEventListener('fetch', (event) => {
+    // EXCLUDE Supabase and Admin PWA from SW interception (DIRECT NETWORK)
+    if (event.request.url.includes('supabase.co') ||
+        event.request.url.includes('/admin-pwa/') ||
+        event.request.url.includes('manifest.webmanifest')) {
+        return; // Let the browser handle these directly
+    }
+
     // Network First for API calls (if any local API), Cache First for static
     if (event.request.url.includes('/api/')) {
         event.respondWith(
