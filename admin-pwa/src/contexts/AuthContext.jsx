@@ -2,56 +2,17 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "2.0.0";
+const VERSION = "2.0.1";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(null); // changed from false to null
-
-    useEffect(() => {
-        let mounted = true;
-
-        // Safety timeout to prevent infinite loading state
-        const timeoutId = setTimeout(() => {
-            if (mounted && loading) {
-                console.warn('⚠️ Auth initialization timed out');
-                setLoading(false);
-            }
-        }, 10000);
-
-        // Single path for initialization and auth state changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (!mounted) return;
-
-            console.log('📡 Auth State Change:', event);
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-
-            if (currentUser) {
-                // Ensure we await admin check before stopping the loader
-                await checkAdmin(currentUser.email);
-            } else {
-                setIsAdmin(false);
-            }
-
-            setLoading(false);
-            clearTimeout(timeoutId);
-        });
-
-        return () => {
-            mounted = false;
-            clearTimeout(timeoutId);
-            subscription.unsubscribe();
-        };
-    }, []);
+    const [isAdmin, setIsAdmin] = useState(null);
 
     const checkAdmin = async (email, retries = 1) => {
         if (!email) return false;
-
         try {
             console.log(`🔐 Checking admin status for: ${email.trim().toLowerCase()}`);
-
             const { data, error } = await supabase
                 .from('app_config')
                 .select('value')
@@ -69,7 +30,6 @@ export const AuthProvider = ({ children }) => {
 
             const adminEmails = Array.isArray(data?.value) ? data.value : [];
             const normalizedUserEmail = email.trim().toLowerCase();
-
             const isWhitelisted = adminEmails.some(e => {
                 if (typeof e !== 'string') return false;
                 return e.trim().toLowerCase() === normalizedUserEmail;
@@ -84,6 +44,71 @@ export const AuthProvider = ({ children }) => {
             return false;
         }
     };
+
+    useEffect(() => {
+        let mounted = true;
+
+        const timeoutId = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('⚠️ Auth initialization timed out');
+                setLoading(false);
+                if (isAdmin === null) setIsAdmin(false);
+            }
+        }, 12000);
+
+        const initSession = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!mounted) return;
+
+                const currentUser = session?.user ?? null;
+                setUser(currentUser);
+
+                if (currentUser) {
+                    await checkAdmin(currentUser.email);
+                } else {
+                    setIsAdmin(false);
+                }
+            } catch (err) {
+                console.error('Portal: Initial session fetch failed:', err);
+                if (mounted) setIsAdmin(false);
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                    clearTimeout(timeoutId);
+                }
+            }
+        };
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!mounted) return;
+            console.log('📡 Auth State Change:', event);
+
+            try {
+                const currentUser = session?.user ?? null;
+                setUser(currentUser);
+                if (currentUser) {
+                    await checkAdmin(currentUser.email);
+                } else {
+                    setIsAdmin(false);
+                }
+            } catch (err) {
+                console.error('Portal: Auth event logic failed:', err);
+                setIsAdmin(false);
+            } finally {
+                setLoading(false);
+                clearTimeout(timeoutId);
+            }
+        });
+
+        initSession();
+
+        return () => {
+            mounted = false;
+            clearTimeout(timeoutId);
+            subscription.unsubscribe();
+        };
+    }, []);
 
     const login = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -107,29 +132,19 @@ export const AuthProvider = ({ children }) => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
             ]);
         } catch (err) {
-            console.warn('Signout timeout, proceeding with local purge:', err.message);
+            console.warn('Signout timeout:', err.message);
         } finally {
             localStorage.clear();
             sessionStorage.clear();
-
-            // Unregister service workers to force fresh load
-            if ('serviceWorker' in navigator) {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                for (let reg of regs) await reg.unregister();
-            }
-
-            // Reload the current admin panel URL (not the root app)
             const baseUrl = window.location.href.split('?')[0];
             window.location.href = baseUrl + '?logout=' + Date.now();
         }
     };
 
     const hardReset = () => {
-        console.warn('⚠️ Performing Manual Hard Reset...');
         localStorage.clear();
         sessionStorage.clear();
-        const baseUrl = window.location.href.split('?')[0];
-        window.location.href = baseUrl;
+        window.location.href = window.location.href.split('?')[0];
     };
 
     return (
