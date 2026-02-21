@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(null);
+    const [adminCheckError, setAdminCheckError] = useState(null);
 
     const checkAdmin = async (email, retries = 3) => {
         if (!email) {
@@ -37,6 +38,9 @@ export const AuthProvider = ({ children }) => {
 
                     return checkAdmin(email, retries - 1);
                 }
+
+                // Max retries reached, capture the error
+                setAdminCheckError(`${error.code || 'UNKNOWN'}: ${error.message || 'Network/Server Error'}`);
                 throw error;
             }
 
@@ -48,10 +52,18 @@ export const AuthProvider = ({ children }) => {
             });
 
             console.log(isWhitelisted ? '✅ Admin verified' : '❌ Not in whitelist');
+
+            if (!isWhitelisted) {
+                setAdminCheckError(`Email ${normalizedUserEmail} not found in whitelist.`);
+            } else {
+                setAdminCheckError(null);
+            }
+
             setIsAdmin(isWhitelisted);
             return isWhitelisted;
         } catch (err) {
             console.error('🚫 Error checking admin status:', err.message);
+            if (!adminCheckError) setAdminCheckError(`Runtime Error: ${err.message}`);
             setIsAdmin(false);
             return false;
         }

@@ -27,7 +27,7 @@ const useOnlineStatus = () => {
 };
 
 const AppContent = () => {
-  const { user, isAdmin, loading, logout } = useAuth();
+  const { user, isAdmin, loading, logout, adminCheckError } = useAuth();
   const isOnline = useOnlineStatus();
 
   if (!isOnline) {
@@ -94,6 +94,11 @@ const AppContent = () => {
               Your account (<span className="text-white font-mono text-xs">{user.email}</span>) is not on the admin whitelist.
             </p>
             <p className="text-muted text-sm mt-2">If you just reopened the app and got this error, your network might still be connecting.</p>
+            {adminCheckError && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-left">
+                <p className="text-xs font-mono text-red-300 break-words">{adminCheckError}</p>
+              </div>
+            )}
           </div>
           <div className="flex gap-4 mt-2">
             <button
