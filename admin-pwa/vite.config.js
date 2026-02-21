@@ -8,6 +8,24 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      workbox: {
+        // Ensure ALL Supabase requests always go through the network — never from cache
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'supabase-queue',
+                options: { maxRetentionTime: 24 * 60 }
+              }
+            }
+          }
+        ],
+        // Make sure our app shell is always fresh  
+        navigateFallback: 'index.html',
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}']
+      },
       manifest: {
         id: 'bunkit-admin-portal',
         name: 'Bunkit Admin',
