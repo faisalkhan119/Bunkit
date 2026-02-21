@@ -77,7 +77,7 @@ class BunkitAdManager {
     }
 
     // ----- Build and show an ad overlay for the given adType -----
-    async show(adType) {
+    async show(adType, options = {}) {
         // SYNCHRONOUS guard — set BEFORE any await to prevent race conditions
         // where two concurrent calls both see _activeOverlayEl === null
         if (this._isShowing || this._activeOverlayEl) {
@@ -95,6 +95,7 @@ class BunkitAdManager {
             }
 
             this._activeAdType = adType;
+            this._activeOptions = options; // Store options for allowSkip reference
             const skipDelay = typeof config.skip_delay_sec === 'number' ? config.skip_delay_sec : 4;
             const ctaButtons = Array.isArray(config.cta_buttons) ? config.cta_buttons : [];
 
@@ -155,28 +156,33 @@ class BunkitAdManager {
                 'z-index:2147483647;'
             ].join('');
             skipBtn.disabled = true;
-            skipBtn.textContent = `Skip in ${skipDelay}s`;
 
-            let remaining = skipDelay;
-            this._skipTimer = setInterval(() => {
-                remaining--;
-                if (remaining <= 0) {
-                    clearInterval(this._skipTimer);
-                    this._skipTimer = null;
-                    skipBtn.disabled = false;
-                    skipBtn.style.cursor = 'pointer';
-                    skipBtn.style.background = 'rgba(255,255,255,0.2)';
-                    skipBtn.textContent = 'Skip ✕';
-                } else {
-                    skipBtn.textContent = `Skip in ${remaining}s`;
-                }
-            }, 1000);
+            if (options.manualSkip) {
+                skipBtn.textContent = 'Processing...';
+            } else {
+                skipBtn.textContent = `Skip in ${skipDelay}s`;
+                let remaining = skipDelay;
+                this._skipTimer = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(this._skipTimer);
+                        this._skipTimer = null;
+                        skipBtn.disabled = false;
+                        skipBtn.style.cursor = 'pointer';
+                        skipBtn.style.background = 'rgba(255,255,255,0.2)';
+                        skipBtn.textContent = 'Skip ✕';
+                    } else {
+                        skipBtn.textContent = `Skip in ${remaining}s`;
+                    }
+                }, 1000);
+            }
 
             skipBtn.onclick = () => {
                 if (skipBtn.disabled) return;
                 this._trackEvent(adType, 'skip');
                 this.dismiss();
             };
+            this._activeSkipBtnEl = skipBtn;
 
             // ---- Ad Image ----
             if (config.image_url) {
@@ -314,6 +320,17 @@ class BunkitAdManager {
             return;
         }
         await this.show('calculate_ad');
+    }
+
+    // ----- Enable skip button for an ad with manualSkip: true -----
+    allowSkip() {
+        if (this._activeSkipBtnEl && this._activeOptions?.manualSkip) {
+            console.log('[AdManager] Image processing complete — enabling skip');
+            this._activeSkipBtnEl.disabled = false;
+            this._activeSkipBtnEl.style.cursor = 'pointer';
+            this._activeSkipBtnEl.style.background = 'rgba(255,255,255,0.2)';
+            this._activeSkipBtnEl.textContent = 'Skip ✕';
+        }
     }
 }
 

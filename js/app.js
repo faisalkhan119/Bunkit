@@ -2810,8 +2810,8 @@ async function handleImageUpload(files) {
 
     loadingSection.style.display = 'block';
 
-    // Show calculate ad during image processing
-    if (window.AdManager) AdManager.showDuringProcessing();
+    // Show calculate ad during image processing with manual skip control
+    if (window.bunkitAdManager) window.bunkitAdManager.show('calculate_ad', { manualSkip: true });
 
     try {
         let mergedData = {};
@@ -2851,6 +2851,10 @@ async function handleImageUpload(files) {
         document.getElementById('resultsSection').innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i><p>${err.message}</p></div>`;
     } finally {
         loadingSection.style.display = 'none';
+        // Always enable skip once processing is finished (or fails)
+        if (window.bunkitAdManager) {
+            window.bunkitAdManager.allowSkip();
+        }
     }
 }
 // EXPLICIT EXPORT: Ensure handleImageUpload is available globally for inline HTML handlers
