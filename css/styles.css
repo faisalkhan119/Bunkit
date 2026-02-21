@@ -4322,6 +4322,11 @@
             color: white;
         }
 
+        /* Light mode: black text on verify button for visibility */
+        body:not(.dark-mode) .fp-btn-primary {
+            color: #1a1a1a;
+        }
+
         .fp-btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(var(--accent-primary-rgb), 0.3);
