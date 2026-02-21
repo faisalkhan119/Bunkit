@@ -135,6 +135,7 @@ const AuthManager = {
             }
 
             this.updateUI(true);
+            this.monitorConnectivity(); // Enforce online-only for logged-in users
         } else {
             console.log('👤 Guest Mode');
             document.body.classList.remove('logged-in');
@@ -319,6 +320,66 @@ const AuthManager = {
             console.error('Delete failed:', e);
             alert("Error deleting account: " + e.message);
         }
+    },
+
+    // ============================================================
+    // ONLINE-ONLY ENFORCEMENT (Logged-in users require internet)
+    // ============================================================
+    monitorConnectivity() {
+        // Already set up — avoid double-binding listeners
+        if (this._connectivityBound) return;
+        this._connectivityBound = true;
+
+        const showOfflineOverlay = () => {
+            if (!this.user) return; // Only for logged-in users, not guests
+            if (document.getElementById('offlineBlockOverlay')) return;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'offlineBlockOverlay';
+            overlay.style.cssText = [
+                'position:fixed', 'top:0', 'left:0', 'width:100%', 'height:100%',
+                'background:rgba(10,10,20,0.96)', 'z-index:2147483647',
+                'display:flex', 'flex-direction:column',
+                'justify-content:center', 'align-items:center',
+                'color:white', "font-family:'Outfit',sans-serif",
+                'text-align:center', 'padding:30px',
+                'backdrop-filter:blur(8px)'
+            ].join(';');
+            overlay.innerHTML = `
+                <div style="font-size:4rem;margin-bottom:20px;animation:pulse 2s infinite">📡</div>
+                <h2 style="font-size:1.6rem;margin-bottom:10px;font-weight:700">You're Offline</h2>
+                <p style="color:#94a3b8;max-width:300px;line-height:1.6;font-size:0.95rem">
+                    Signed-in mode requires an internet connection to keep your data safe.
+                    <br><br>
+                    Please reconnect to continue.
+                </p>
+                <div id="offlineRetryDots" style="margin-top:24px;display:flex;gap:8px">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#667eea;animation:pulse 1s infinite"></span>
+                    <span style="width:8px;height:8px;border-radius:50%;background:#667eea;animation:pulse 1s 0.2s infinite"></span>
+                    <span style="width:8px;height:8px;border-radius:50%;background:#667eea;animation:pulse 1s 0.4s infinite"></span>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            console.warn('📡 Offline detected — blocking app for logged-in user.');
+        };
+
+        const hideOfflineOverlay = () => {
+            const overlay = document.getElementById('offlineBlockOverlay');
+            if (overlay) {
+                overlay.remove();
+                console.log('🌐 Back online — unblocking app.');
+                // Re-sync to get any missed changes
+                if (this.user && window.SyncManager) {
+                    setTimeout(() => SyncManager.forceResync(true), 500);
+                }
+            }
+        };
+
+        window.addEventListener('offline', showOfflineOverlay);
+        window.addEventListener('online', hideOfflineOverlay);
+
+        // Check immediately on login (in case already offline)
+        if (!navigator.onLine) showOfflineOverlay();
     }
 };
 

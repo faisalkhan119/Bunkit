@@ -30,27 +30,18 @@ const SyncManager = {
 
                 if (classError || logError) throw new Error("Fetch failed");
 
-                // 2. Load Local Data
-                // SMART WIPE STRATEGY:
-                // Only wipe if:
-                // A) It's a fresh signup (Clean slate)
-                // B) It's a DIFFERENT user than before (Security/Privacy)
-                // C) We have no record of the last user
-                const isNewSignup = localStorage.getItem('is_new_signup');
-                const lastUserId = localStorage.getItem('last_user_id');
+                // 2. CLOUD-AUTHORITATIVE STRATEGY:
+                // For logged-in users, cloud data is always the source of truth.
+                // Always wipe local data before applying cloud — prevents stale local
+                // data from a different session or guest mode from bleeding through.
+                // EXCEPTION: wasGuest=true means the user is converting from Guest, so
+                // their local data will have been uploaded first before this wipe.
                 const currentUserId = AuthManager.user?.id;
 
-                let shouldWipe = false;
-
-                if (isNewSignup) {
-                    console.log("🆕 New Signup detected. Wiping local data.");
-                    shouldWipe = true;
-                } else if (!lastUserId || lastUserId !== currentUserId) {
-                    console.log(`👤 User Changed (Old: ${lastUserId}, New: ${currentUserId}). Wiping local data.`);
-                    shouldWipe = true;
-                } else {
-                    console.log("🔄 Same User Refresh. Preserving local data for sync merge.");
-                }
+                const shouldWipe = true; // Cloud always wins for logged-in users
+                console.log(wasGuest
+                    ? '🔄 Guest→Login conversion: local data uploaded first, now applying cloud.'
+                    : '☁️ Logged-in sync: wiping local, applying cloud as source of truth.');
 
                 if (shouldWipe) {
                     // Comprehensive Wipe of User Data Keys
@@ -78,7 +69,7 @@ const SyncManager = {
                     localStorage.setItem('last_user_id', currentUserId);
                 }
 
-                // Always clear the flag after checking
+                // Always clear the new-signup flag
                 localStorage.removeItem('is_new_signup');
 
                 // FORCE PRUNE DUPLICATES before loading to clean up existing mess
@@ -518,12 +509,15 @@ const SyncManager = {
         }
     },
 
-    async forceResync() {
-        if (!confirm("Force Global Sync?\n\nThis will re-upload ALL your local data to the cloud, ensuring everything is saved.\n\nContinue?")) return;
+    async forceResync(silent = false) {
+        if (!silent && !confirm("Force Global Sync?\n\nThis will re-upload ALL your local data to the cloud, ensuring everything is saved.\n\nContinue?")) return;
         this.syncing = false; // Reset lock
+        this.syncPromise = null; // Clear pending promise
         await this.uploadAll();
-        alert("✅ Forced Sync Complete!\nYour local data is now on the cloud.");
-        window.location.reload();
+        if (!silent) {
+            alert("✅ Forced Sync Complete!\nYour local data is now on the cloud.");
+            window.location.reload();
+        }
     },
 
     // --- EDGE CASE HELPERS ---
