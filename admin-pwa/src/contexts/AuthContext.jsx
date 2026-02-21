@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(null);
 
-    const checkAdmin = async (email, retries = 1) => {
+    const checkAdmin = async (email, retries = 2) => {
         if (!email) {
             setIsAdmin(false);
             return false;
@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
         try {
             console.log(`🔐 [Auth v${VERSION}] Checking admin: ${email.toLowerCase()}`);
 
-            // Add a per-request timeout to avoid hanging initialization
             const fetchConfig = supabase
                 .from('app_config')
                 .select('value')
@@ -26,12 +25,12 @@ export const AuthProvider = ({ children }) => {
 
             const { data, error } = await Promise.race([
                 fetchConfig,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Admin check timeout')), 5000))
+                new Promise((resolve) => setTimeout(() => resolve({ data: null, error: { message: 'Admin check timeout', code: 'TIMEOUT' } }), 10000))
             ]);
 
             if (error) {
-                if (retries > 0 && (error.code === 'PGRST116' || error.message?.includes('fetch'))) {
-                    console.warn('🔄 Retrying admin check...');
+                if (retries > 0 && (error.code === 'PGRST116' || error.code === 'TIMEOUT' || error.message?.includes('fetch') || error.message?.includes('network'))) {
+                    console.warn(`🔄 Retrying admin check... (${retries} retries left)`);
                     return checkAdmin(email, retries - 1);
                 }
                 throw error;
@@ -60,11 +59,11 @@ export const AuthProvider = ({ children }) => {
 
         const timeoutId = setTimeout(() => {
             if (mounted && loading) {
-                console.warn('⚠️ Auth initialization timed out (12s)');
+                console.warn('⚠️ Auth initialization timed out (25s)');
                 setLoading(false);
                 if (isAdmin === null) setIsAdmin(false);
             }
-        }, 12000);
+        }, 25000);
 
         const initSession = async () => {
             console.log('🏁 Portal Init started...');
