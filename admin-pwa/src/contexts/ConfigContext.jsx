@@ -1,15 +1,32 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const ConfigContext = createContext({});
 
 export const ConfigProvider = ({ children }) => {
+    const { user } = useAuth();
     const [config, setConfig] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchAllConfig = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
+        console.log('📦 Fetching all configs...');
+
+        // Safety timeout for config fetch
+        const timeoutId = setTimeout(() => {
+            if (loading) {
+                console.warn('⚠️ Config fetch timed out');
+                setLoading(false);
+            }
+        }, 6000);
+
         try {
             const { data, error: supabaseError } = await supabase
                 .from('app_config')
@@ -17,25 +34,26 @@ export const ConfigProvider = ({ children }) => {
 
             if (supabaseError) throw supabaseError;
 
-            // Convert array to key-value map
-            const configMap = data.reduce((acc, item) => {
+            const configMap = (data || []).reduce((acc, item) => {
                 acc[item.key] = item.value;
                 return acc;
             }, {});
 
+            console.log('✅ Configs loaded:', Object.keys(configMap));
             setConfig(configMap);
             setError(null);
         } catch (err) {
-            console.error('Error fetching config:', err);
+            console.error('🚫 Error fetching config:', err);
             setError(err.message);
         } finally {
             setLoading(false);
+            clearTimeout(timeoutId);
         }
     };
 
     useEffect(() => {
         fetchAllConfig();
-    }, []);
+    }, [user?.id]); // Re-fetch when user changes
 
     const refreshConfig = () => fetchAllConfig();
 
