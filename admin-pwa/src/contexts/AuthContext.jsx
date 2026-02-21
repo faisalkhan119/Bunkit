@@ -44,22 +44,42 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
-    const checkAdmin = async (email) => {
+    const checkAdmin = async (email, retries = 1) => {
+        if (!email) return false;
+
         try {
+            console.log(`🔐 Checking admin status for: ${email.trim().toLowerCase()}`);
+
             const { data, error } = await supabase
                 .from('app_config')
                 .select('value')
                 .eq('key', 'admin_emails')
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // If it's a network error and we have retries left
+                if (retries > 0 && (error.message?.includes('fetch') || error.code === 'PGRST116')) {
+                    console.warn('🔄 Retrying admin check...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return checkAdmin(email, retries - 1);
+                }
+                throw error;
+            }
 
-            const adminEmails = data.value || [];
-            const isWhitelisted = adminEmails.some(e => e.toLowerCase() === email.toLowerCase());
+            const adminEmails = Array.isArray(data?.value) ? data.value : [];
+            const normalizedUserEmail = email.trim().toLowerCase();
+
+            const isWhitelisted = adminEmails.some(e => {
+                if (typeof e !== 'string') return false;
+                return e.trim().toLowerCase() === normalizedUserEmail;
+            });
+
+            console.log(isWhitelisted ? '✅ Admin verified' : '❌ Not in whitelist');
             setIsAdmin(isWhitelisted);
             return isWhitelisted;
         } catch (err) {
-            console.error('Error checking admin status:', err);
+            console.error('🚫 Error checking admin status:', err);
+            // On error, we default to false for security, but we log it clearly
             setIsAdmin(false);
             return false;
         }
