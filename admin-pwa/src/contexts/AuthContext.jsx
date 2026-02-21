@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
+const VERSION = "1.5.2";
+
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -102,33 +104,29 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        console.log('🚪 Initializing Aggressive Logout...');
-
-        // Immediate UI feedback/cleanup
-        setUser(null);
-        setIsAdmin(false);
-        setLoading(false);
+        alert('🔄 Logging out [v' + VERSION + ']... App will reset.');
+        console.log('🚪 Logout Initiated [v' + VERSION + ']');
 
         try {
-            // Attempt clean sign out but don't wait forever
+            // Give 1s to sign out from server, then move on anyway
             await Promise.race([
                 supabase.auth.signOut(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Signout timeout')), 2000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
             ]);
         } catch (err) {
-            console.warn('⚠️ signOut had issues, proceeding with manual cleanup:', err);
+            console.warn('Signout delay/error, proceeding with local purge:', err);
         } finally {
-            // Destruction of all local state
             localStorage.clear();
             sessionStorage.clear();
 
-            // Clear all possible cookies (security measure)
-            document.cookie.split(";").forEach((c) => {
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-            });
+            // Clear Service Workers
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) reg.unregister();
+            }
 
-            console.log('🚀 Redirecting to login...');
-            window.location.href = window.location.origin;
+            // Forced reload with cache bust
+            window.location.href = window.location.origin + '?logout=' + Date.now();
         }
     };
 
@@ -140,7 +138,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAdmin, loading, authLoading: loading, login, loginWithGoogle, logout, hardReset }}>
+        <AuthContext.Provider value={{ user, isAdmin, loading, authLoading: loading, login, loginWithGoogle, logout, hardReset, version: VERSION }}>
             {children}
         </AuthContext.Provider>
     );

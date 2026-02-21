@@ -1,9 +1,10 @@
-import { LayoutDashboard, Megaphone, Settings, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Megaphone, Settings, LogOut, User, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
-    const { user, logout } = useAuth();
+    const { user, logout, version } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = async () => {
@@ -80,6 +81,12 @@ const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
                         </>
                     )}
                 </button>
+
+                <div className="mt-4 text-center">
+                    <p className="text-[10px] text-muted-foreground opacity-50 font-mono">
+                        ENGINE VERSION: {version || 'v1.5.2'}
+                    </p>
+                </div>
             </div>
         </aside>
     );
