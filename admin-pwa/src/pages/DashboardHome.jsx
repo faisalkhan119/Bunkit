@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Megaphone, Zap } from 'lucide-react';
+import { Users, Megaphone, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const DashboardHome = () => {
@@ -12,7 +12,7 @@ const DashboardHome = () => {
         <div className="space-y-8 animate-fade-in">
             <div>
                 <h1 className="text-3xl font-bold">Welcome back, Admin</h1>
-                <p className="text-muted mt-1">Here's an overview of your Bunkit ecosystem</p>
+                <p className="text-muted mt-1">Here&apos;s an overview of your Bunkit ecosystem</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

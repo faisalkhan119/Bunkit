@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Eye, Plus, Trash2, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Save, Plus, Trash2, Megaphone, Image as ImageIcon, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdManager = () => {
