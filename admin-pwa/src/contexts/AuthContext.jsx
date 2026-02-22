@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "2.0.2";
+const VERSION = "2.0.3";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -26,20 +26,16 @@ export const AuthProvider = ({ children }) => {
 
             const { data, error } = await Promise.race([
                 fetchConfig,
-                new Promise((resolve) => setTimeout(() => resolve({ data: null, error: { message: 'Admin check timeout', code: 'TIMEOUT' } }), 10000))
+                new Promise((resolve) => setTimeout(() => resolve({ data: null, error: { message: 'Admin check timeout', code: 'TIMEOUT' } }), 5000))
             ]);
 
             if (error) {
                 if (retries > 0) {
                     console.warn(`🔄 Retrying admin check in 2s... (${retries} retries left)`);
-
-                    // Add 2-second sleep to allow mobile OS network to wake up on PWA resume 
                     await new Promise(resolve => setTimeout(resolve, 2000));
-
                     return checkAdmin(email, retries - 1);
                 }
 
-                // Max retries reached, capture the error
                 setAdminCheckError(`${error.code || 'UNKNOWN'}: ${error.message || 'Network/Server Error'}`);
                 throw error;
             }
@@ -87,14 +83,26 @@ export const AuthProvider = ({ children }) => {
         const initSession = async () => {
             console.log('🏁 Portal Init started...');
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                // Bug fix #8: Add strict 5s timeout to getSession so it doesn't hang infinitely on resume
+                let sessionResult;
+                try {
+                    sessionResult = await Promise.race([
+                        supabase.auth.getSession(),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('GET_SESSION_TIMEOUT: Token refresh hung.')), 5000))
+                    ]);
+                } catch (e) {
+                    console.warn('🔄 getSession fetch timed out. OS network might be sleeping. Fast failing.');
+                    throw e; // Handled below in outer catch block
+                }
+
+                const { data: { session } } = sessionResult;
                 if (!mounted || authStateFetched) return;
 
                 const currentUser = session?.user ?? null;
                 setUser(currentUser);
 
                 if (currentUser) {
-                    await checkAdmin(currentUser.email);
+                    await checkAdmin(currentUser.email, 2); // Pass explicit 2 retries (Total time: ~15s max)
                 } else {
                     setAdminCheckError("NO_USER: Session exists but currentUser is null.");
                     setIsAdmin(false);
