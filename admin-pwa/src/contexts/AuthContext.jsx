@@ -2,12 +2,33 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
-const VERSION = "2.0.3";
+const VERSION = "2.0.4";
+
+const getCachedState = () => {
+    try {
+        const cachedAdminEmail = localStorage.getItem('bunkit_admin_cache');
+        if (cachedAdminEmail) {
+            // Find the supabase auth token in localStorage.
+            const sbKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+            if (sbKey) {
+                const sbData = JSON.parse(localStorage.getItem(sbKey));
+                const sessionUser = sbData?.user;
+                if (sessionUser && sessionUser.email === cachedAdminEmail) {
+                    return { user: sessionUser, isAdmin: true, loading: false };
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to parse cached auth state:', e);
+    }
+    return { user: null, isAdmin: null, loading: true };
+};
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(null);
+    const cachedState = getCachedState();
+    const [user, setUser] = useState(cachedState.user);
+    const [loading, setLoading] = useState(cachedState.loading);
+    const [isAdmin, setIsAdmin] = useState(cachedState.isAdmin);
     const [adminCheckError, setAdminCheckError] = useState(null);
 
     const checkAdmin = async (email, retries = 3) => {
@@ -51,14 +72,21 @@ export const AuthProvider = ({ children }) => {
 
             if (!isWhitelisted) {
                 setAdminCheckError(`Email ${normalizedUserEmail} not found in whitelist.`);
+                localStorage.removeItem('bunkit_admin_cache');
             } else {
                 setAdminCheckError(null);
+                localStorage.setItem('bunkit_admin_cache', normalizedUserEmail);
             }
 
             setIsAdmin(isWhitelisted);
             return isWhitelisted;
         } catch (err) {
             console.error('🚫 Error checking admin status:', err.message);
+            // Optimistic Auth Bypass: If we are already an admin via cache, ignore the network error!
+            if (isAdmin === true) {
+                console.warn('🤫 Ignoring checkAdmin error because optimistic cache is active.');
+                return true;
+            }
             if (!adminCheckError) setAdminCheckError(`Runtime Error: ${err.message}`);
             setIsAdmin(false);
             return false;
@@ -92,6 +120,16 @@ export const AuthProvider = ({ children }) => {
                     ]);
                 } catch (e) {
                     console.warn('🔄 getSession fetch timed out. OS network might be sleeping. Fast failing.');
+                    // Optimistic Auth Bypass: If cache is active, silently swallow the error to prevent Access Denied screen.
+                    if (isAdmin === true && user !== null) {
+                        console.warn('🤫 Swallowing getSession timeout because optimistic cache is already driving the UI.');
+                        if (mounted) {
+                            authStateFetched = true;
+                            setLoading(false);
+                            clearTimeout(timeoutId);
+                        }
+                        return;
+                    }
                     throw e; // Handled below in outer catch block
                 }
 
