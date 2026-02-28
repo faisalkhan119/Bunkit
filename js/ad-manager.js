@@ -1,0 +1,437 @@
+// ============================================================
+// Bunkit Ad Manager — js/ad-manager.js v2
+// Renders ad overlays from app_config, tracks analytics events
+// to the ad_events table, and auto-skips when user returns
+// after clicking a CTA link.
+// ============================================================
+
+class BunkitAdManager {
+    constructor() {
+        this._isShowing = false;      // synchronous lock — set BEFORE any await
+        this._activeAdType = null;
+        this._activeOverlayEl = null;
+        this._visibilityHandler = null;
+        this._skipTimer = null;
+    }
+
+    // ----- INTERNAL: track an event to Supabase ad_events -----
+    async _trackEvent(adType, eventType, buttonLabel = null, buttonUrl = null) {
+        const client = window.supabaseClient;
+        if (!client) { console.warn('[AdManager] No Supabase client — skipping track'); return; }
+        try {
+            // Supabase JS v2 NEVER throws — errors come back as { error }
+            const { error } = await client.from('ad_events').insert({
+                ad_type: adType,
+                event_type: eventType,
+                button_label: buttonLabel,
+                button_url: buttonUrl
+            });
+            if (error) {
+                console.warn(`[AdManager] ❌ Insert failed (${adType}/${eventType}):`, error.message, '|code:', error.code);
+            } else {
+                console.log(`[AdManager] ✅ Tracked: ${adType} → ${eventType}`, buttonLabel || '');
+            }
+        } catch (e) {
+            console.warn('[AdManager] Track exception:', e.message);
+        }
+    }
+
+    // ----- INTERNAL: fetch a single config key from app_config -----
+    async _fetchConfig(adType) {
+        const client = window.supabaseClient;
+        if (!client) return null;
+        try {
+            const { data, error } = await client
+                .from('app_config')
+                .select('value')
+                .eq('key', adType)
+                .single();
+            if (error || !data) return null;
+            return data.value;
+        } catch (e) {
+            console.warn('[AdManager] Fetch config error:', e.message);
+            return null;
+        }
+    }
+
+    // ----- Dismiss the active overlay -----
+    dismiss() {
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+        if (this._skipTimer) {
+            clearInterval(this._skipTimer);
+            this._skipTimer = null;
+        }
+        const el = this._activeOverlayEl;
+        if (el) {
+            el.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.95)';
+            setTimeout(() => { if (el.parentNode) el.remove(); }, 380);
+        }
+        this._activeOverlayEl = null;
+        this._activeAdType = null;
+        this._isShowing = false;    // release lock
+    }
+
+    // ----- Build and show an ad overlay for the given adType -----
+    async show(adType, options = {}) {
+        // SYNCHRONOUS guard — set BEFORE any await to prevent race conditions
+        // where two concurrent calls both see _activeOverlayEl === null
+        if (this._isShowing || this._activeOverlayEl) {
+            console.log('[AdManager] Already showing an ad — blocked duplicate call');
+            return;
+        }
+        this._isShowing = true;  // acquire lock synchronously
+
+        try {
+            const config = await this._fetchConfig(adType);
+            if (!config || !config.enabled) {
+                console.log(`[AdManager] ${adType} is disabled or not configured`);
+                this._isShowing = false;
+                return;
+            }
+
+            // --- PREMIUM USER AD-BYPASS LOGIC ---
+            const userEmail = AuthManager.user?.email;
+            if (userEmail) {
+                try {
+                    const premiumConfig = await this._fetchConfig('premium_users');
+                    if (premiumConfig) {
+                        const normalizedEmail = userEmail.trim().toLowerCase();
+                        const userPlan = premiumConfig[normalizedEmail];
+
+                        if (userPlan) {
+                            if (Date.now() <= userPlan.expires_at) {
+                                console.log(`[AdManager] 👑 Premium User detected (${normalizedEmail}) — Ad bypassed automatically.`);
+                                this._isShowing = false;
+                                return;
+                            } else {
+                                console.log(`[AdManager] ⏳ Premium Plan Expired for ${normalizedEmail}. Showing ad.`);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[AdManager] Failed to check premium status:', err.message);
+                }
+            }
+            // ------------------------------------
+
+            this._activeAdType = adType;
+            this._activeOptions = options; // Store options for allowSkip reference
+            const skipDelay = typeof config.skip_delay_sec === 'number' ? config.skip_delay_sec : 4;
+            const ctaButtons = Array.isArray(config.cta_buttons) ? config.cta_buttons : [];
+
+            // Fire view event
+            this._trackEvent(adType, 'view');
+
+            // ---- Inject keyframe styles once ----
+            if (!document.getElementById('bunkit-ad-styles')) {
+                const style = document.createElement('style');
+                style.id = 'bunkit-ad-styles';
+                style.textContent = `
+                    @keyframes bk-adIn { from { opacity:0; transform:scale(0.93) translateY(16px); } to { opacity:1; transform:scale(1) translateY(0); } }
+                    @keyframes bk-overlayIn { from { opacity:0; } to { opacity:1; } }
+                    .bk-ad-overlay { animation: bk-overlayIn 0.3s ease; }
+                    .bk-ad-card { animation: bk-adIn 0.45s cubic-bezier(0.22,1,0.36,1); }
+                    .bk-cta-btn:hover { opacity:0.88; transform:translateY(-1px); }
+                    .bk-skip-btn:not(:disabled):hover { background:rgba(255,255,255,0.15)!important; color:#e2e8f0!important; }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // ---- Overlay ----
+            const overlay = document.createElement('div');
+            overlay.className = 'bk-ad-overlay';
+            overlay.style.cssText = [
+                'position:fixed;inset:0;',
+                'background:rgba(5,5,15,0.92);',
+                'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);',
+                'display:flex;align-items:center;justify-content:center;',
+                'z-index:2147483647;',
+                'padding:20px;',
+                'font-family:-apple-system,BlinkMacSystemFont,"Outfit",sans-serif;'
+            ].join('');
+
+            // ---- Card ----
+            const card = document.createElement('div');
+            card.className = 'bk-ad-card';
+            card.style.cssText = [
+                'background:linear-gradient(145deg,rgba(18,18,36,0.99),rgba(8,8,20,0.99));',
+                'border:1px solid rgba(255,255,255,0.09);',
+                'border-radius:24px;padding:28px 24px 24px;',
+                'max-width:400px;width:100%;',
+                'position:relative;',
+                'box-shadow:0 40px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(108,99,255,0.08);'
+            ].join('');
+
+            // ---- Skip Button ----
+            const skipBtn = document.createElement('button');
+            skipBtn.className = 'bk-skip-btn';
+            skipBtn.style.cssText = [
+                'position:fixed;top:20px;right:20px;', // Pinned to screen for consistency
+                'background:rgba(255,255,255,0.1);',
+                'border:1px solid rgba(255,255,255,0.2);',
+                'color:#fff;border-radius:999px;',
+                'padding:8px 16px;font-size:12px;font-weight:700;',
+                'cursor:not-allowed;transition:all 0.2s;',
+                'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
+                'z-index:2147483647;'
+            ].join('');
+            skipBtn.disabled = true;
+
+            if (options.manualSkip) {
+                skipBtn.textContent = 'Processing...';
+            } else {
+                skipBtn.textContent = `Skip in ${skipDelay}s`;
+                let remaining = skipDelay;
+                this._skipTimer = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(this._skipTimer);
+                        this._skipTimer = null;
+                        skipBtn.disabled = false;
+                        skipBtn.style.cursor = 'pointer';
+                        skipBtn.style.background = 'rgba(255,255,255,0.2)';
+                        skipBtn.textContent = 'Skip ✕';
+                    } else {
+                        skipBtn.textContent = `Skip in ${remaining}s`;
+                    }
+                }, 1000);
+            }
+
+            skipBtn.onclick = () => {
+                if (skipBtn.disabled) return;
+                this._trackEvent(adType, 'skip');
+                this.dismiss();
+            };
+            this._activeSkipBtnEl = skipBtn;
+
+            // ---- Ad Media (Image or Video — auto-detected) ----
+            if (config.image_url) {
+                const mediaUrl = config.image_url.trim();
+                const isVideo = /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(mediaUrl);
+
+                if (isVideo) {
+                    // Container for video + mute button
+                    const videoContainer = document.createElement('div');
+                    videoContainer.style.cssText = 'position:relative;width:100%;margin-bottom:18px;border-radius:16px;overflow:hidden;background:#000;';
+
+                    const video = document.createElement('video');
+                    video.src = mediaUrl;
+                    video.autoplay = true;
+                    video.loop = true;
+                    video.muted = false; // User requested audio by default
+                    video.playsInline = true;
+                    video.setAttribute('playsinline', '');
+                    video.style.cssText = 'width:100%;object-fit:contain;max-height:50vh;display:block;';
+                    video.onerror = () => videoContainer.style.display = 'none';
+
+                    // Mute/Unmute Toggle Button (defaults to unmuted / volume-high)
+                    const muteBtn = document.createElement('button');
+                    muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    muteBtn.style.cssText = [
+                        'position:absolute;bottom:10px;right:10px;',
+                        'background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);',
+                        'border:1px solid rgba(255,255,255,0.2);color:#fff;',
+                        'width:32px;height:32px;border-radius:50%;',
+                        'display:flex;align-items:center;justify-content:center;',
+                        'cursor:pointer;font-size:12px;transition:all 0.2s;z-index:2;'
+                    ].join('');
+
+                    muteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        video.muted = !video.muted;
+                        muteBtn.innerHTML = video.muted
+                            ? '<i class="fa-solid fa-volume-xmark"></i>'
+                            : '<i class="fa-solid fa-volume-high"></i>';
+                    };
+
+                    videoContainer.appendChild(video);
+                    videoContainer.appendChild(muteBtn);
+                    card.appendChild(videoContainer);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = mediaUrl;
+                    img.alt = config.title || 'Ad Banner';
+                    img.style.cssText = 'width:100%;border-radius:16px;margin-bottom:18px;object-fit:contain;max-height:50vh;display:block;background:#000;';
+                    img.onerror = () => img.style.display = 'none';
+                    card.appendChild(img);
+                }
+            }
+
+            // ---- Title ----
+            if (config.title) {
+                const h = document.createElement('h2');
+                h.textContent = config.title;
+                h.style.cssText = 'color:#f1f5f9;font-size:19px;font-weight:700;margin:0 0 8px;line-height:1.3;padding-right:60px;';
+                card.appendChild(h);
+            }
+
+            // ---- Message ----
+            if (config.message) {
+                const p = document.createElement('p');
+                p.textContent = config.message;
+                p.style.cssText = 'color:#8896ab;font-size:13.5px;line-height:1.65;margin:0 0 20px;';
+                card.appendChild(p);
+            }
+
+            // ---- CTA Buttons ----
+            if (ctaButtons.length > 0) {
+                const btnWrap = document.createElement('div');
+                btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+                ctaButtons.forEach((cta) => {
+                    const btn = document.createElement('a');
+                    btn.href = cta.url || '#';
+                    btn.target = '_blank';
+                    btn.rel = 'noopener noreferrer';
+                    btn.textContent = cta.label || 'Visit';
+                    btn.className = 'bk-cta-btn';
+                    let btnBg = 'linear-gradient(135deg,#6c63ff,#4f46e5)'; // Default Primary
+                    let btnShadow = '0 4px 16px rgba(79,70,229,0.35)';
+                    let btnTextColor = '#fff';
+                    let btnIconClass = 'fa-solid fa-globe'; // Default icon
+
+                    // Match colors from Admin AdManager.jsx
+                    if (cta.type === 'instagram') {
+                        btnBg = 'linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)';
+                        btnShadow = '0 4px 16px rgba(188,24,136,0.3)';
+                        btnIconClass = 'fa-brands fa-instagram';
+                    } else if (cta.type === 'whatsapp') {
+                        btnBg = '#25D366';
+                        btnShadow = '0 4px 12px rgba(37,211,102,0.3)';
+                        btnIconClass = 'fa-brands fa-whatsapp';
+                    } else if (cta.type === 'buymeacoffee') {
+                        btnBg = '#FFDD00';
+                        btnShadow = '0 4px 12px rgba(255,221,0,0.3)';
+                        btnTextColor = '#000';
+                        btnIconClass = 'fa-solid fa-mug-hot';
+                    }
+
+                    btn.style.cssText = [
+                        'display:flex;align-items:center;justify-content:center;gap:8px;',
+                        'text-align:center;',
+                        'padding:13px 20px;',
+                        `background:${btnBg};`,
+                        `color:${btnTextColor};text-decoration:none;`,
+                        'border-radius:14px;font-weight:600;font-size:14px;',
+                        'transition:opacity 0.2s,transform 0.2s;',
+                        `box-shadow:${btnShadow};`
+                    ].join('');
+
+                    // Add icon if available
+                    const icon = document.createElement('i');
+                    icon.className = btnIconClass;
+                    btn.prepend(icon);
+
+                    btn.onclick = () => {
+                        this._trackEvent(adType, 'click', cta.label, cta.url);
+                        // Auto-skip: when user returns to this tab, dismiss the ad
+                        if (this._visibilityHandler) {
+                            document.removeEventListener('visibilitychange', this._visibilityHandler);
+                        }
+                        this._visibilityHandler = () => {
+                            if (document.visibilityState === 'visible') {
+                                console.log('[AdManager] User returned — auto-dismissing ad');
+                                this.dismiss();
+                            }
+                        };
+                        document.addEventListener('visibilitychange', this._visibilityHandler);
+                    };
+                    btnWrap.appendChild(btn);
+                });
+
+                card.appendChild(btnWrap);
+            }
+
+            // --- WHATSAPP UPSELL CTA ---
+            const ctaWrap = document.createElement('div');
+            ctaWrap.style.cssText = 'text-align:center;margin-top:16px;';
+            const ctaLink = document.createElement('a');
+            ctaLink.href = 'https://wa.me/916386854875?text=hey%20want%20ad%20free%20experience%20on%20bunkit...';
+            ctaLink.target = '_blank';
+            ctaLink.rel = 'noopener noreferrer';
+            ctaLink.textContent = 'want completely ad free experience';
+            ctaLink.style.cssText = 'color:#cbd5e1;font-size:13px;text-decoration:underline;text-underline-offset:4px;opacity:0.8;transition:opacity 0.2s;';
+            ctaLink.onmouseover = () => ctaLink.style.opacity = '1';
+            ctaLink.onmouseout = () => ctaLink.style.opacity = '0.8';
+            ctaLink.onclick = () => {
+                this._trackEvent(adType, 'click', 'WhatsApp Ad-Free Upsell', ctaLink.href);
+            };
+            ctaWrap.appendChild(ctaLink);
+            card.appendChild(ctaWrap);
+            // ---------------------------
+
+            overlay.appendChild(card);
+            overlay.appendChild(skipBtn); // Outside card for better Visibility
+            document.body.appendChild(overlay);
+            this._activeOverlayEl = overlay;
+
+            console.log(`[AdManager] Showing ${adType}`);
+
+        } catch (err) {
+            console.error('[AdManager] Unexpected error in show():', err);
+            this._isShowing = false;  // release lock on any unexpected error
+        }
+    }
+
+    // ----- Show daily_ad — throttled to once per calendar day -----
+    async showDailyAdIfNeeded() {
+        // ---- BUG FIX: Don't show if onboarding is not yet completed ----
+        // This effectively blocks ads on Login Screen and during first-time setup
+        if (localStorage.getItem('hasCompletedOnboarding') !== 'true') {
+            console.log('[AdManager] Onboarding not complete — skipping ad check');
+            return;
+        }
+
+        const today = new Date().toDateString();
+        const key = 'bunkit_daily_ad_date';
+        if (localStorage.getItem(key) === today) {
+            console.log('[AdManager] Daily ad already shown today');
+            return;
+        }
+        // Mark BEFORE showing to prevent duplicate calls during async gap
+        localStorage.setItem(key, today);
+        await this.show('daily_ad');
+    }
+
+    // ----- Show calculate_ad — called from bunk/calc feature -----
+    async showCalculateAd() {
+        // Guard: Don't show if onboarding not complete
+        if (localStorage.getItem('hasCompletedOnboarding') !== 'true') {
+            console.log('[AdManager] Onboarding not complete — skipping calculation ad');
+            return;
+        }
+
+        const today = new Date().toDateString();
+        const key = 'bunkit_calc_ad_date';
+        if (localStorage.getItem(key) === today) {
+            console.log('[AdManager] Calculation ad already shown today');
+            return;
+        }
+        // Mark BEFORE showing
+        localStorage.setItem(key, today);
+
+        await this.show('calculate_ad');
+    }
+
+    // ----- Enable skip button for an ad with manualSkip: true -----
+    allowSkip() {
+        if (this._activeSkipBtnEl && this._activeOptions?.manualSkip) {
+            console.log('[AdManager] Image processing complete — enabling skip');
+            this._activeSkipBtnEl.disabled = false;
+            this._activeSkipBtnEl.style.cursor = 'pointer';
+            this._activeSkipBtnEl.style.background = 'rgba(255,255,255,0.2)';
+            this._activeSkipBtnEl.textContent = 'Skip ✕';
+        }
+    }
+}
+
+// Initialize and attach to window
+window.bunkitAdManager = new BunkitAdManager();
+
+// NO AUTOMATIC STARTUP TRIGGER
+// Triggering is now exclusively handled by onboarding/login events

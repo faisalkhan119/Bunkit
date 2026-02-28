@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit!)
+.env
+.env.local
+.env.production
+js/env-config.js
+
+# Build output
+dist/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Netlify
+.netlify/
+
+# Backup files
+*.backup
+config.js
+
+# Sensitive key files
+vapid.*
+vapid_keys.txt
+
+# Logs
+*.log
+build_logs.txt

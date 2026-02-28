@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BunkIt - Project Synopsis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+            page-break-after: always;
+            position: relative;
+        }
+
+        /* Front Page Styles */
+        .front-page {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 257mm;
+            /* Total A4 minus padding */
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 40px;
+            font-weight: normal;
+        }
+
+        .report-type {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 30px 0;
+            text-transform: uppercase;
+        }
+
+        .submitted-for {
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .subject {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 50px;
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            text-align: left;
+        }
+
+        .grid-left,
+        .grid-right {
+            width: 45%;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        .name-details p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .university-details {
+            margin-top: auto;
+            border-top: 2px solid #000;
+            padding-top: 20px;
+        }
+
+        .university-name {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .university-address {
+            font-size: 16px;
+        }
+
+
+        /* Content Page Styles */
+        h2 {
+            font-size: 18px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        p {
+            font-size: 14px;
+            text-align: justify;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-top: 0;
+            font-size: 14px;
+            text-align: justify;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        /* Print Specifics */
+        @media print {
+            body {
+                background: none;
+            }
+
+            .page {
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                width: 100%;
+                min-height: 100%;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PAGE 1: COVER PAGE -->
+    <div class="page front-page">
+
+        <div class="report-type">PROJECT SYNOPSIS</div>
+
+        <div class="submitted-for">
+            Submitted in partial fulfillment of the requirements<br>
+            for the subject of
+        </div>
+
+        <div class="subject">
+            DATABASE MANAGEMENT SYSTEMS (DBMS)
+        </div>
+
+        <div style="margin: 20px 0;">
+            <span style="font-size: 16px;">on</span>
+        </div>
+
+        <h1>BUNKIT</h1>
+        <div class="subtitle">A Smart Attendance Analytics & Student Management Platform</div>
+
+
+        <div class="grid-container">
+            <div class="grid-left">
+                <div class="grid-title">Submitted By:</div>
+                <div class="name-details">
+                    <p><b>Faisal Khan</b></p>
+                    <p>Reg No: RA2411003030442</p>
+                    <br>
+                    <p><b>Sheikh Hemayoou</b></p>
+                    <p>Reg No: RA2411003030476</p>
+                </div>
+            </div>
+
+            <div class="grid-right">
+                <div class="grid-title">Under the Guidance of:</div>
+                <div class="name-details">
+                    <p><b>Dr. Avneesh Vashistha</b></p>
+                    <p>Professor</p>
+                    <p>Department of Computer Science</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="university-details">
+            <div class="university-name">SRM Institute of Science and Technology</div>
+            <div class="university-address">NCR Campus, Modinagar, Ghaziabad</div>
+        </div>
+    </div>
+
+
+    <!-- PAGE 2: CONTENT PAGE -->
+    <div class="page">
+        <h2 style="text-align: center; border: none; font-size: 20px; margin-top: 0;">PROJECT SYNOPSIS</h2>
+
+        <h3>1. Title of the Project</h3>
+        <p><b>BunkIt – A Smart Attendance Analytics & Student Management Platform</b></p>
+
+        <h3>2. Working/Methodology of the Project</h3>
+        <p>BunkIt is an intelligent, offline-first web application designed to alleviate the stress of university
+            attendance tracking. The methodology is built upon predictive database analytics and real-time syncing:</p>
+        <ul>
+            <li><b>Data Collection & Flow:</b> Students input their current attendance statistics or initialize a fresh
+                semester. The application caches this data locally using IndexedDB for instant, offline access, and
+                simultaneously syncs it to a remote PostgreSQL database to prevent data loss.</li>
+            <li><b>Predictive Analytics Engine:</b> As daily attendance is logged (Present, Absent, Cancelled, or
+                Holiday), the core algorithm mathematically calculates the user's current percentage. It dynamically
+                computes two critical metrics: <b>"Safe Bunks"</b> (the exact number of consecutive classes a student
+                can miss before falling below the mandatory threshold) and <b>"Classes Required"</b> (the precise number
+                of consecutive classes a student must attend to recover a deficit percentage).</li>
+            <li><b>Advanced System Methodology:</b> The platform includes a "Mass Bunk Polling" system where students
+                sharing the same class ID can vote in real-time. This leverages PostgreSQL database webhooks to securely
+                broadcast native Push Notifications to the specific student cohort.</li>
+        </ul>
+
+        <h3>3. Selected Frontend and Backend Technologies</h3>
+        <p>The project utilizes a modern decoupled architecture:</p>
+        <ul>
+            <li><b>Frontend Technologies (Client-Side):</b> HTML5, Modern Vanilla JavaScript (ES6+), and Advanced CSS3.
+                It utilizes Native Web Service Workers, Cache API, and IndexedDB for Progressive Web App (PWA) offline
+                capabilities. The administrative dashboard is built using React.js and Tailwind CSS.</li>
+            <li><b>Backend Technologies (Server-Side & Database):</b> Supabase (PostgreSQL) is utilized as the primary
+                database with strict Row Level Security (RLS) policies. Serverless compute is handled by Edge Functions
+                (Deno/TypeScript), and background task execution is managed via pg_cron. Real-time communication is
+                facilitated by the Native Web Push API (VAPID protocol).</li>
+        </ul>
+
+        <h3>4. Expected Outcome of the Project</h3>
+        <p>The primary outcome of BunkIt is to deliver a highly accessible cross-platform application that empowers
+            students to proactively manage their academic standing. By providing dynamic mathematical forecasting rather
+            than just static logs, the project will significantly reduce the number of students facing
+            attendance-shortage penalties. Furthermore, it will demonstrate a scalable, offline-capable database
+            architecture that provides a seamless user experience regardless of network connectivity.</p>
+
+        <h3>5. Student Details (Group Submission)</h3>
+        <ul>
+            <li><b>Faisal Khan</b> – Registration Number: RA2411003030442</li>
+            <li><b>Sheikh Hemayoou</b> – Registration Number: RA2411003030476</li>
+        </ul>
+    </div>
+
+</body>
+
+</html>

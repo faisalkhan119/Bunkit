@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NNWKQ6SSHN"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-NNWKQ6SSHN');
+    </script>
+    <!-- Microsoft Clarity Analytics -->
+    <script type="text/javascript">
+        (function (c, l, a, r, i, t, y) {
+            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "ujzwruoqtu");
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Offline - Bunk it</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            max-width: 400px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .message {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .features {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .features h3 {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .feature-item span {
+            opacity: 0.85;
+        }
+
+        .retry-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 14px 35px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .retry-btn:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .status.online {
+            color: #4ade80;
+            opacity: 1;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .offline-container {
+                background: rgba(30, 30, 50, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .features {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .retry-btn {
+                background: #818cf8;
+                color: white;
+            }
+
+            .retry-btn:hover {
+                background: #a78bfa;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="offline-container">
+        <img src="/icon-192x192.png" alt="Bunk it Logo" class="logo" onerror="this.style.display='none'">
+        <div class="offline-icon">📡</div>
+        <h1>You're Offline</h1>
+        <p class="subtitle">No internet connection detected</p>
+
+        <p class="message">
+            Don't worry! Your attendance data is safely stored on your device.
+            Connect to the internet to sync and access all features.
+        </p>
+
+        <div class="features">
+            <h3>✅ Available Offline:</h3>
+            <div class="feature-item">
+                <span>📊</span>
+                <span>View your saved attendance data</span>
+            </div>
+            <div class="feature-item">
+                <span>📝</span>
+                <span>Log today's attendance</span>
+            </div>
+            <div class="feature-item">
+                <span>📅</span>
+                <span>Check your timetable</span>
+            </div>
+            <div class="feature-item">
+                <span>🧮</span>
+                <span>Calculate attendance percentage</span>
+            </div>
+        </div>
+
+        <button class="retry-btn" onclick="retryConnection()">
+            🔄 Try Again
+        </button>
+
+        <p class="status" id="connectionStatus">Waiting for connection...</p>
+    </div>
+
+    <script>
+        function retryConnection() {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = 'Checking connection...';
+
+            // Try to fetch a small resource
+            fetch('/manifest.json', { cache: 'no-store' })
+                .then(response => {
+                    if (response.ok) {
+                        statusEl.textContent = '✅ Connected! Redirecting...';
+                        statusEl.classList.add('online');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 500);
+                    } else {
+                        throw new Error('Not connected');
+                    }
+                })
+                .catch(() => {
+                    statusEl.textContent = '❌ Still offline. Please check your connection.';
+                    statusEl.classList.remove('online');
+                });
+        }
+
+        // Auto-detect when coming back online
+        window.addEventListener('online', () => {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = '✅ Back online! Redirecting...';
+            statusEl.classList.add('online');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        });
+
+        // Check connection status on load
+        if (navigator.onLine) {
+            document.getElementById('connectionStatus').textContent = 'Connection detected, loading app...';
+            window.location.href = '/';
+        }
+    </script>
+</body>
+
+</html>

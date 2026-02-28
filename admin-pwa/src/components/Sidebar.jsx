@@ -1,0 +1,105 @@
+import { useState } from 'react';
+import { LayoutDashboard, Megaphone, Settings, LogOut, User, Loader2, BarChart2, TrendingUp, BookOpen, Search, Wrench, Shield, Vote, Bell, GraduationCap } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { motion } from 'framer-motion';
+
+const Sidebar = ({ activeTab, setActiveTab, onClose }) => {
+    const { user, logout, version } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+    };
+
+    const menuItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'user-analytics', label: 'User Analytics', icon: TrendingUp },
+        { id: 'users', label: 'Premium Users', icon: User },
+        { id: 'user-lookup', label: 'User Lookup', icon: Search },
+        { id: 'ads', label: 'Ad Manager', icon: Megaphone },
+        { id: 'analytics', label: 'Ad Analytics', icon: BarChart2 },
+        { id: 'shared-classes', label: 'Shared Classes', icon: BookOpen },
+        { id: 'bunk-polls', label: 'Bunk Polls', icon: Vote },
+        { id: 'class-creator', label: 'Class Creator', icon: GraduationCap },
+        { id: 'push-notifications', label: 'Push Hub', icon: Bell },
+        { id: 'moderation', label: 'Moderation', icon: Shield },
+        { id: 'app-config', label: 'App Config', icon: Wrench },
+        { id: 'settings', label: 'Settings', icon: Settings },
+    ];
+
+    const handleTabClick = (id) => {
+        setActiveTab(id);
+        if (onClose) onClose();
+    };
+
+    return (
+        <aside className="w-64 glass border-r-0 rounded-r-3xl h-full flex flex-col p-4">
+            <div className="p-4 mb-8">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+                    Bunkit Admin
+                </h1>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {menuItems.map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => handleTabClick(item.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === item.id
+                            ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
+                            : 'text-muted hover:bg-white/5 hover:text-white'
+                            }`}
+                    >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                        {activeTab === item.id && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="ml-auto w-1 h-5 bg-primary rounded-full"
+                            />
+                        )}
+                    </button>
+                ))}
+            </nav>
+
+            <div className="mt-auto p-4 border-t border-white/5">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <User className="text-primary w-5 h-5" />
+                    </div>
+                    <div className="overflow-hidden">
+                        <p className="text-sm font-medium truncate">{user?.email}</p>
+                        <p className="text-[10px] text-muted uppercase tracking-wider">Administrator</p>
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all font-medium disabled:opacity-50"
+                >
+                    {isLoggingOut ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Logging out...</span>
+                        </>
+                    ) : (
+                        <>
+                            <LogOut className="w-5 h-5" />
+                            <span>Logout</span>
+                        </>
+                    )}
+                </button>
+
+                <div className="mt-4 text-center">
+                    <p className="text-[10px] text-muted-foreground opacity-50 font-mono">
+                        ENGINE VERSION: {version || 'v2.0.0'}
+                    </p>
+                </div>
+            </div>
+        </aside>
+    );
+};
+
+export default Sidebar;

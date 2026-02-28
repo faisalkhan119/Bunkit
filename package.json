@@ -1,0 +1,27 @@
+{
+    "name": "bunkit-attendance",
+    "version": "1.0.0",
+    "description": "Smart Attendance Manager PWA",
+    "scripts": {
+        "dev": "echo 'Open index.html in browser for development'",
+        "build": "node build.js",
+        "build:minify": "node build.js --minify",
+        "build:obfuscate": "node build.js --obfuscate",
+        "build:production": "node build.js --minify --obfuscate",
+        "deploy": "netlify deploy --prod",
+        "deploy:preview": "netlify deploy"
+    },
+    "devDependencies": {
+        "cheerio": "^1.0.0-rc.12",
+        "javascript-obfuscator": "^4.2.2",
+        "puppeteer": "^24.37.5",
+        "sharp": "^0.34.5",
+        "terser": "^5.31.0"
+    },
+    "dependencies": {
+        "firebase-admin": "^12.0.0"
+    },
+    "engines": {
+        "node": "24.x"
+    }
+}

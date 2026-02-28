@@ -1,0 +1,403 @@
+import { useState, useEffect } from 'react';
+import { useConfig } from '../contexts/ConfigContext';
+import { Save, Plus, Trash2, Megaphone, Film, ExternalLink, AlertCircle, CheckCircle2, Loader2, Sparkles, Copy, Instagram, MessageCircle, Coffee, Globe, Volume2, VolumeX } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const AdManager = () => {
+    const { config, updateConfig, loading: configLoading } = useConfig();
+    const [activeTab, setActiveTab] = useState('daily_ad');
+    const [saving, setSaving] = useState(false);
+    const [applying, setApplying] = useState(false);
+    const [status, setStatus] = useState(null);
+    const [isMuted, setIsMuted] = useState(false);
+
+    const [adData, setAdData] = useState({
+        enabled: false,
+        image_url: '',
+        title: '',
+        message: '',
+        cta_buttons: [],
+        skip_delay_sec: 4
+    });
+
+    // Synchronize local form data with global config when tab or config changes
+    useEffect(() => {
+        // CRITICAL: only sync after config has finished loading from Supabase
+        // Otherwise we reset to empty defaults while data is still being fetched
+        if (configLoading) return;
+
+        const data = config[activeTab];
+        if (data) {
+            console.log(`📋 Loading ${activeTab} data into form:`, data);
+            setAdData({
+                enabled: data.enabled ?? false,
+                image_url: data.image_url ?? '',
+                title: data.title ?? '',
+                message: data.message ?? '',
+                cta_buttons: Array.isArray(data.cta_buttons) ? data.cta_buttons : [],
+                skip_delay_sec: data.skip_delay_sec ?? 4
+            });
+        } else {
+            // No data for this tab yet — reset to blanks only when explicitly switching tabs
+            console.log(`ℹ️ No saved config for ${activeTab}, resetting form to defaults`);
+            setAdData({
+                enabled: false,
+                image_url: '',
+                title: '',
+                message: '',
+                cta_buttons: [],
+                skip_delay_sec: 4
+            });
+        }
+    }, [activeTab, config, configLoading]);
+
+    const saveAd = async () => {
+        setSaving(true);
+        setStatus(null);
+        const { success, error } = await updateConfig(activeTab, adData);
+        if (success) {
+            setStatus({ type: 'success', message: 'Ad configuration saved successfully!' });
+            setTimeout(() => setStatus(null), 3000);
+        } else {
+            setStatus({ type: 'error', message: error || 'Failed to save configuration' });
+        }
+        setSaving(false);
+    };
+
+    const applyToBoth = async () => {
+        setApplying(true);
+        setStatus(null);
+
+        console.log('🔄 Applying current ad config to both types...');
+
+        try {
+            // Save to daily_ad
+            const dailyResult = await updateConfig('daily_ad', adData);
+            // Save to calculate_ad
+            const calcResult = await updateConfig('calculate_ad', adData);
+
+            if (dailyResult.success && calcResult.success) {
+                setStatus({ type: 'success', message: 'Configuration synced to both Daily & Calculation ads!' });
+                setTimeout(() => setStatus(null), 4000);
+            } else {
+                setStatus({
+                    type: 'error',
+                    message: `Sync failed: Daily(${dailyResult.success ? 'OK' : 'Fail'}), Calc(${calcResult.success ? 'OK' : 'Fail'})`
+                });
+            }
+        } catch (err) {
+            setStatus({ type: 'error', message: 'Sync operation failed' });
+        } finally {
+            setApplying(false);
+        }
+    };
+
+    const addCta = () => {
+        if (adData.cta_buttons.length >= 3) return;
+        setAdData({
+            ...adData,
+            cta_buttons: [...adData.cta_buttons, { label: 'Visit Website', url: '', type: 'website' }]
+        });
+    };
+
+    const updateCta = (index, field, value) => {
+        const newButtons = [...adData.cta_buttons];
+        newButtons[index] = { ...newButtons[index], [field]: value };
+        setAdData({ ...adData, cta_buttons: newButtons });
+    };
+
+    const removeCta = (index) => {
+        const newButtons = adData.cta_buttons.filter((_, i) => i !== index);
+        setAdData({ ...adData, cta_buttons: newButtons });
+    };
+
+    if (configLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold flex items-center gap-3">
+                        <Megaphone className="text-primary" /> Ad Manager
+                    </h1>
+                    <p className="text-muted mt-1">Configure and preview app advertisements</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={saveAd}
+                        disabled={saving || applying}
+                        className="btn-primary px-6 py-2.5 rounded-2xl flex items-center gap-2 shadow-xl shadow-primary/20"
+                    >
+                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex gap-1.5 p-1 bg-white/5 rounded-2xl w-full sm:w-fit border border-white/5">
+                    <button
+                        onClick={() => setActiveTab('daily_ad')}
+                        className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'daily_ad' ? 'bg-white/10 text-white shadow-xl ring-1 ring-white/10' : 'text-muted hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Daily Ad
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('calculate_ad')}
+                        className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'calculate_ad' ? 'bg-white/10 text-white shadow-xl ring-1 ring-white/10' : 'text-muted hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Calculation Ad
+                    </button>
+                </div>
+
+                <div className="hidden sm:block h-8 w-[1px] bg-white/10 mx-1" />
+
+                <button
+                    onClick={applyToBoth}
+                    disabled={saving || applying}
+                    title="Copy this current configuration to both Daily and Calculation ads"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl hover:bg-indigo-500/20 transition-all font-bold text-sm flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-300 group shadow-lg shadow-indigo-500/5"
+                >
+                    {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
+                    Apply to Both
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Editor */}
+                <div className="space-y-6">
+                    <section className="glass p-6 rounded-3xl space-y-6">
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div>
+                                <h3 className="font-bold">Enable Advertisement</h3>
+                                <p className="text-xs text-muted">Show this ad to your users</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={adData.enabled}
+                                    onChange={(e) => setAdData({ ...adData, enabled: e.target.checked })}
+                                />
+                                <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-inner"></div>
+                            </label>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider mb-2 block">Media URL (Image or Video)</label>
+                                <div className="relative">
+                                    <Film className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                    <input
+                                        type="url"
+                                        placeholder=".jpg .png .gif .mp4 .webm .mov"
+                                        className="input-field pl-12"
+                                        value={adData.image_url}
+                                        onChange={(e) => setAdData({ ...adData, image_url: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider mb-2 block">Ad Title</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Support the Developer ☕"
+                                    className="input-field"
+                                    value={adData.title}
+                                    onChange={(e) => setAdData({ ...adData, title: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider mb-2 block">Main Message</label>
+                                <textarea
+                                    placeholder="Tell your users why they should support or check this out..."
+                                    className="input-field min-h-[100px] resize-none"
+                                    value={adData.message}
+                                    onChange={(e) => setAdData({ ...adData, message: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-muted uppercase tracking-wider mb-2 block">Skip Delay (Sec)</label>
+                                    <input
+                                        type="number"
+                                        min="3"
+                                        max="30"
+                                        className="input-field"
+                                        value={adData.skip_delay_sec}
+                                        onChange={(e) => setAdData({ ...adData, skip_delay_sec: parseInt(e.target.value) || 3 })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 border-t border-white/5 pt-6">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-muted uppercase tracking-wider">CTA Buttons ({adData.cta_buttons.length}/3)</label>
+                                {adData.cta_buttons.length < 3 && (
+                                    <button onClick={addCta} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                                        <Plus className="w-3 h-3" /> Add Button
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="space-y-3">
+                                {adData.cta_buttons.map((btn, index) => (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        key={index}
+                                        className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3"
+                                    >
+                                        <div className="flex gap-2">
+                                            <input
+                                                className="input-field text-sm"
+                                                placeholder="Label"
+                                                value={btn.label}
+                                                onChange={(e) => updateCta(index, 'label', e.target.value)}
+                                            />
+                                            <select
+                                                className="input-field text-sm w-32"
+                                                value={btn.type}
+                                                onChange={(e) => updateCta(index, 'type', e.target.value)}
+                                            >
+                                                <option value="website">Website</option>
+                                                <option value="instagram">Instagram</option>
+                                                <option value="whatsapp">WhatsApp</option>
+                                                <option value="buymeacoffee">Coffee</option>
+                                                <option value="custom">Custom</option>
+                                            </select>
+                                            <button onClick={() => removeCta(index)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-all self-center">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <input
+                                            className="input-field text-sm"
+                                            placeholder="https://..."
+                                            value={btn.url}
+                                            onChange={(e) => updateCta(index, 'url', e.target.value)}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <AnimatePresence>
+                        {status && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className={`flex items-center gap-3 p-4 rounded-2xl border ${status.type === 'success'
+                                    ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                                    }`}
+                            >
+                                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                                <span className="font-medium text-sm">{status.message}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Live Preview */}
+                <div className="lg:sticky lg:top-8 h-fit">
+                    <div className="flex items-center gap-2 mb-4 text-xs font-bold text-muted uppercase tracking-wider">
+                        <Sparkles className="w-4 h-4 text-yellow-500" /> Live App Preview
+                    </div>
+
+                    <div className="relative aspect-[9/16] max-w-[340px] mx-auto rounded-[3rem] border-[8px] border-zinc-800 bg-[#050510] overflow-hidden shadow-2xl scale-[0.8] sm:scale-100 origin-top">
+                        {/* Phone Notch/Speaker */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-zinc-800 rounded-b-2xl z-50"></div>
+
+                        <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                            <motion.div
+                                key={activeTab + JSON.stringify(adData)}
+                                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                className="w-full bg-[#141428] border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+                            >
+                                {adData.image_url && (() => {
+                                    const url = adData.image_url.trim();
+                                    const isVideo = /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(url);
+                                    if (isVideo) {
+                                        return (
+                                            <div className="relative w-full bg-black border-b border-white/5">
+                                                <video src={url} autoPlay loop muted={isMuted} playsInline className="w-full max-h-48 object-contain" />
+                                                <button
+                                                    onClick={() => setIsMuted(!isMuted)}
+                                                    className="absolute bottom-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm border border-white/20 text-white hover:bg-black/80 transition-all z-10"
+                                                >
+                                                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        );
+                                    }
+                                    return <img src={url} alt="Preview" className="w-full max-h-48 object-contain bg-black border-b border-white/5" />;
+                                })()}
+                                <div className="p-6 text-center">
+                                    <h3 className="text-lg font-bold mb-2">{adData.title || 'Your Ad Title'}</h3>
+                                    <p className="text-xs text-[#94a3b8] leading-relaxed mb-6">
+                                        {adData.message || 'The message you enter in the editor will appear right here for your users.'}
+                                    </p>
+
+                                    <div className="space-y-2.5">
+                                        {adData.cta_buttons.map((btn, i) => {
+                                            const Icon = btn.type === 'instagram' ? Instagram :
+                                                btn.type === 'whatsapp' ? MessageCircle :
+                                                    btn.type === 'buymeacoffee' ? Coffee :
+                                                        Globe;
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 ${btn.type === 'instagram' ? 'bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600' :
+                                                        btn.type === 'whatsapp' ? 'bg-[#25D366]' :
+                                                            btn.type === 'buymeacoffee' ? 'bg-[#FFDD00] text-black' :
+                                                                'bg-primary'
+                                                        }`}
+                                                >
+                                                    <Icon className="w-3.5 h-3.5" />
+                                                    {btn.label || 'Visit Website'}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <button disabled className="mt-5 w-fit mx-auto px-6 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-muted">
+                                        Skip ({adData.skip_delay_sec}s)
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* Simulated UI background */}
+                        <div className="absolute inset-0 -z-10 opacity-10 flex flex-col p-6 space-y-4">
+                            <div className="h-20 w-full bg-white/20 rounded-2xl" />
+                            <div className="h-40 w-full bg-white/20 rounded-2xl" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="h-32 bg-white/20 rounded-2xl" />
+                                <div className="h-32 bg-white/20 rounded-2xl" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AdManager;

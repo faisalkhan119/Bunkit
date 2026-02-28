@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BunkIt | Technical Architecture & Architecture Documentation</title>
+    <!-- Modern Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- Mermaid diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --sidebar-bg: rgba(15, 23, 42, 0.9);
+            --border: rgba(255, 255, 255, 0.1);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: #f1f5f9;
+        }
+
+        section {
+            scroll-margin-top: 5rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sidebar {
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* PDF Mode Fallbacks - Fixes "Unreadable" blur issues */
+        body.pdf-mode .glass-card {
+            background: rgba(30, 41, 59, 1) !important;
+            backdrop-filter: none !important;
+            box-shadow: none !important;
+        }
+
+        body.pdf-mode .sidebar {
+            display: none !important;
+        }
+
+        body.pdf-mode .content-area {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 20px !important;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8, #22d3ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: #818cf8;
+        }
+
+        .mermaid {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            width: 100%;
+        }
+
+        /* Ensure sections start on new pages in PDF */
+        body.pdf-mode section {
+            page-break-before: always;
+            padding-top: 2rem;
+        }
+
+        /* Navigation Hover */
+        .nav-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--primary);
+            padding-left: 1.5rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* High-Fidelity Print Overrides */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            body {
+                background-color: #0f172a !important;
+                color: #f1f5f9 !important;
+            }
+
+            .content-area {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 40px !important;
+            }
+
+            .glass-card {
+                background: rgba(30, 41, 59, 0.9) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                color: #f1f5f9 !important;
+                break-inside: avoid;
+            }
+
+            .gradient-text {
+                -webkit-text-fill-color: #818cf8 !important;
+                color: #818cf8 !important;
+            }
+
+            .mermaid {
+                background: #1e293b !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }
+
+            button,
+            .export-btn {
+                display: none !important;
+            }
+
+            /* Ensure all sections start on new pages if they are major */
+            section {
+                break-after: auto;
+                margin-bottom: 4rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100">
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar fixed top-0 left-0 h-screen w-64 p-6 hidden lg:block z-50">
+        <div class="mb-10 text-center">
+            <h1 class="text-3xl font-extrabold gradient-text tracking-tight">BunkIt</h1>
+            <p class="text-xs text-slate-400 font-medium tracking-widest uppercase">System Documentation</p>
+        </div>
+
+        <div class="space-y-1">
+            <a href="#overview" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🚀
+                Overview</a>
+            <a href="#dna" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🧬 Project
+                DNA</a>
+            <a href="#features" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">✨ Core
+                Features</a>
+            <a href="#algorithms" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🧠
+                Algorithms</a>
+            <a href="#architecture" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🏗️
+                Architecture</a>
+            <a href="#database-anchor" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🗄️
+                Database
+                Model</a>
+            <a href="#checklist" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">✅ System
+                Checklist</a>
+            <a href="#admin" class="nav-item block py-3 px-4 rounded-lg text-slate-300 hover:text-white">🤵 Admin
+                System</a>
+        </div>
+
+        <div class="absolute bottom-10 left-6 right-6">
+            <button id="download-pdf"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform active:scale-95 shadow-lg shadow-indigo-500/20">
+                📥 Export to PDF
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-area lg:ml-64 p-6 md:p-12 min-h-screen">
+
+        <!-- Header Section -->
+        <div id="overview" class="mb-20 pt-10">
+            <p class="text-indigo-400 font-bold tracking-[0.2em] mb-4 uppercase text-sm">Welcome to Bunkit</p>
+            <h1 class="text-6xl font-black mb-6 leading-tight">
+                Academic Freedom, <br>
+                <span class="gradient-text">Engineered Precisely.</span>
+            </h1>
+            <p class="text-xl text-slate-400 max-w-2xl leading-relaxed">
+                Bunkit is a high-performance Progressive Web App (PWA) designed to give students mathematical control
+                over their attendance while coordinating class movements in real-time.
+            </p>
+        </div>
+
+        <!-- Section: Project DNA -->
+        <section id="dna" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-cyan-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">Project DNA: Stack & Languages</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Javascript -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-yellow-400">
+                    <h3 class="text-xl font-bold mb-2">JavaScript (ES6+)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        The primary engine for frontend logic, service worker management, and PWA synchronization.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-yellow-400/10 text-yellow-500 rounded text-[10px] font-mono">SyncManager.js</span>
+                        <span
+                            class="px-2 py-0.5 bg-yellow-400/10 text-yellow-500 rounded text-[10px] font-mono">ServiceWorker.js</span>
+                    </div>
+                </div>
+
+                <!-- JSX/React -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-blue-400">
+                    <h3 class="text-xl font-bold mb-2">JSX / React.js</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Powers the high-performance Admin PWA with component-based scalability and state management.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-blue-400/10 text-blue-500 rounded text-[10px] font-mono">AdminLayout.jsx</span>
+                        <span
+                            class="px-2 py-0.5 bg-blue-400/10 text-blue-500 rounded text-[10px] font-mono">Analytics.jsx</span>
+                    </div>
+                </div>
+
+                <!-- SQL -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-green-400">
+                    <h3 class="text-xl font-bold mb-2">PostgreSQL / SQL</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Complex relational schema with Row Level Security (RLS) and stored procedures for data
+                        integrity.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-green-400/10 text-green-500 rounded text-[10px] font-mono">auth_schema.sql</span>
+                        <span
+                            class="px-2 py-0.5 bg-green-400/10 text-green-500 rounded text-[10px] font-mono">rls_policies.sql</span>
+                    </div>
+                </div>
+
+                <!-- TypeScript -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-blue-600">
+                    <h3 class="text-xl font-bold mb-2">TypeScript / Deno</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Backend Edge Functions written in TypeScript for type-safety during AI processing and
+                        notifications.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-blue-600/10 text-blue-400 rounded text-[10px] font-mono">gemini-vision.ts</span>
+                        <span
+                            class="px-2 py-0.5 bg-blue-600/10 text-blue-400 rounded text-[10px] font-mono">send-push.ts</span>
+                    </div>
+                </div>
+
+                <!-- Tailwind -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-cyan-400">
+                    <h3 class="text-xl font-bold mb-2">Tailwind / CSS3</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Modern utility-first styling with advanced glassmorphism and responsive layout engines.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-cyan-400/10 text-cyan-500 rounded text-[10px] font-mono">App.css</span>
+                        <span
+                            class="px-2 py-0.5 bg-cyan-400/10 text-cyan-500 rounded text-[10px] font-mono">Glassmorphism.css</span>
+                    </div>
+                </div>
+
+                <!-- HTML5 -->
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-l-orange-500">
+                    <h3 class="text-xl font-bold mb-2">HTML5 / Semantic</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Semantic structures for SEO optimization and accessible PWA interfaces.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span
+                            class="px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded text-[10px] font-mono">index.html</span>
+                        <span
+                            class="px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded text-[10px] font-mono">manifest.json</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Core Features -->
+        <section id="features" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">Comprehensive Feature Set</h2>
+            </div>
+
+            <div class="feature-grid">
+                <!-- Feature: Smart Logger -->
+                <div class="glass-card p-6 rounded-3xl">
+                    <div
+                        class="h-12 w-12 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl mb-4">
+                        📊</div>
+                    <h3 class="text-2xl font-bold mb-3">Precision Daily Logger</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Tracks subject-wise attendance with a calendar interface. It supports multi-period tracking and
+                        custom status states (Attended, Skipped, Medical, Duty Leave).
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li>• Multi-Status Support (ML, DL, OD)</li>
+                        <li>• Calendar Day-Wise Drilldown</li>
+                        <li>• Portal Mode Sync Integration</li>
+                    </ul>
+                </div>
+
+                <!-- Feature: AI Import -->
+                <div class="glass-card p-6 rounded-3xl">
+                    <div
+                        class="h-12 w-12 bg-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center text-2xl mb-4">
+                        🤖</div>
+                    <h3 class="text-2xl font-bold mb-3">Inbuilt AI Import</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Powered by Google Gemini. Users upload timetable screenshots, and the AI extracts subjects,
+                        periods, and weekly schedules automatically.
+                    </p>
+                    <div
+                        class="bg-indigo-900/40 p-3 rounded-xl border border-indigo-500/20 text-xs font-mono text-indigo-300">
+                        "extract schedule as JSON..."
+                    </div>
+                </div>
+
+                <!-- Feature: Bunk Polls -->
+                <div class="glass-card p-6 rounded-3xl">
+                    <div
+                        class="h-12 w-12 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center text-2xl mb-4">
+                        🗳️</div>
+                    <h3 class="text-2xl font-bold mb-3">Real-time Bunk Polls</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Decide as a team. Students create polls for mass bunks; real-time notifications alert everyone
+                        to cast their vote and see live results.
+                    </p>
+                    <span
+                        class="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider">LIVE
+                        REAL-TIME</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Algorithms -->
+        <section id="algorithms" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">The Math Behind Bunking</h2>
+            </div>
+
+            <!-- Algorithm 1: Safe Bunk Logic -->
+            <div class="glass-card p-10 rounded-[2.5rem] mb-10">
+                <div class="flex flex-wrap items-start justify-between gap-6">
+                    <div class="max-w-md">
+                        <h3 class="text-3xl font-bold mb-4">The "Safe Bunk" Formula</h3>
+                        <p class="text-slate-400 mb-6 leading-relaxed">
+                            Bunkit calculates how many future classes you can skip based on the <strong>total projected
+                                classes</strong> in the semester.
+                        </p>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-slate-800/50 rounded-2xl border border-white/5">
+                                <span class="text-xs font-bold text-indigo-400 block mb-1">STILL NEED</span>
+                                <code class="text-sm">ceil( (Criteria% * FinalTotal) - Attended )</code>
+                            </div>
+                            <div class="p-4 bg-slate-800/50 rounded-2xl border border-white/5">
+                                <span class="text-xs font-bold text-green-400 block mb-1">MAX SKIPPABLE</span>
+                                <code class="text-sm">max(0, Remaining - StillNeed)</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-white p-6 rounded-3xl min-w-[300px]">
+                        <div class="mermaid">
+                            graph TD
+                            A[Input: Attended, Held, Remaining] --> B{Calc FinalTotal}
+                            B -- Attended + Held + Remaining --> C[Apply Target Criteria 75%]
+                            C --> D[Still Need Calculation]
+                            D --> E[Max Safe Bunks Calculated]
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Algorithm 2: Optimal Break Finder -->
+            <div class="glass-card p-10 rounded-[2.5rem]">
+                <h3 class="text-3xl font-bold mb-4">Optimal Break Projection</h3>
+                <p class="text-slate-400 mb-8 max-w-2xl">
+                    A proprietary greedy algorithm that scans the entire semester timeline to find the longest possible
+                    stretch of holidays by strategically "spending" your safe bunk budget on working days.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="p-6 bg-slate-900 rounded-3xl border border-white/5">
+                        <h4 class="font-bold text-indigo-400 mb-4 block">Simulation Sequence:</h4>
+                        <ol class="space-y-4 text-sm text-slate-300">
+                            <li class="flex gap-3">
+                                <span
+                                    class="h-6 w-6 bg-slate-800 rounded-lg flex items-center justify-center text-xs font-bold">1</span>
+                                Build a timeline of all days until semester end.
+                            </li>
+                            <li class="flex gap-3">
+                                <span
+                                    class="h-6 w-6 bg-slate-800 rounded-lg flex items-center justify-center text-xs font-bold">2</span>
+                                Identify weekends and pre-defined holidays as "Free Days".
+                            </li>
+                            <li class="flex gap-3">
+                                <span
+                                    class="h-6 w-6 bg-slate-800 rounded-lg flex items-center justify-center text-xs font-bold">3</span>
+                                Run a sliding window to find max consecutive days by filling gaps with "Safe Bunks".
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="p-6 bg-white rounded-3xl">
+                        <div class="mermaid">
+                            graph LR
+                            T[Timeline] --> WD[Working Days]
+                            T --> HD[Holidays]
+                            WD --> BW[Sliding Window]
+                            BW --> LB[Longest Possible Break Found]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Architecture -->
+        <section id="architecture" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">System Architecture</h2>
+            </div>
+
+            <div class="glass-card p-10 rounded-[2.5rem]">
+                <h3 class="text-3xl font-bold mb-10 text-center">Cloud Engine Flow</h3>
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant PWA as Student (PWA)
+                    participant SB as Supabase (Realtime)
+                    participant EF as Edge Functions (Deno)
+                    participant AI as Gemini AI (Vision)
+
+                    PWA->>SB: Auth & Sync Data
+                    PWA->>EF: Upload Image (OCR)
+                    EF->>AI: Image Data + Prompt
+                    AI->>EF: Structured JSON
+                    EF->>PWA: Parsed Timetable Object
+                    SB->>PWA: Push Notification (Poll/Reminder)
+                </div>
+            </div>
+
+            <!-- Missing Feature 1: Monetization & Ad Engine -->
+            <div class="glass-card p-10 rounded-[2.5rem] mt-10">
+                <h3 class="text-3xl font-bold mb-4 flex items-center gap-3">
+                    <span class="text-yellow-400">💰</span> The Monetization Engine
+                </h3>
+                <p class="text-slate-400 mb-6 leading-relaxed max-w-3xl">
+                    The <code>BunkitAdManager</code> (<code>js/ad-manager.js</code>) is a custom-built, non-intrusive
+                    monetization pipeline that loads dynamic configurations (like image URLs and CTA links) directly
+                    from
+                    the <code>app_config</code> database. It features:
+                </p>
+                <ul class="space-y-4 text-sm text-slate-300">
+                    <li class="flex items-start gap-4 p-4 bg-slate-800/20 rounded-2xl border border-yellow-500/10">
+                        <span class="text-xl">⏱️</span>
+                        <div>
+                            <strong class="text-yellow-400 block mb-1">Dynamic Skip Timers</strong>
+                            <p>Ads implement a forced skip-delay (e.g., 4s) to ensure visibility before allowing
+                                dismissal, ensuring high impressions.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-4 p-4 bg-slate-800/20 rounded-2xl border border-yellow-500/10">
+                        <span class="text-xl">👑</span>
+                        <div>
+                            <strong class="text-yellow-400 block mb-1">Premium User Bypass</strong>
+                            <p>The system actively cross-references the <code>AuthManager.user.email</code> against a
+                                <code>premium_users</code> config node. If a valid, unexpired premium pass is found, the
+                                generation sequence is synchronously aborted—providing a 100% ad-free experience.
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Missing Feature 2: Service Worker & Smart Reminders -->
+            <div class="glass-card p-10 rounded-[2.5rem] mt-10">
+                <h3 class="text-3xl font-bold mb-4 flex items-center gap-3">
+                    <span class="text-green-400">⚡</span> Offline Architecture & Smart Reminders
+                </h3>
+                <p class="text-slate-400 mb-6 leading-relaxed max-w-3xl">
+                    BunkIt operates as a fully functional Progressive Web App (PWA) driven by a robust Service Worker
+                    (<code>sw.js</code>).
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <div class="space-y-4">
+                        <div class="p-5 bg-slate-900 rounded-2xl border border-white/5">
+                            <h4 class="font-bold text-green-400 mb-2">Caching Strategies</h4>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Implements <strong>Stale-While-Revalidate</strong> for external assets (like Chart.js)
+                                and a
+                                <strong>Network-First (3s Timeout)</strong> strategy for core HTML pages, falling back
+                                to cache
+                                or an offline page instantly if the network fails.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-5 bg-slate-900 rounded-2xl border border-white/5">
+                            <h4 class="font-bold text-green-400 mb-2">Context-Aware Reminders</h4>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                The Service Worker autonomously analyzes local IndexedDB data hourly. It calculates
+                                low-attendance thresholds and logging streaks, utilizing native
+                                <code>showNotification</code>
+                                and scheduled <code>TimestampTrigger</code> APIs to nudge users intelligently without a
+                                server.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+
+        <!-- Bulletproof Anchor Hook -->
+        <a id="database-anchor" style="display:block; position:relative; top:-100px; visibility:hidden;"></a>
+
+        <!-- Section: Database Schema (Relocated) -->
+        <section id="database" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">Full Database Model</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="space-y-6">
+                    <div class="border-l-4 border-indigo-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-indigo-400 text-lg mb-1">profiles</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Extended Auth & Metadata</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, email, full_name, auth_provider, last_seen, is_guest</code>
+                    </div>
+                    <div class="border-l-4 border-cyan-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-cyan-400 text-lg mb-1">classes</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">User Attendance Data</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, user_email, class_name, attendance_data (JSONB)</code>
+                    </div>
+                    <div class="border-l-4 border-green-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-green-400 text-lg mb-1">app_config</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Global Settings</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">key, value (JSONB) -- [admin_emails, vapid_key]</code>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="border-l-4 border-purple-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-purple-400 text-lg mb-1">mass_bunk_polls</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Coordination Data</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, creator_email, class_id, subject, scheduled_time, status</code>
+                    </div>
+                    <div class="border-l-4 border-pink-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-pink-400 text-lg mb-1">push_subscriptions</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">PWA Push Tokens</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, user_email, device_id, subscription_json</code>
+                    </div>
+                    <div class="border-l-4 border-orange-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-orange-400 text-lg mb-1">shared_classes</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Class Templates</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, creator_email, class_data, share_code</code>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="border-l-4 border-yellow-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-yellow-400 text-lg mb-1">ad_events</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Monetization Tracking</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, ad_type, event_type, user_id, metadata (JSONB)</code>
+                    </div>
+                    <div class="border-l-4 border-red-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-red-400 text-lg mb-1">class_memberships</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Social Hub Index</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">user_id, shared_class_id, joined_at</code>
+                    </div>
+                    <div class="border-l-4 border-gray-500 pl-4 bg-slate-800/20 p-4 rounded-xl">
+                        <h4 class="font-bold text-gray-400 text-lg mb-1">update_proposals</h4>
+                        <p class="text-xs text-slate-500 italic mb-3">Class Diff History</p>
+                        <code
+                            class="text-[11px] text-slate-300 bg-slate-900/50 p-2 rounded block">id, class_id, proposer, changes, votes</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: The Master Checklist -->
+        <section id="checklist" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">The Complete Master Checklist</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- 1. Attendance Core -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-blue-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">📊 Attendance Core Engines</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-blue-500">
+                            <div>
+                                <strong class="text-slate-200">Manual Classroom Logger</strong>
+                                <p class="text-slate-500 text-xs">Individual period tracking with real-time percentage
+                                    updates.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-blue-500">
+                            <div>
+                                <strong class="text-slate-200">Student Portal Integration</strong>
+                                <p class="text-slate-500 text-xs">Direct scraping-free sync for university attendance
+                                    portals.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-blue-500">
+                            <div>
+                                <strong class="text-slate-200">Gemini AI Timetable Import</strong>
+                                <p class="text-slate-500 text-xs">Extracts schedules from image/OCR with 98% accuracy.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-blue-500">
+                            <div>
+                                <strong class="text-slate-200">History Log & Restoration</strong>
+                                <p class="text-slate-500 text-xs">Undo/Redo capabilities for accidental attendance logs.
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 2. Analytics & Algorithms -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-green-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">🧠 Predictive Analytics</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-green-500">
+                            <div>
+                                <strong class="text-slate-200">Safe Bunk Projection</strong>
+                                <p class="text-slate-500 text-xs">Calculates max skippable classes while staying above
+                                    75%.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-green-500">
+                            <div>
+                                <strong class="text-slate-200">Long Weekend Finder</strong>
+                                <p class="text-slate-500 text-xs">Greedy algorithm for finding optimal class skippables
+                                    for trips.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-green-500">
+                            <div>
+                                <strong class="text-slate-200">Condonation Logic</strong>
+                                <p class="text-slate-500 text-xs">Supports 65% medical leave scenarios with separate
+                                    logic paths.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-green-500">
+                            <div>
+                                <strong class="text-slate-200">BunkMate AI Chatbot</strong>
+                                <p class="text-slate-500 text-xs">Context-aware assistant for answering "Can I bunk
+                                    today?".</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 3. Social Hub -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-purple-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">🤝 Social & Coordination</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-purple-500">
+                            <div>
+                                <strong class="text-slate-200">Real-time Mass Bunk Polls</strong>
+                                <p class="text-slate-500 text-xs">Synchronized voting for whole-class skip coordination.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-purple-500">
+                            <div>
+                                <strong class="text-slate-200">Update Propagation</strong>
+                                <p class="text-slate-500 text-xs">Propose and diff timetable changes across class
+                                    members.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-purple-500">
+                            <div>
+                                <strong class="text-slate-200">QR Class Sharing</strong>
+                                <p class="text-slate-500 text-xs">Generate instant scan links to onboard entire batches.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-purple-500">
+                            <div>
+                                <strong class="text-slate-200">Active Bunkers Counter</strong>
+                                <p class="text-slate-500 text-xs">Live presence indicator for anonymous skip tracking.
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 4. Infrastructure -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-indigo-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">🛠️ Infrastructure & PWA</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-indigo-500">
+                            <div>
+                                <strong class="text-slate-200">Sync Manager (LWW)</strong>
+                                <p class="text-slate-500 text-xs">Robust Last-Write-Wins conflict resolution for
+                                    multi-device.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-indigo-500">
+                            <div>
+                                <strong class="text-slate-200">Guest-to-User Migration</strong>
+                                <p class="text-slate-500 text-xs">No-loss data transfer from local-only to cloud login.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-indigo-500">
+                            <div>
+                                <strong class="text-slate-200">Offline-Only Enforcer</strong>
+                                <p class="text-slate-500 text-xs">Overlay system protecting data integrity during
+                                    network loss.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-indigo-500">
+                            <div>
+                                <strong class="text-slate-200">Web Push Standard</strong>
+                                <p class="text-slate-500 text-xs">VAPID-secured notifications for Mass Bunk alerts.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 5. Admin Panel -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-pink-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">🤵 Admin & Analytics</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-pink-500">
+                            <div>
+                                <strong class="text-slate-200">Analytics Dashboard</strong>
+                                <p class="text-slate-500 text-xs">Real-time engagement, growth, and retention metrics.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-pink-500">
+                            <div>
+                                <strong class="text-slate-200">Moderation Control</strong>
+                                <p class="text-slate-500 text-xs">Flagging and cleanup of mass bunk polls and community
+                                    data.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-pink-500">
+                            <div>
+                                <strong class="text-slate-200">Bunk Poll Intelligence</strong>
+                                <p class="text-slate-500 text-xs">Trends in bunking frequency and class-specific
+                                    dynamics.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-pink-500">
+                            <div>
+                                <strong class="text-slate-200">App Config Flags</strong>
+                                <p class="text-slate-500 text-xs">Dynamic feature-flagging for global app rollout
+                                    management.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 6. Localization & Compliance -->
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-cyan-500">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">🛡️ Security & Privacy</h3>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-cyan-500">
+                            <div>
+                                <strong class="text-slate-200">Local JSON Backups</strong>
+                                <p class="text-slate-500 text-xs">Encrypted file-based export for ultimate data
+                                    sovereignty.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-cyan-500">
+                            <div>
+                                <strong class="text-slate-200">Row Level Security (RLS)</strong>
+                                <p class="text-slate-500 text-xs">Postgres policies ensuring complete data isolation.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <input type="checkbox" checked disabled class="mt-1 accent-cyan-500">
+                            <div>
+                                <strong class="text-slate-200">GDPR Compliance</strong>
+                                <p class="text-slate-500 text-xs">Profile deletion and data purge logic implemented.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Admin System -->
+        <section id="admin" class="mb-32">
+            <div class="flex items-center gap-4 mb-10">
+                <div class="h-10 w-2 bg-indigo-500 rounded-full"></div>
+                <h2 class="text-4xl font-bold">Admin Management System</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-8 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">Class Creator Wizard</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                            A specialized tool for bulk class setup. Admins can create timetable templates once and
+                            share them via link or QR code, saving users from manual entry.
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg text-[10px] font-bold">3-STEP
+                            WIZARD</span>
+                        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg text-[10px] font-bold">QR
+                            GENERATOR</span>
+                    </div>
+                </div>
+
+                <div class="glass-card p-8 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">Manual Push Override</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                            Allows Admins to send urgent, high-priority notifications to the entire user base or
+                            specific cohorts (e.g., "Holiday declared tomorrow!").
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold">VAPID
+                            SECURE</span>
+                        <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold">GLOBAL
+                            REACH</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- Footer -->
+        <footer class="mt-40 border-t border-white/5 pt-10 text-center pb-[500px]">
+            <h2 class="text-2xl font-bold gradient-text mb-4">BunkIt Technical Manifest</h2>
+            <p class="text-slate-500 text-sm">Created for Architectural Audit & Operational Review</p>
+            <p class="text-slate-600 text-xs mt-2">v2.4.0 • 2026 Documentation Release</p>
+        </footer>
+
+    </main>
+
+    <!-- Initialize Mermaid -->
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Outfit'
+        });
+    </script>
+
+    <!-- Script for smooth scroll & active nav & PDF Export -->
+    <script>
+        // Smooth Scroll & Active Nav logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('bg-white/5', 'text-white');
+                        if (nav.getAttribute('href') === '#' + id) {
+                            nav.classList.add('bg-white/5', 'text-white');
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('section, div[id]').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Trigger Direct Native PDF Download
+        document.getElementById('download-pdf').addEventListener('click', function () {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '📥 Downloading Native PDF...';
+            btn.disabled = true;
+
+            // Create a temporary link to download the pre-compiled native PDF
+            const link = document.createElement('a');
+            link.href = 'PROJECT_DOCUMENTATION.pdf'; // Local relative path
+            link.download = 'BunkIt_Technical_Architecture.pdf'; // Force download dialog
+
+            // Append, click, and cleanup
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Restore button instantly
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1000);
+        });
+    </script>
+
+</body>
+
+</html>
