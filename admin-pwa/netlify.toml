@@ -1,0 +1,17 @@
+# Netlify Configuration for Admin PWA
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy Supabase requests through same origin (bypasses Jio ISP block)
+[[redirects]]
+  from = "/sb-proxy/*"
+  to = "https://rqajrgqpfuqfvwveyqdh.supabase.co/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - all routes serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
