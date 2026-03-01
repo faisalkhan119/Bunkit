@@ -5,41 +5,61 @@ import { useAuth } from './AuthContext';
 const ConfigContext = createContext({});
 
 export const ConfigProvider = ({ children }) => {
-    const { user, authLoading } = useAuth();
-    const [config, setConfig] = useState({});
+    const { user, authLoading, isAdmin } = useAuth();
+    const [config, setConfig] = useState(() => {
+        // Optimistic: try to load config from localStorage cache
+        try {
+            const cached = localStorage.getItem('bunkit_admin_config_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                console.log('📦 Loaded config from cache, keys:', Object.keys(parsed));
+                return parsed;
+            }
+        } catch (e) { /* ignore */ }
+        return {};
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchAllConfig = async (attempt = 1) => {
-        // Always wait for auth to settle first
+        // Wait for auth to fully settle — don't fetch during transition
         if (authLoading) {
             console.log('⏳ Auth still loading, skipping config fetch');
             return;
         }
 
+        // Only clear config on explicit logout (no user AND not loading)
+        // Don't clear during transient auth states to prevent flash-of-zeros
         if (!user) {
             console.log('👤 No user, clearing config');
             setConfig({});
+            localStorage.removeItem('bunkit_admin_config_cache');
             setLoading(false);
             return;
         }
 
-        // Don't re-fetch if already loading (prevents double-fetches)
         setLoading(true);
         setError(null);
         console.log(`📦 Fetching configs (attempt ${attempt}/3) for:`, user.email);
 
         try {
-            const { data, error: supabaseError } = await supabase
+            const fetchPromise = supabase
                 .from('app_config')
                 .select('key, value');
+
+            // Add a 10s timeout to prevent hanging forever
+            const { data, error: supabaseError } = await Promise.race([
+                fetchPromise,
+                new Promise((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: { message: 'Config fetch timeout (10s)', code: 'TIMEOUT' } }), 10000)
+                )
+            ]);
 
             if (supabaseError) {
                 throw new Error(`Supabase error: ${supabaseError.message} (code: ${supabaseError.code})`);
             }
 
             if (!data || data.length === 0) {
-                // Empty response - retry once to rule out transient errors
                 if (attempt < 3) {
                     console.warn(`⚠️ Config fetch returned empty on attempt ${attempt}, retrying in 1s...`);
                     setTimeout(() => fetchAllConfig(attempt + 1), 1000);
@@ -56,11 +76,16 @@ export const ConfigProvider = ({ children }) => {
             console.log('✅ Configs loaded. Keys:', Object.keys(configMap));
             setConfig(configMap);
             setError(null);
+
+            // Cache config for instant display on next refresh
+            try {
+                localStorage.setItem('bunkit_admin_config_cache', JSON.stringify(configMap));
+            } catch (e) { /* full storage, ignore */ }
         } catch (err) {
             console.error('🚫 Config fetch failed:', err.message);
             setError(err.message);
-            // Retry on network errors
-            if (attempt < 3 && (err.message.includes('fetch') || err.message.includes('network'))) {
+            // Retry on network/timeout errors
+            if (attempt < 3 && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('timeout') || err.message.includes('TIMEOUT'))) {
                 console.warn(`🔄 Retrying config fetch in ${attempt}s...`);
                 setTimeout(() => fetchAllConfig(attempt + 1), attempt * 1000);
                 return;
@@ -71,7 +96,15 @@ export const ConfigProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        fetchAllConfig();
+        // Only fetch when auth is settled AND we have a user
+        if (!authLoading && user?.id) {
+            fetchAllConfig();
+        } else if (!authLoading && !user) {
+            // Explicit no-user state after auth settled — clear config
+            setConfig({});
+            localStorage.removeItem('bunkit_admin_config_cache');
+            setLoading(false);
+        }
     }, [user?.id, authLoading]); // Re-run when session settles or user changes
 
     const refreshConfig = () => fetchAllConfig();
